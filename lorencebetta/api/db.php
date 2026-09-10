@@ -3,15 +3,14 @@
 header("Content-Type: application/json; charset=UTF-8");
 
 /*
- * Hosting can provide these values as environment variables. The fallback
- * values keep the project compatible with a normal local XAMPP installation.
- * Use 127.0.0.1 instead of localhost so MySQLi connects over TCP rather than
- * looking for a Unix socket that may not exist on the web server.
+ * InfinityFree MySQL connection. Environment variables can override these
+ * values on another server. Keep the password out of this public repository:
+ * set DB_PASSWORD when supported, or enter it only in the hosted copy.
  */
-$host = getenv("DB_HOST") ?: "127.0.0.1";
-$username = getenv("DB_USER") ?: "root";
+$host = getenv("DB_HOST") ?: "sql200.infinityfree.com";
+$username = getenv("DB_USER") ?: "if0_42882922";
 $password = getenv("DB_PASSWORD") ?: "";
-$database = getenv("DB_NAME") ?: "lorence_betta_fish";
+$database = getenv("DB_NAME") ?: "if0_42882922_lorencebetta";
 $port = (int) (getenv("DB_PORT") ?: 3306);
 
 /*
