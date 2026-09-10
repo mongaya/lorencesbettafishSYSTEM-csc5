@@ -2,10 +2,17 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-$host = "localhost";
-$username = "root";
-$password = "";
-$database = "lorence_betta_fish";
+/*
+ * Hosting can provide these values as environment variables. The fallback
+ * values keep the project compatible with a normal local XAMPP installation.
+ * Use 127.0.0.1 instead of localhost so MySQLi connects over TCP rather than
+ * looking for a Unix socket that may not exist on the web server.
+ */
+$host = getenv("DB_HOST") ?: "127.0.0.1";
+$username = getenv("DB_USER") ?: "root";
+$password = getenv("DB_PASSWORD") ?: "";
+$database = getenv("DB_NAME") ?: "lorence_betta_fish";
+$port = (int) (getenv("DB_PORT") ?: 3306);
 
 /*
  * PHP 8.1 may throw before connect_error can be checked. Disable automatic
@@ -19,7 +26,8 @@ $conn = new mysqli(
     $host,
     $username,
     $password,
-    $database
+    $database,
+    $port
 );
 
 if ($conn->connect_error) {
