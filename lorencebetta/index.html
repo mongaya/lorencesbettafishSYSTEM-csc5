@@ -1,0 +1,3973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Lorence's Betta Fish</title>
+
+<style>
+
+/* =========================================================
+   GLOBAL
+========================================================= */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+:root{
+    --blue:#087ea4;
+    --dark-blue:#04506d;
+    --light-blue:#e8faff;
+    --cyan:#00c6ff;
+    --deep:#023047;
+    --white:#ffffff;
+    --text:#233746;
+    --gray:#6b7b88;
+    --green:#20b26b;
+    --red:#e63946;
+    --orange:#ff9f1c;
+    --shadow:0 8px 25px rgba(0,70,100,.12);
+}
+
+body{
+    background:#eefaff;
+    color:var(--text);
+    overflow-x:hidden;
+}
+
+button{
+    border:none;
+    cursor:pointer;
+}
+
+input,
+select,
+textarea{
+    outline:none;
+}
+
+.hidden{
+    display:none!important;
+}
+
+/* =========================================================
+   FISH BACKGROUND
+========================================================= */
+
+.fish{
+    position:fixed;
+    font-size:35px;
+    opacity:.12;
+    z-index:-1;
+    animation:swim 18s linear infinite;
+}
+
+.fish1{top:18%;left:-80px;animation-duration:20s}
+.fish2{top:55%;left:-100px;animation-duration:25s}
+.fish3{top:80%;left:-80px;animation-duration:22s}
+
+@keyframes swim{
+    0%{transform:translateX(-100px) scaleX(1)}
+    50%{transform:translateX(55vw) translateY(-30px) scaleX(1.1)}
+    100%{transform:translateX(110vw) translateY(20px) scaleX(1)}
+}
+
+/* =========================================================
+   LOGIN / AQUARIUM UI
+========================================================= */
+
+.auth-screen{
+    min-height:100vh;
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:38px 55px;
+    background:
+        radial-gradient(circle at 22% 18%,rgba(83,220,255,.95),transparent 22%),
+        radial-gradient(circle at 76% 78%,rgba(0,130,190,.8),transparent 34%),
+        linear-gradient(135deg,#067ca7 0%,#00516f 48%,#02334b 100%);
+}
+
+.auth-screen::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    background:
+        radial-gradient(circle at 64% 14%,rgba(255,255,255,.18) 0 2px,transparent 3px),
+        radial-gradient(circle at 82% 25%,rgba(255,255,255,.18) 0 3px,transparent 4px),
+        radial-gradient(circle at 72% 58%,rgba(255,255,255,.14) 0 2px,transparent 3px),
+        radial-gradient(circle at 42% 72%,rgba(255,255,255,.12) 0 2px,transparent 3px);
+    background-size:170px 170px,220px 220px,190px 190px,250px 250px;
+    animation:bubbles 16s linear infinite;
+}
+
+.auth-screen::after{
+    content:"";
+    position:absolute;
+    left:-5%;
+    right:-5%;
+    bottom:-65px;
+    height:150px;
+    background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(228,249,255,.95));
+    border-radius:50% 50% 0 0 / 55% 55% 0 0;
+    box-shadow:0 -18px 0 rgba(0,198,255,.5),0 -32px 0 rgba(0,113,210,.35);
+    transform:rotate(-2deg);
+    pointer-events:none;
+}
+
+@keyframes bubbles{
+    0%{transform:translateY(20px)}
+    50%{transform:translateY(-10px)}
+    100%{transform:translateY(20px)}
+}
+
+.auth-layout{
+    width:min(1280px,100%);
+    min-height:680px;
+    display:grid;
+    grid-template-columns:1.02fr .98fr;
+    align-items:center;
+    gap:65px;
+    position:relative;
+    z-index:2;
+}
+
+.auth-showcase{
+    color:white;
+    padding:15px 10px 70px 25px;
+    position:relative;
+}
+
+.auth-logo{
+    width:min(390px,75%);
+    max-height:245px;
+    object-fit:contain;
+    object-position:left center;
+    display:block;
+    filter:drop-shadow(0 12px 18px rgba(0,30,50,.22));
+    margin-bottom:6px;
+}
+
+.auth-tagline{
+    font-size:18px;
+    font-weight:600;
+    letter-spacing:.4px;
+    margin:2px 0 42px;
+    text-shadow:0 2px 8px rgba(0,30,50,.22);
+}
+
+.auth-welcome-label{
+    font-size:18px;
+    letter-spacing:5px;
+    font-weight:500;
+    margin-bottom:8px;
+}
+
+.auth-showcase h2{
+    font-size:58px;
+    line-height:.98;
+    max-width:560px;
+    margin-bottom:18px;
+    letter-spacing:-1.8px;
+}
+
+.auth-showcase-description{
+    max-width:500px;
+    font-size:20px;
+    line-height:1.55;
+    color:rgba(255,255,255,.9);
+}
+
+.auth-features{
+    display:flex;
+    gap:35px;
+    margin-top:34px;
+    flex-wrap:wrap;
+}
+
+.auth-feature{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:15px;
+    font-weight:700;
+}
+
+.auth-feature-icon{
+    width:42px;
+    height:42px;
+    border:2px solid rgba(255,255,255,.9);
+    border-radius:12px;
+    display:grid;
+    place-items:center;
+    font-size:21px;
+    background:rgba(255,255,255,.08);
+    backdrop-filter:blur(4px);
+}
+
+.auth-decor-fish{
+    position:absolute;
+    right:-35px;
+    bottom:5px;
+    font-size:110px;
+    transform:rotate(-8deg);
+    opacity:.82;
+    filter:drop-shadow(0 12px 12px rgba(0,0,0,.18));
+    animation:fishFloat 4s ease-in-out infinite;
+}
+
+@keyframes fishFloat{
+    0%,100%{transform:translateY(0) rotate(-8deg)}
+    50%{transform:translateY(-13px) rotate(-4deg)}
+}
+
+.auth-card{
+    width:min(500px,100%);
+    justify-self:center;
+    background:rgba(255,255,255,.94);
+    border:1px solid rgba(255,255,255,.8);
+    border-radius:30px;
+    padding:34px 38px 36px;
+    box-shadow:0 30px 80px rgba(0,20,40,.3);
+    backdrop-filter:blur(16px);
+}
+
+.logo{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.logo-fish{
+    display:none;
+}
+
+.logo-image{
+    width:145px;
+    height:105px;
+    object-fit:contain;
+    display:block;
+    margin:0 auto 3px;
+}
+
+.logo h1{
+    color:#07547a;
+    font-size:30px;
+    margin-top:3px;
+}
+
+.logo p{
+    color:#728898;
+    margin-top:6px;
+    font-size:14px;
+}
+
+.auth-tabs{
+    display:flex;
+    gap:5px;
+    background:#eaf7fb;
+    padding:5px;
+    border-radius:14px;
+    margin-bottom:22px;
+}
+
+.auth-tabs button{
+    flex:1;
+    padding:13px;
+    border-radius:10px;
+    background:transparent;
+    color:#07547a;
+    font-weight:700;
+    font-size:15px;
+}
+
+.auth-tabs button.active{
+    background:linear-gradient(135deg,#08b8ea,#006fc2);
+    color:white;
+    box-shadow:0 6px 15px rgba(0,130,190,.2);
+}
+
+.form-group{
+    margin-bottom:16px;
+}
+
+.form-group label{
+    display:block;
+    margin-bottom:7px;
+    font-weight:700;
+    font-size:14px;
+    color:#23485d;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea{
+    width:100%;
+    border:1px solid #cce4ec;
+    padding:14px 15px;
+    border-radius:13px;
+    background:#fafdfe;
+    font-size:15px;
+    transition:.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus{
+    border-color:#11aee0;
+    box-shadow:0 0 0 4px rgba(17,174,224,.1);
+}
+
+.primary-btn{
+    background:linear-gradient(135deg,#08bde9,#0071c7);
+    color:white;
+    padding:14px 18px;
+    border-radius:13px;
+    font-weight:700;
+    transition:.2s;
+    box-shadow:0 8px 20px rgba(0,120,190,.2);
+}
+
+.primary-btn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 10px 24px rgba(0,120,190,.3);
+}
+
+.full-btn{
+    width:100%;
+}
+
+.switch-text{
+    text-align:center;
+    margin-top:18px;
+    font-size:14px;
+    color:var(--gray);
+}
+
+.switch-text span{
+    color:var(--blue);
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.error{
+    background:#ffe8e8;
+    color:#c62828;
+    padding:10px;
+    border-radius:8px;
+    margin-bottom:15px;
+    font-size:14px;
+}
+
+/* =========================================================
+   MAIN APPLICATION
+========================================================= */
+
+.app{
+    min-height:100vh;
+}
+
+.topbar{
+    height:70px;
+    background:white;
+    border-bottom:1px solid #d7edf4;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 25px;
+    position:sticky;
+    top:0;
+    z-index:100;
+    box-shadow:0 3px 15px rgba(0,80,110,.06);
+}
+
+.brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:bold;
+    color:var(--dark-blue);
+    font-size:20px;
+}
+
+.brand span{
+    font-size:35px;
+}
+
+.top-actions{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.cart-button{
+    position:relative;
+    background:#e6f8ff;
+    color:var(--dark-blue);
+    padding:10px 15px;
+    border-radius:10px;
+    font-size:18px;
+}
+
+.cart-count{
+    position:absolute;
+    top:-7px;
+    right:-7px;
+    background:#ff385c;
+    color:white;
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    font-weight:bold;
+}
+
+.profile{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:#f1faff;
+    padding:8px 12px;
+    border-radius:20px;
+    font-size:14px;
+}
+
+.logout-btn{
+    background:#ffe8e8;
+    color:#d32f2f;
+    padding:9px 13px;
+    border-radius:9px;
+    font-weight:bold;
+}
+
+/* =========================================================
+   CUSTOMER SIDEBAR
+========================================================= */
+
+.layout{
+    display:flex;
+}
+
+.sidebar{
+    width:240px;
+    background:linear-gradient(180deg,#034e6b,#02364c);
+    min-height:calc(100vh - 70px);
+    color:white;
+    position:fixed;
+    left:0;
+    top:70px;
+    bottom:0;
+    padding:20px 13px;
+    overflow-y:auto;
+}
+
+.sidebar-title{
+    padding:10px 13px;
+    color:#83dfff;
+    font-size:12px;
+    text-transform:uppercase;
+    font-weight:bold;
+    letter-spacing:1px;
+}
+
+.nav-btn{
+    width:100%;
+    background:transparent;
+    color:#d8f5ff;
+    text-align:left;
+    padding:13px 14px;
+    border-radius:10px;
+    margin-bottom:5px;
+    font-size:14px;
+    transition:.2s;
+}
+
+.nav-btn:hover,
+.nav-btn.active{
+    background:rgba(255,255,255,.14);
+    color:white;
+}
+
+.nav-btn span{
+    width:25px;
+    display:inline-block;
+}
+
+/* =========================================================
+   CONTENT
+========================================================= */
+
+.content{
+    margin-left:240px;
+    width:calc(100% - 240px);
+    padding:25px;
+}
+
+.page{
+    display:none;
+}
+
+.page.active{
+    display:block;
+}
+
+.page-title{
+    margin-bottom:22px;
+}
+
+.page-title h2{
+    color:var(--dark-blue);
+    margin-bottom:5px;
+}
+
+.page-title p{
+    color:var(--gray);
+}
+
+/* =========================================================
+   CUSTOMER HERO
+========================================================= */
+
+.hero{
+    min-height:250px;
+    border-radius:25px;
+    padding:35px;
+    color:white;
+    background:
+        radial-gradient(circle at 80% 30%,rgba(255,255,255,.3),transparent 15%),
+        linear-gradient(135deg,#009fd1,#006284);
+    position:relative;
+    overflow:hidden;
+    margin-bottom:25px;
+}
+
+.hero h1{
+    font-size:35px;
+    max-width:600px;
+}
+
+.hero p{
+    margin-top:10px;
+    max-width:600px;
+    color:#e0f9ff;
+}
+
+.hero-fish{
+    position:absolute;
+    right:70px;
+    bottom:20px;
+    font-size:110px;
+    opacity:.35;
+}
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+.search-area{
+    display:flex;
+    gap:12px;
+    margin-bottom:20px;
+}
+
+.search-box{
+    flex:1;
+    background:white;
+    border:1px solid #d2eaf1;
+    border-radius:12px;
+    padding:14px 17px;
+}
+
+.category-select{
+    width:190px;
+    background:white;
+    border:1px solid #d2eaf1;
+    border-radius:12px;
+    padding:14px;
+}
+
+/* =========================================================
+   CATEGORY CARDS
+========================================================= */
+
+.categories{
+    display:flex;
+    gap:12px;
+    overflow-x:auto;
+    margin-bottom:25px;
+    padding-bottom:5px;
+}
+
+.category{
+    min-width:125px;
+    background:white;
+    border-radius:15px;
+    padding:17px;
+    text-align:center;
+    box-shadow:var(--shadow);
+    cursor:pointer;
+    border:2px solid transparent;
+}
+
+.category:hover,
+.category.selected{
+    border-color:#00a9dd;
+}
+
+.category .icon{
+    font-size:35px;
+    margin-bottom:8px;
+}
+
+.category small{
+    color:var(--gray);
+}
+
+/* =========================================================
+   PRODUCTS
+========================================================= */
+
+.products-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(205px,1fr));
+    gap:18px;
+}
+
+.product-card{
+    background:white;
+    border-radius:17px;
+    overflow:hidden;
+    box-shadow:var(--shadow);
+    transition:.25s;
+}
+
+.product-card:hover{
+    transform:translateY(-5px);
+}
+
+.product-image{
+    height:180px;
+    background:linear-gradient(135deg,#c9f5ff,#66d9f5);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:85px;
+    position:relative;
+}
+
+.product-image img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
+.stock-tag{
+    position:absolute;
+    top:10px;
+    left:10px;
+    background:white;
+    padding:6px 8px;
+    border-radius:8px;
+    font-size:11px;
+    font-weight:bold;
+}
+
+.product-info{
+    padding:15px;
+}
+
+.product-info h3{
+    color:#174b61;
+    font-size:16px;
+    margin-bottom:7px;
+}
+
+.rating{
+    color:#ffae00;
+    font-size:13px;
+    margin-bottom:8px;
+}
+
+.price{
+    color:#0096c7;
+    font-size:20px;
+    font-weight:bold;
+}
+
+.product-bottom{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:12px;
+}
+
+.add-btn{
+    background:#e2f8ff;
+    color:#00749d;
+    padding:9px 12px;
+    border-radius:9px;
+    font-weight:bold;
+}
+
+.add-btn:hover{
+    background:#007ea7;
+    color:white;
+}
+
+/* =========================================================
+   CART
+========================================================= */
+
+.cart-panel{
+    background:white;
+    border-radius:18px;
+    padding:20px;
+    box-shadow:var(--shadow);
+}
+
+.cart-item{
+    display:flex;
+    gap:15px;
+    align-items:center;
+    padding:15px 0;
+    border-bottom:1px solid #e7f1f4;
+}
+
+.cart-image{
+    width:70px;
+    height:70px;
+    border-radius:12px;
+    background:#d9f8ff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:35px;
+}
+
+.cart-details{
+    flex:1;
+}
+
+.cart-details h4{
+    margin-bottom:5px;
+}
+
+.cart-price{
+    color:#008bb8;
+    font-weight:bold;
+}
+
+.qty{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.qty button{
+    width:28px;
+    height:28px;
+    border-radius:7px;
+    background:#e4f7fc;
+    color:#006d8e;
+    font-weight:bold;
+}
+
+.remove-btn{
+    background:#ffe7e7;
+    color:#d32f2f;
+    padding:8px;
+    border-radius:8px;
+}
+
+.cart-summary{
+    margin-top:20px;
+    background:#f1fbfe;
+    padding:20px;
+    border-radius:14px;
+}
+
+.summary-row{
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:10px;
+}
+
+.summary-total{
+    border-top:1px solid #d3eaf0;
+    padding-top:13px;
+    font-size:20px;
+    font-weight:bold;
+}
+
+/* =========================================================
+   CHECKOUT
+========================================================= */
+
+.checkout-layout{
+    display:grid;
+    grid-template-columns:1.5fr 1fr;
+    gap:20px;
+}
+
+.card{
+    background:white;
+    border-radius:18px;
+    padding:22px;
+    box-shadow:var(--shadow);
+    margin-bottom:20px;
+}
+
+.card h3{
+    color:#075a78;
+    margin-bottom:18px;
+}
+
+.payment-option{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    border:1px solid #d3eaf1;
+    padding:13px;
+    border-radius:10px;
+    margin-bottom:10px;
+    cursor:pointer;
+}
+
+.payment-option:hover{
+    border-color:#00a5d8;
+}
+
+.payment-option input{
+    accent-color:#008bb8;
+}
+
+/* =========================================================
+   ORDERS
+========================================================= */
+
+.order-card{
+    background:white;
+    border-radius:17px;
+    padding:20px;
+    margin-bottom:15px;
+    box-shadow:var(--shadow);
+}
+
+.order-head{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:15px;
+}
+
+.order-id{
+    font-weight:bold;
+    color:#075a78;
+}
+
+.status{
+    padding:7px 11px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:bold;
+}
+
+.status.Pending{
+    background:#fff4d7;
+    color:#a66a00;
+}
+
+.status.Confirmed{
+    background:#dff5ff;
+    color:#006c8f;
+}
+
+.status.Preparing{
+    background:#e6e0ff;
+    color:#5739a6;
+}
+
+.status.Shipped{
+    background:#dcecff;
+    color:#1461ad;
+}
+
+.status.Delivered{
+    background:#dff8e9;
+    color:#087b44;
+}
+
+.status.Cancelled{
+    background:#ffe1e1;
+    color:#b62828;
+}
+
+.progress{
+    display:flex;
+    justify-content:space-between;
+    position:relative;
+    margin:25px 0;
+}
+
+.progress:before{
+    content:"";
+    height:4px;
+    background:#d9ebf0;
+    position:absolute;
+    top:15px;
+    left:5%;
+    right:5%;
+    z-index:0;
+}
+
+.progress-step{
+    position:relative;
+    z-index:1;
+    text-align:center;
+    font-size:11px;
+    color:#8999a1;
+}
+
+.progress-dot{
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    background:#dceef3;
+    margin:auto auto 5px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.progress-step.done{
+    color:#0083ac;
+}
+
+.progress-step.done .progress-dot{
+    background:#00a3d5;
+    color:white;
+}
+
+/* =========================================================
+   ADMIN
+========================================================= */
+
+.admin-sidebar{
+    background:linear-gradient(180deg,#061f2b,#023b52);
+}
+
+.admin-content{
+    margin-left:240px;
+    width:calc(100% - 240px);
+    padding:25px;
+}
+
+.stat-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:17px;
+    margin-bottom:25px;
+}
+
+.stat-card{
+    background:white;
+    border-radius:16px;
+    padding:20px;
+    box-shadow:var(--shadow);
+    position:relative;
+    overflow:hidden;
+}
+
+.stat-icon{
+    position:absolute;
+    right:17px;
+    top:17px;
+    font-size:35px;
+    opacity:.25;
+}
+
+.stat-card p{
+    color:var(--gray);
+    font-size:13px;
+}
+
+.stat-card h2{
+    color:#075a78;
+    margin-top:7px;
+}
+
+.admin-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+}
+
+.chart{
+    height:250px;
+    display:flex;
+    align-items:end;
+    gap:10px;
+    padding:20px 10px 10px;
+}
+
+.bar{
+    flex:1;
+    background:linear-gradient(to top,#007ea7,#42d4f8);
+    border-radius:7px 7px 0 0;
+    position:relative;
+    min-height:10px;
+}
+
+.bar span{
+    position:absolute;
+    bottom:-22px;
+    width:100%;
+    text-align:center;
+    font-size:11px;
+    color:#71818a;
+}
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.table-wrap{
+    background:white;
+    border-radius:16px;
+    box-shadow:var(--shadow);
+    overflow:auto;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th,
+td{
+    padding:14px;
+    text-align:left;
+    border-bottom:1px solid #edf3f5;
+    font-size:13px;
+}
+
+th{
+    background:#f1fbfe;
+    color:#075a78;
+}
+
+.action-btn{
+    padding:7px 10px;
+    border-radius:7px;
+    font-size:12px;
+    font-weight:bold;
+    margin-right:4px;
+}
+
+.edit-btn{
+    background:#e1f5ff;
+    color:#00769d;
+}
+
+.delete-btn{
+    background:#ffe6e6;
+    color:#c62828;
+}
+
+.view-btn{
+    background:#e4f9ee;
+    color:#087c46;
+}
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,25,40,.6);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+    z-index:999;
+}
+
+.modal-box{
+    background:white;
+    width:550px;
+    max-width:100%;
+    max-height:90vh;
+    overflow-y:auto;
+    border-radius:20px;
+    padding:25px;
+}
+
+.modal-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+}
+
+.close-btn{
+    background:#edf6f8;
+    width:32px;
+    height:32px;
+    border-radius:50%;
+}
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+.toast{
+    position:fixed;
+    right:20px;
+    bottom:20px;
+    background:#073b4c;
+    color:white;
+    padding:14px 18px;
+    border-radius:10px;
+    box-shadow:0 10px 25px rgba(0,0,0,.2);
+    transform:translateY(100px);
+    opacity:0;
+    transition:.3s;
+    z-index:2000;
+}
+
+.toast.show{
+    transform:translateY(0);
+    opacity:1;
+}
+
+
+.status.Pending\ Shipping\ Fee{background:#fff4d7;color:#8a5b00;}
+.status.Awaiting\ Payment{background:#fff0db;color:#a45a00;}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+.mobile-menu{
+    display:none;
+}
+
+@media(max-width:1000px){
+
+    .auth-screen{padding:30px 25px;}
+    .auth-layout{grid-template-columns:1fr;gap:25px;max-width:620px;min-height:auto;}
+    .auth-showcase{text-align:center;padding:10px 5px 0;}
+    .auth-logo{width:300px;max-width:80%;margin:0 auto;}
+    .auth-tagline{margin-bottom:20px;font-size:15px;}
+    .auth-welcome-label{font-size:14px;letter-spacing:3px;}
+    .auth-showcase h2{font-size:42px;}
+    .auth-showcase-description{font-size:17px;margin:auto;}
+    .auth-features{justify-content:center;margin-top:22px;}
+    .auth-decor-fish{display:none;}
+
+
+
+    .stat-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .checkout-layout{
+        grid-template-columns:1fr;
+    }
+
+}
+
+@media(max-width:750px){
+
+    .auth-screen{padding:20px 14px 45px;}
+    .auth-card{padding:26px 20px 28px;border-radius:24px;}
+    .auth-showcase{padding:0;}
+    .auth-logo{width:260px;}
+    .auth-showcase h2{font-size:36px;}
+    .auth-showcase-description{font-size:15px;}
+    .auth-features{gap:15px;}
+    .auth-feature{font-size:12px;}
+    .auth-feature-icon{width:35px;height:35px;font-size:17px;}
+
+
+
+    .sidebar{
+        transform:translateX(-100%);
+        transition:.3s;
+        z-index:200;
+    }
+
+    .sidebar.open{
+        transform:translateX(0);
+    }
+
+    .content,
+    .admin-content{
+        margin-left:0;
+        width:100%;
+        padding:15px;
+    }
+
+    .mobile-menu{
+        display:block;
+        background:#e5f8ff;
+        padding:9px 12px;
+        border-radius:9px;
+    }
+
+    .search-area{
+        flex-direction:column;
+    }
+
+    .category-select{
+        width:100%;
+    }
+
+    .hero h1{
+        font-size:27px;
+    }
+
+    .hero-fish{
+        right:10px;
+        font-size:70px;
+    }
+
+    .stat-grid{
+        grid-template-columns:1fr;
+    }
+
+    .admin-grid{
+        grid-template-columns:1fr;
+    }
+
+    .topbar{
+        padding:0 12px;
+    }
+
+    .brand-name{
+        display:none;
+    }
+
+    .profile{
+        display:none;
+    }
+}
+
+
+/* =========================================================
+   IMPROVED LORENCE'S BETTA FISH UI
+========================================================= */
+.brand-logo{width:44px;height:44px;object-fit:contain;display:block;}
+.logo-image{width:150px;height:150px;object-fit:contain;display:block;margin:0 auto 12px;}
+.auth-logo{width:320px;height:320px;object-fit:contain;display:block;margin:0 auto 8px;}
+.text-btn{display:block;width:100%;margin-top:12px;background:transparent;color:#007fa8;font-weight:700;padding:8px;}
+.text-btn:hover{text-decoration:underline;}
+.muted{color:#6b7b88;line-height:1.5;margin-bottom:16px;}
+.small-modal{width:440px;}
+.profile-avatar{width:78px;height:78px;border-radius:50%;background:linear-gradient(135deg,#009fd1,#005579);color:white;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;margin-bottom:16px;}
+.chat-panel{background:white;border-radius:18px;box-shadow:var(--shadow);overflow:hidden;}
+.chat-messages{height:430px;overflow-y:auto;padding:18px;background:linear-gradient(180deg,#effbff,#f8fdff);display:flex;flex-direction:column;gap:10px;}
+.chat-bubble{max-width:75%;padding:11px 14px;border-radius:16px;line-height:1.45;box-shadow:0 2px 8px rgba(0,70,100,.08);}
+.chat-bubble.customer{align-self:flex-end;background:#008fbd;color:white;border-bottom-right-radius:5px;}
+.chat-bubble.admin{align-self:flex-start;background:white;color:#214353;border:1px solid #dceef3;border-bottom-left-radius:5px;}
+.chat-time{font-size:10px;opacity:.7;margin-top:5px;display:block;}
+.chat-compose{display:flex;gap:10px;padding:14px;border-top:1px solid #e0eef2;background:white;}
+.chat-compose input{flex:1;border:1px solid #cfe5ec;border-radius:12px;padding:12px 14px;}
+.admin-chat-layout{display:grid;grid-template-columns:280px 1fr;gap:18px;}
+.chat-user{width:100%;text-align:left;padding:12px;border:1px solid #e0eef2;background:white;border-radius:10px;margin-bottom:8px;cursor:pointer;}
+.chat-user:hover,.chat-user.active{border-color:#00a3d5;background:#eefaff;}
+.shipping-pending{padding:12px 14px;border-radius:12px;background:#fff7dd;color:#8a5b00;border:1px solid #f0d58a;margin:12px 0;}
+.shipping-confirmed{padding:12px 14px;border-radius:12px;background:#e5f9ee;color:#087443;border:1px solid #bce8cf;margin:12px 0;}
+.admin-shipping-box{background:#f3fbfe;border:1px solid #d5edf3;border-radius:14px;padding:14px;margin-top:14px;}
+.admin-shipping-box .inline{display:flex;gap:10px;align-items:end;flex-wrap:wrap;}
+.admin-shipping-box input{max-width:180px;}
+.payment-note{font-size:12px;color:#6c7e87;margin-top:8px;line-height:1.45;}
+.notification-wrap{position:relative;}
+.notification-btn{position:relative;background:#e6f8ff;color:var(--dark-blue);padding:10px 13px;border-radius:10px;font-size:18px;}
+.notification-badge{position:absolute;top:-7px;right:-7px;background:#ff385c;color:white;min-width:20px;height:20px;padding:0 5px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;}
+.notification-panel{position:absolute;right:0;top:48px;width:360px;max-width:calc(100vw - 25px);background:white;border:1px solid #d9edf3;border-radius:16px;box-shadow:0 15px 35px rgba(0,60,90,.18);z-index:500;overflow:hidden;}
+.notification-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e7f1f4;font-weight:800;color:var(--dark-blue);}
+.notification-list{max-height:380px;overflow:auto;}
+.notification-item{padding:13px 16px;border-bottom:1px solid #edf4f6;cursor:pointer;}
+.notification-item:hover{background:#f3fbfe;}
+.notification-item.unread{background:#eefaff;}
+.notification-item strong{display:block;color:#174d62;margin-bottom:4px;}
+.notification-item small{display:block;color:#71838d;line-height:1.4;}
+.notification-empty{padding:30px 16px;text-align:center;color:#7c9099;}
+.gcash-box{margin-top:14px;padding:16px;border:1px solid #cceaf3;border-radius:16px;background:#f4fcff;text-align:center;}
+.gcash-qr{width:240px;max-width:100%;border-radius:12px;display:block;margin:10px auto 14px;object-fit:contain;background:#000;}
+.gcash-pay-btn{display:inline-block;margin-top:8px;}
+
+@media(max-width:800px){.admin-chat-layout{grid-template-columns:1fr}.chat-messages{height:350px}.auth-logo{width:250px;height:250px}.logo-image{width:120px;height:120px}.brand-logo{width:38px;height:38px}}
+
+</style>
+
+<style>
+.product-image.no-image::after{
+    content:"No Image";
+    color:#6b7b88;
+    font-size:14px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- FLOATING FISH -->
+
+<div class="fish fish1">🐠</div>
+<div class="fish fish2">🐟</div>
+<div class="fish fish3">🐡</div>
+
+<!-- =======================================================
+     LOGIN / SIGN UP
+======================================================= -->
+
+<section id="authScreen" class="auth-screen">
+
+    <div class="auth-layout">
+
+        <div class="auth-showcase">
+            <img src="images/logo.png" alt="Lorence's Betta Fish logo" class="auth-logo">
+            <div class="auth-tagline">Beautiful Bettas &nbsp;•&nbsp; Healthy Fish &nbsp;•&nbsp; Happy Hobby</div>
+
+            <div class="auth-welcome-label">WELCOME TO</div>
+            <h2>Lorence's<br>Betta Fish</h2>
+            <p class="auth-showcase-description">Your trusted online shop for quality betta fish and supplies.</p>
+
+            <div class="auth-features">
+                <div class="auth-feature"><span class="auth-feature-icon">✓</span><span>Safe<br>Shopping</span></div>
+                <div class="auth-feature"><span class="auth-feature-icon">🚚</span><span>Fast<br>Delivery</span></div>
+                <div class="auth-feature"><span class="auth-feature-icon">♡</span><span>Healthy<br>Bettas</span></div>
+            </div>
+
+            <div class="auth-decor-fish">🐠</div>
+        </div>
+
+        <div class="auth-card">
+
+        <div class="logo">
+            <img src="images/logo.png" alt="Lorence's Betta Fish logo" class="logo-image">
+            <h1>Login to Your Account</h1>
+            <p>Welcome back! Please login to continue.</p>
+        </div>
+
+        <div class="auth-tabs">
+            <button id="loginTab" class="active" onclick="showAuth('login')">
+                Login
+            </button>
+
+            <button id="signupTab" onclick="showAuth('signup')">
+                Sign Up
+            </button>
+        </div>
+
+        <div id="authError" class="error hidden"></div>
+
+        <!-- LOGIN -->
+
+        <form id="loginForm">
+
+            <div class="form-group">
+                <label>Username</label>
+                <input
+                    id="loginUsername"
+                    type="text"
+                    placeholder="Enter username"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <input
+                    id="loginPassword"
+                    type="password"
+                    placeholder="Enter password"
+                    required
+                >
+            </div>
+
+            <button class="primary-btn full-btn">
+                🔐 Login
+            </button>
+
+            <button type="button" class="text-btn" onclick="openForgotPassword()">
+                Forgot Password?
+            </button>
+
+        </form>
+
+        <!-- SIGNUP -->
+
+        <form id="signupForm" class="hidden">
+
+            <div class="form-group">
+                <label>Full Name</label>
+                <input
+                    id="signupName"
+                    type="text"
+                    placeholder="Your full name"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Username</label>
+                <input
+                    id="signupUsername"
+                    type="text"
+                    placeholder="Create username"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Email</label>
+                <input
+                    id="signupEmail"
+                    type="email"
+                    placeholder="you@email.com"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <input
+                    id="signupPassword"
+                    type="password"
+                    placeholder="Create password"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label>Confirm Password</label>
+                <input
+                    id="signupConfirm"
+                    type="password"
+                    placeholder="Confirm password"
+                    required
+                >
+            </div>
+
+            <button class="primary-btn full-btn">
+                🐟 Create Customer Account
+            </button>
+
+        </form>
+
+        </div>
+    </div>
+
+</section>
+
+
+<!-- =======================================================
+     CUSTOMER APP
+======================================================= -->
+
+<section id="customerApp" class="app hidden">
+
+    <header class="topbar">
+
+        <button class="mobile-menu" onclick="toggleSidebar()">
+            ☰
+        </button>
+
+        <div class="brand">
+            <img src="images/logo.png" class="brand-logo" alt="Lorence's Betta Fish">
+            <span class="brand-name">Lorence's Betta Fish</span>
+        </div>
+
+        <div class="top-actions">
+
+            <button class="cart-button" onclick="showCustomerPage('cart')">
+                🛒
+                <span id="cartCount" class="cart-count">0</span>
+            </button>
+
+            <div class="notification-wrap">
+                <button class="notification-btn" onclick="toggleNotifications('customer')" title="Notifications">
+                    🔔
+                    <span id="customerNotificationCount" class="notification-badge">0</span>
+                </button>
+                <div id="customerNotificationPanel" class="notification-panel hidden">
+                    <div class="notification-head"><span>Notifications</span><button class="text-btn" style="width:auto;margin:0;padding:0" onclick="markNotificationsRead('customer')">Mark all read</button></div>
+                    <div id="customerNotificationList" class="notification-list"></div>
+                </div>
+            </div>
+
+            <div class="profile">
+                👤
+                <span id="customerName"></span>
+            </div>
+
+            <button class="logout-btn" onclick="logout()">
+                Logout
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <div class="layout">
+
+        <!-- CUSTOMER SIDEBAR -->
+
+        <aside id="customerSidebar" class="sidebar">
+
+            <div class="sidebar-title">
+                Customer Menu
+            </div>
+
+            <button class="nav-btn active" onclick="showCustomerPage('home',this)">
+                <span>🏠</span> Home
+            </button>
+
+            <button class="nav-btn" onclick="showCustomerPage('orders',this)">
+                <span>📦</span> My Orders
+            </button>
+
+            <button class="nav-btn" onclick="showCustomerPage('profile',this)">
+                <span>👤</span> My Profile
+            </button>
+
+            <button class="nav-btn" onclick="showCustomerPage('chat',this)">
+                <span>💬</span> Chat with Admin
+            </button>
+
+        </aside>
+
+
+        <main class="content">
+
+            <!-- HOME -->
+
+            <section id="customer-home" class="page active">
+
+                <div class="hero">
+                    <h1>Welcome to Lorence's Betta Fish! 🐠</h1>
+                    <p>Discover colorful, healthy and beautiful Betta fish carefully selected for every fish enthusiast.</p>
+                    <div class="hero-fish">🐟</div>
+                </div>
+
+                <div class="page-title">
+                    <h2>🐠 Shop Betta Fish</h2>
+                    <p>Browse all available fish and search for your favorite.</p>
+                </div>
+
+                <div class="search-area">
+                    <input id="searchInput" class="search-box" placeholder="🔎 Search Betta fish..." oninput="renderProducts()">
+                </div>
+
+                <div id="productGrid" class="products-grid"></div>
+
+            </section>
+
+
+            <!-- CART -->
+
+            <section id="customer-cart" class="page">
+
+                <div class="page-title">
+                    <h2>🛒 My Shopping Cart</h2>
+                    <p>Review your selected Betta fish.</p>
+                </div>
+
+                <div id="cartContainer"></div>
+
+            </section>
+
+
+            <!-- CHECKOUT -->
+
+            <section id="customer-checkout" class="page">
+
+                <div class="page-title">
+                    <h2>💳 Checkout</h2>
+                    <p>Complete your order details.</p>
+                </div>
+
+                <div class="checkout-layout">
+
+                    <div>
+
+                        <div class="card">
+
+                            <h3>📍 Delivery Information</h3>
+
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input id="checkoutName">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Phone Number</label>
+                                <input
+                                    id="checkoutPhone"
+                                    placeholder="09XXXXXXXXX"
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label>Complete Address</label>
+                                <textarea
+                                    id="checkoutAddress"
+                                    rows="4"
+                                    placeholder="House No., Street, Barangay, Municipality, Province"
+                                ></textarea>
+                            </div>
+
+                        </div>
+
+                        <div class="card">
+
+                            <h3>💰 Payment Method</h3>
+
+                            <label class="payment-option">
+                                <input
+                                    type="radio"
+                                    name="payment"
+                                    value="Cash on Delivery"
+                                    checked
+                                >
+                                💵 Cash on Delivery
+                            </label>
+
+                            <label class="payment-option">
+                                <input
+                                    type="radio"
+                                    name="payment"
+                                    value="GCash"
+                                >
+                                📱 GCash
+                            </label>
+                            <div class="payment-note">After the admin confirms the shipping fee and final total, your order page will show the GCash QR code for direct payment.</div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <h3>🧾 Order Summary</h3>
+
+                        <div id="checkoutSummary"></div>
+
+                        <br>
+
+                        <button
+                            class="primary-btn full-btn"
+                            onclick="placeOrder()"
+                        >
+                            🛍️ Place Order
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ORDERS -->
+
+            <section id="customer-orders" class="page">
+
+                <div class="page-title">
+                    <h2>📦 My Orders</h2>
+                    <p>Track your Betta fish orders.</p>
+                </div>
+
+                <div id="customerOrders"></div>
+
+            </section>
+
+
+            <!-- PROFILE -->
+
+            <section id="customer-profile" class="page">
+
+                <div class="page-title">
+                    <h2>👤 My Profile</h2>
+                    <p>Manage your customer information.</p>
+                </div>
+
+                <div class="card">
+
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input id="profileName">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input id="profileUsername" disabled>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input id="profileEmail">
+                    </div>
+
+                    <button class="primary-btn" onclick="saveProfile()">
+                        Save Changes
+                    </button>
+
+                </div>
+
+            </section>
+
+            <!-- CHAT WITH ADMIN -->
+            <section id="customer-chat" class="page">
+                <div class="page-title">
+                    <h2>💬 Chat with Admin</h2>
+                    <p>Ask questions about fish, orders, delivery, or payment.</p>
+                </div>
+                <div class="chat-panel">
+                    <div id="customerChatMessages" class="chat-messages"></div>
+                    <div class="chat-compose">
+                        <input id="customerChatInput" placeholder="Type your message..." maxlength="1000" onkeydown="if(event.key==='Enter') sendCustomerMessage()">
+                        <button class="primary-btn" onclick="sendCustomerMessage()">Send</button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+    </div>
+
+</section>
+
+
+<!-- =======================================================
+     ADMIN APP
+======================================================= -->
+
+<section id="adminApp" class="app hidden">
+
+    <header class="topbar">
+
+        <button class="mobile-menu" onclick="toggleAdminSidebar()">
+            ☰
+        </button>
+
+        <div class="brand">
+            <img src="images/logo.png" class="brand-logo" alt="Lorence's Betta Fish">
+            <span class="brand-name">Lorence's Betta Fish — Admin</span>
+        </div>
+
+        <div class="top-actions">
+
+            <div class="notification-wrap">
+                <button class="notification-btn" onclick="toggleNotifications('admin')" title="Notifications">
+                    🔔
+                    <span id="adminNotificationCount" class="notification-badge">0</span>
+                </button>
+                <div id="adminNotificationPanel" class="notification-panel hidden">
+                    <div class="notification-head"><span>Notifications</span><button class="text-btn" style="width:auto;margin:0;padding:0" onclick="markNotificationsRead('admin')">Mark all read</button></div>
+                    <div id="adminNotificationList" class="notification-list"></div>
+                </div>
+            </div>
+
+            <div class="profile">
+                👑 Administrator
+            </div>
+
+            <button class="logout-btn" onclick="logout()">
+                Logout
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <div class="layout">
+
+        <aside id="adminSidebar" class="sidebar admin-sidebar">
+
+            <div class="sidebar-title">
+                Administration
+            </div>
+
+            <button
+                class="nav-btn active"
+                onclick="showAdminPage('dashboard',this)"
+            >
+                <span>📊</span> Dashboard
+            </button>
+
+            <button
+                class="nav-btn"
+                onclick="showAdminPage('orders',this)"
+            >
+                <span>📦</span> Orders
+            </button>
+
+            <button
+                class="nav-btn"
+                onclick="showAdminPage('products',this)"
+            >
+                <span>🐠</span> Products
+            </button>
+
+            <button
+                class="nav-btn"
+                onclick="showAdminPage('customers',this)"
+            >
+                <span>👥</span> Customers
+            </button>
+
+            <button
+                class="nav-btn"
+                onclick="showAdminPage('chat',this)"
+            >
+                <span>💬</span> Messages
+            </button>
+
+            <button
+                class="nav-btn"
+                onclick="showAdminPage('stock',this)"
+            >
+                <span>📦</span> Stock Control
+            </button>
+
+        </aside>
+
+
+        <main class="admin-content">
+
+            <!-- ADMIN DASHBOARD -->
+
+            <section id="admin-dashboard" class="page active">
+
+                <div class="page-title">
+
+                    <h2>📊 Admin Dashboard</h2>
+
+                    <p>
+                        Overview of Lorence's Betta Fish.
+                    </p>
+
+                </div>
+
+                <div class="stat-grid">
+
+                    <div class="stat-card">
+                        <div class="stat-icon">💰</div>
+                        <p>Total Sales</p>
+                        <h2 id="statSales">₱0.00</h2>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">📦</div>
+                        <p>Total Orders</p>
+                        <h2 id="statOrders">0</h2>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">🐠</div>
+                        <p>Products</p>
+                        <h2 id="statProducts">0</h2>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <p>Customers</p>
+                        <h2 id="statCustomers">0</h2>
+                    </div>
+
+                </div>
+
+
+                <div class="admin-grid">
+
+                    <div class="card">
+
+                        <h3>📈 Sales Overview</h3>
+
+                        <div id="salesChart" class="chart"></div>
+
+                    </div>
+
+
+                    <div class="card">
+
+                        <h3>🔥 Recent Orders</h3>
+
+                        <div id="recentOrders"></div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ADMIN ORDERS -->
+
+            <section id="admin-orders" class="page">
+
+                <div class="page-title">
+
+                    <h2>📦 Order Management</h2>
+
+                    <p>
+                        View and update customer orders.
+                    </p>
+
+                </div>
+
+                <div class="table-wrap">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Subtotal</th>
+                                <th>Shipping</th>
+                                <th>Total</th>
+                                <th>Payment</th>
+                                <th>Payment Status</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="adminOrdersTable"></tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+
+            <!-- ADMIN PRODUCTS -->
+
+            <section id="admin-products" class="page">
+
+                <div class="page-title">
+
+                    <h2>🐠 Product Management</h2>
+
+                    <p>
+                        Add, edit and remove Betta fish products.
+                    </p>
+
+                    <button
+                        class="primary-btn"
+                        onclick="openProductModal()"
+                    >
+                        + Add Product
+                    </button>
+
+                </div>
+
+                <div class="table-wrap">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>Product</th>
+                                <th>Price</th>
+                                <th>Stock</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="adminProductsTable"></tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+
+            <!-- ADMIN CUSTOMERS -->
+
+            <section id="admin-customers" class="page">
+
+                <div class="page-title">
+
+                    <h2>👥 Customer Records</h2>
+
+                    <p>
+                        Registered customer accounts.
+                    </p>
+
+                </div>
+
+                <div class="table-wrap">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+                                <th>Name</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Registered</th>
+                                <th>Orders</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="customersTable"></tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+
+            <!-- ADMIN CHAT -->
+            <section id="admin-chat" class="page">
+                <div class="page-title">
+                    <h2>💬 Customer Messages</h2>
+                    <p>Answer customer questions and concerns.</p>
+                </div>
+                <div class="admin-chat-layout">
+                    <div class="card chat-users">
+                        <h3>Customers</h3>
+                        <div id="chatCustomerList"></div>
+                    </div>
+                    <div class="card">
+                        <h3 id="adminChatTitle">Select a customer</h3>
+                        <div id="adminChatMessages" class="chat-messages"></div>
+                        <div class="chat-compose">
+                            <input id="adminChatInput" placeholder="Reply to customer..." maxlength="1000" onkeydown="if(event.key==='Enter') sendAdminMessage()">
+                            <button class="primary-btn" onclick="sendAdminMessage()">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ADMIN STOCK -->
+
+            <section id="admin-stock" class="page">
+
+                <div class="page-title">
+
+                    <h2>📦 Stock Control</h2>
+
+                    <p>
+                        Monitor your current Betta fish inventory.
+                    </p>
+
+                </div>
+
+                <div id="stockCards" class="products-grid"></div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+</section>
+
+
+<!-- =======================================================
+     PRODUCT MODAL
+======================================================= -->
+
+<div id="productModal" class="modal hidden">
+
+    <div class="modal-box">
+
+        <div class="modal-head">
+
+            <h2 id="productModalTitle">
+                Add Product
+            </h2>
+
+            <button
+                class="close-btn"
+                onclick="closeProductModal()"
+            >
+                ✕
+            </button>
+
+        </div>
+
+        <input id="editProductId" type="hidden">
+
+        <div class="form-group">
+            <label>Product Name</label>
+            <input
+                id="productName"
+                placeholder="Example: Royal Blue Halfmoon"
+            >
+        </div>
+        <div class="form-group">
+            <label>Price</label>
+
+            <input
+                id="productPrice"
+                type="number"
+                min="0"
+                step="0.01"
+            >
+
+        </div>
+
+        <div class="form-group">
+
+            <label>Stock</label>
+
+            <input
+                id="productStock"
+                type="number"
+                min="0"
+            >
+
+        </div>
+
+        <div class="form-group">
+
+            <label>Description</label>
+
+            <textarea
+                id="productDescription"
+                rows="4"
+                placeholder="Describe the Betta fish..."
+            ></textarea>
+
+        </div>
+
+        <div class="form-group">
+            <label>Product Picture</label>
+            <input
+                id="productImage"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+            >
+            <div id="productImagePreview"></div>
+            <small style="color:#71818a">
+                JPG, PNG or WEBP • Maximum 5MB
+            </small>
+        </div>
+
+        <button
+            class="primary-btn full-btn"
+            onclick="saveProduct()"
+        >
+            Save Product
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- ORDER MODAL -->
+
+<div id="orderModal" class="modal hidden">
+
+    <div class="modal-box">
+
+        <div class="modal-head">
+
+            <h2>📦 Order Details</h2>
+
+            <button
+                class="close-btn"
+                onclick="closeOrderModal()"
+            >
+                ✕
+            </button>
+
+        </div>
+
+        <div id="orderDetails"></div>
+
+    </div>
+
+</div>
+
+
+<!-- FORGOT PASSWORD MODAL -->
+<div id="forgotModal" class="modal hidden">
+  <div class="modal-box small-modal">
+    <div class="modal-head"><h2>🔑 Forgot Password</h2><button class="close-btn" onclick="closeForgotPassword()">✕</button></div>
+    <p class="muted">Enter the existing email address registered to your account. A reset link will be sent to it.</p>
+    <div class="form-group"><label>Email Address</label><input id="forgotEmail" type="email" placeholder="you@gmail.com" required></div>
+    <button class="primary-btn full-btn" onclick="requestPasswordReset()">Send Reset Link</button>
+  </div>
+</div>
+
+<!-- RESET PASSWORD MODAL -->
+<div id="resetModal" class="modal hidden">
+  <div class="modal-box small-modal">
+    <div class="modal-head"><h2>🔐 Reset Password</h2></div>
+    <p class="muted">Create a new password for your account.</p>
+    <div class="form-group"><label>New Password</label><input id="resetPassword" type="password" minlength="6"></div>
+    <div class="form-group"><label>Confirm Password</label><input id="resetConfirm" type="password" minlength="6"></div>
+    <button class="primary-btn full-btn" onclick="resetPassword()">Update Password</button>
+  </div>
+</div>
+
+<div id="toast" class="toast">
+    Saved successfully.
+</div>
+
+
+
+<script>
+/* =========================================================
+   LORENCE' BETTA FISH - MYSQL / PHP VERSION
+   Database-backed:
+   - users
+   - products
+   - orders
+   - order_items
+   LocalStorage is used only for the current session/cart.
+========================================================= */
+
+const API = "api/";
+
+let products = [];
+let users = [];
+let orders = [];
+let currentUser = JSON.parse(
+    localStorage.getItem("lorence_currentUser") || "null"
+);
+
+/* =========================================================
+   API HELPER
+========================================================= */
+
+async function apiRequest(endpoint, options = {}) {
+    try {
+        const response = await fetch(API + endpoint, options);
+        const text = await response.text();
+
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch {
+            console.error("Invalid API response:", text);
+            throw new Error("Server returned an invalid response.");
+        }
+
+        if (!response.ok || data.success === false) {
+            throw new Error(data.message || "Request failed.");
+        }
+
+        return data;
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+}
+
+/* =========================================================
+   LOAD DATA FROM MYSQL
+========================================================= */
+
+async function loadProducts() {
+    const data = await apiRequest("products.php");
+    products = data.products || [];
+}
+
+async function loadUsers() {
+    const data = await apiRequest("customers.php");
+    users = data.customers || [];
+}
+
+async function loadOrders() {
+    const data = await apiRequest("orders.php");
+    orders = data.orders || [];
+}
+
+async function loadAllData() {
+    await Promise.all([
+        loadProducts(),
+        loadUsers(),
+        loadOrders()
+    ]);
+}
+
+/* =========================================================
+   AUTH
+========================================================= */
+
+function showAuth(type) {
+    const loginForm = document.getElementById("loginForm");
+    const signupForm = document.getElementById("signupForm");
+    const loginTab = document.getElementById("loginTab");
+    const signupTab = document.getElementById("signupTab");
+    const error = document.getElementById("authError");
+
+    error.classList.add("hidden");
+
+    if (type === "login") {
+        loginForm.classList.remove("hidden");
+        signupForm.classList.add("hidden");
+        loginTab.classList.add("active");
+        signupTab.classList.remove("active");
+    } else {
+        loginForm.classList.add("hidden");
+        signupForm.classList.remove("hidden");
+        loginTab.classList.remove("active");
+        signupTab.classList.add("active");
+    }
+}
+
+document.getElementById("loginForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const username = document.getElementById("loginUsername").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    const error = document.getElementById("authError");
+
+    try {
+        const data = await apiRequest("login.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ username, password })
+        });
+
+        currentUser = data.user;
+
+        localStorage.setItem(
+            "lorence_currentUser",
+            JSON.stringify(currentUser)
+        );
+
+        await loadAllData();
+
+        if (currentUser.type === "admin") {
+            openAdmin();
+        } else {
+            openCustomer();
+        }
+    } catch (err) {
+        error.textContent = err.message;
+        error.classList.remove("hidden");
+    }
+});
+
+document.getElementById("signupForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+
+    const name = document.getElementById("signupName").value.trim();
+    const username = document.getElementById("signupUsername").value.trim();
+    const email = document.getElementById("signupEmail").value.trim();
+    const password = document.getElementById("signupPassword").value;
+    const confirm = document.getElementById("signupConfirm").value;
+    const error = document.getElementById("authError");
+
+    if (password !== confirm) {
+        error.textContent = "Passwords do not match.";
+        error.classList.remove("hidden");
+        return;
+    }
+
+    try {
+        await apiRequest("signup.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                name,
+                username,
+                email,
+                password
+            })
+        });
+
+        showToast("Account created successfully!");
+        document.getElementById("signupForm").reset();
+        showAuth("login");
+    } catch (err) {
+        error.textContent = err.message;
+        error.classList.remove("hidden");
+    }
+});
+
+/* =========================================================
+   APP OPEN / LOGOUT
+========================================================= */
+
+async function openCustomer() {
+    document.getElementById("authScreen").classList.add("hidden");
+    document.getElementById("adminApp").classList.add("hidden");
+    document.getElementById("customerApp").classList.remove("hidden");
+
+    const user = users.find(
+        u => u.username === currentUser.username
+    );
+
+    if (user) {
+        document.getElementById("customerName").textContent = user.name;
+        document.getElementById("profileName").value = user.name;
+        document.getElementById("profileUsername").value = user.username;
+        document.getElementById("profileEmail").value = user.email || "";
+        document.getElementById("profilePhone").value = user.phone || "";
+        document.getElementById("profileAddress").value = user.address || "";
+    }
+
+    renderProducts();
+    renderHomeProducts();
+    renderCart();
+    renderCustomerOrders();
+    updateCartCount();
+    renderNotifications("customer");
+}
+
+async function openAdmin() {
+    document.getElementById("authScreen").classList.add("hidden");
+    document.getElementById("customerApp").classList.add("hidden");
+    document.getElementById("adminApp").classList.remove("hidden");
+
+    renderAdminDashboard();
+    renderAdminOrders();
+    renderAdminProducts();
+    renderCustomers();
+    renderStock();
+    renderNotifications("admin");
+}
+
+function logout() {
+    if (!confirm("Are you sure you want to log out?")) return;
+    currentUser = null;
+    localStorage.removeItem("lorence_currentUser");
+
+    document.getElementById("customerApp").classList.add("hidden");
+    document.getElementById("adminApp").classList.add("hidden");
+    document.getElementById("authScreen").classList.remove("hidden");
+
+    showAuth("login");
+}
+
+
+
+/* =========================================================
+   SHIPPING FEE CONFIRMATION
+========================================================= */
+async function confirmShipping(orderId) {
+    const input = document.getElementById("shippingFeeInput");
+    const fee = Number(input?.value);
+    if (!Number.isFinite(fee) || fee < 0) {
+        showToast("Enter a valid shipping fee.");
+        return;
+    }
+    try {
+        await apiRequest("set_shipping.php", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({orderId, shippingFee:fee})
+        });
+        await loadOrders();
+        renderAdminOrders();
+        renderAdminDashboard();
+        renderCustomerOrders();
+        showToast("Shipping fee confirmed. Final total updated.");
+        viewOrder(orderId);
+    } catch(err) { showToast(err.message); }
+}
+
+/* =========================================================
+   FORGOT / RESET PASSWORD
+========================================================= */
+function openForgotPassword(){
+    document.getElementById("forgotModal").classList.remove("hidden");
+    document.getElementById("forgotEmail").focus();
+}
+function closeForgotPassword(){ document.getElementById("forgotModal").classList.add("hidden"); }
+async function requestPasswordReset(){
+    const email=document.getElementById("forgotEmail").value.trim();
+    if(!email){showToast("Enter your existing email address.");return;}
+    try{
+        await apiRequest("forgot_password.php",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email})});
+        closeForgotPassword();
+        showToast("If the email exists, a reset link has been sent.");
+    }catch(err){showToast(err.message);}
+}
+async function resetPassword(){
+    const token=new URLSearchParams(location.search).get("reset");
+    const password=document.getElementById("resetPassword").value;
+    const confirm=document.getElementById("resetConfirm").value;
+    if(!token){showToast("Reset link is invalid or expired.");return;}
+    if(password.length<6 || password!==confirm){showToast("Passwords must match and be at least 6 characters.");return;}
+    try{
+        await apiRequest("reset_password.php",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token,password})});
+        document.getElementById("resetModal").classList.add("hidden");
+        history.replaceState({},document.title,location.pathname);
+        showToast("Password updated. You can now log in.");
+    }catch(err){showToast(err.message);}
+}
+
+/* =========================================================
+   NOTIFICATIONS
+   Derived from order updates and chat messages.
+   Read state is stored per browser.
+========================================================= */
+let notificationCache = { customer: [], admin: [] };
+
+function notificationReadKey(role){
+    return "lorence_notification_read_" + role + "_" + (currentUser?.username || "guest");
+}
+
+function getReadNotifications(role){
+    try { return JSON.parse(localStorage.getItem(notificationReadKey(role)) || "[]"); }
+    catch { return []; }
+}
+
+function saveReadNotifications(role, ids){
+    localStorage.setItem(notificationReadKey(role), JSON.stringify(ids.slice(-300)));
+}
+
+function buildNotifications(role){
+    const list=[];
+    if(role === "customer" && currentUser){
+        orders.filter(o=>o.username===currentUser.username).forEach(o=>{
+            list.push({id:"order-status-"+o.id+"-"+o.status,title:"Order "+o.id,body:"Your order is now: "+o.status,kind:"order"});
+            if(o.shipping_confirmed) list.push({id:"shipping-"+o.id+"-"+o.shipping,title:"Shipping fee confirmed",body:"Order "+o.id+" final total is ₱"+Number(o.total).toFixed(2),kind:"order"});
+            if(o.payment_status && o.payment_status!=="Waiting for shipping fee") list.push({id:"payment-"+o.id+"-"+o.payment_status,title:"Payment update",body:"Order "+o.id+": "+o.payment_status,kind:"payment"});
+        });
+        // Customer chat notifications are detected by the latest admin messages.
+        // loadCustomerChat also refreshes the chat when opened.
+    } else if(role === "admin") {
+        orders.slice(0,50).forEach(o=>list.push({id:"new-order-"+o.id,title:"Order update",body:o.id+" from "+(o.username||o.customerName||"customer")+" — "+o.status,kind:"order"}));
+    }
+    const chats = chatNotificationState[role] || [];
+    list.push(...chats);
+    return list.reverse();
+}
+
+function renderNotifications(role){
+    const listEl=document.getElementById(role+"NotificationList");
+    const countEl=document.getElementById(role+"NotificationCount");
+    if(!listEl||!countEl) return;
+    const items=buildNotifications(role);
+    notificationCache[role]=items;
+    const read=getReadNotifications(role);
+    const unread=items.filter(n=>!read.includes(n.id));
+    countEl.textContent=unread.length>99?"99+":unread.length;
+    countEl.style.display=unread.length?"flex":"none";
+    listEl.innerHTML=items.length?items.slice(0,50).map(n=>`<div class="notification-item ${read.includes(n.id)?'':'unread'}" onclick="openNotification('${escapeHTML(role)}','${escapeHTML(n.id)}')"><strong>${escapeHTML(n.title)}</strong><small>${escapeHTML(n.body)}</small></div>`).join(""):'<div class="notification-empty">No notifications yet.</div>';
+}
+
+function toggleNotifications(role){
+    const panel=document.getElementById(role+"NotificationPanel");
+    if(!panel) return;
+    document.querySelectorAll('.notification-panel').forEach(p=>{if(p!==panel)p.classList.add('hidden');});
+    panel.classList.toggle('hidden');
+    if(!panel.classList.contains('hidden')) renderNotifications(role);
+}
+
+function markNotificationsRead(role){
+    const ids=notificationCache[role].map(n=>n.id);
+    saveReadNotifications(role,ids);
+    renderNotifications(role);
+}
+
+function openNotification(role,id){
+    const read=getReadNotifications(role);
+    if(!read.includes(id)){read.push(id);saveReadNotifications(role,read);}
+    const n=(notificationCache[role]||[]).find(x=>x.id===id);
+    if(n?.kind==="order"){
+        if(role==="customer") showCustomerPage("orders");
+        else showAdminPage("orders");
+    }
+    const panel=document.getElementById(role+"NotificationPanel");
+    if(panel) panel.classList.add('hidden');
+    renderNotifications(role);
+}
+
+document.addEventListener('click',function(e){
+    if(!e.target.closest('.notification-wrap')){
+        document.querySelectorAll('.notification-panel').forEach(p=>p.classList.add('hidden'));
+    }
+});
+
+/* =========================================================
+   CUSTOMER / ADMIN CHAT
+========================================================= */
+let selectedChatUsername = null;
+let chatNotificationState = {customer:[],admin:[]};
+function updateChatNotifications(role,messages){
+    const read=getReadNotifications(role);
+    const chatItems=(messages||[]).map(m=>({id:"chat-"+m.id,title:role==="customer"?"New message from Admin":"New customer message",body:m.username+": "+m.message,kind:"chat"}));
+    const existing=notificationCache[role]||[];
+    const nonChat=existing.filter(n=>!n.id.startsWith("chat-"));
+    notificationCache[role]=[...chatItems.reverse(),...nonChat];
+    const unread=notificationCache[role].filter(n=>!read.includes(n.id));
+    const count=document.getElementById(role+"NotificationCount");
+    if(count){count.textContent=unread.length>99?"99+":unread.length;count.style.display=unread.length?"flex":"none";}
+    const list=document.getElementById(role+"NotificationList");
+    if(list && !document.getElementById(role+"NotificationPanel")?.classList.contains("hidden")) renderNotificationsFromCache(role);
+}
+function renderNotificationsFromCache(role){
+    const list=document.getElementById(role+"NotificationList"); if(!list)return;
+    const read=getReadNotifications(role); const items=notificationCache[role]||[];
+    list.innerHTML=items.length?items.slice(0,50).map(n=>`<div class="notification-item ${read.includes(n.id)?'':'unread'}" onclick="openNotification('${escapeHTML(role)}','${escapeHTML(n.id)}')"><strong>${escapeHTML(n.title)}</strong><small>${escapeHTML(n.body)}</small></div>`).join(""):'<div class="notification-empty">No notifications yet.</div>';
+}
+
+async function loadCustomerChat(){
+    if(!currentUser || currentUser.type!=="customer") return;
+    try{
+        const data=await apiRequest("chat.php?username="+encodeURIComponent(currentUser.username));
+        const messages=data.messages||[];
+        renderChatMessages(document.getElementById("customerChatMessages"),messages,currentUser.username);
+        updateChatNotifications("customer",messages);
+    }catch(err){console.error(err);}
+}
+function renderChatMessages(container,messages,customerUsername){
+    if(!container) return;
+    if(!messages.length){container.innerHTML='<div style="text-align:center;color:#78909a;margin:auto">No messages yet. Say hello to the admin! 👋</div>';return;}
+    container.innerHTML=messages.map(m=>`<div class="chat-bubble ${m.sender_role==='admin'?'admin':'customer'}">${escapeHTML(m.message)}<span class="chat-time">${escapeHTML(m.created_at)}</span></div>`).join("");
+    container.scrollTop=container.scrollHeight;
+}
+async function sendCustomerMessage(){
+    const input=document.getElementById("customerChatInput"); const message=input.value.trim();
+    if(!message || !currentUser) return;
+    try{await apiRequest("chat.php",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:currentUser.username,senderRole:"customer",message})});input.value="";await loadCustomerChat();}
+    catch(err){showToast(err.message);}
+}
+async function loadAdminChats(){
+    try{
+        const data=await apiRequest("chat.php?role=admin");
+        const groups={};
+        (data.messages||[]).forEach(m=>{if(!groups[m.username])groups[m.username]=[];groups[m.username].push(m);});
+        const list=document.getElementById("chatCustomerList");
+        const names=Object.keys(groups);
+        list.innerHTML=names.length?names.map(u=>`<button class="chat-user ${u===selectedChatUsername?'active':''}" onclick="selectAdminChat('${escapeHTML(u)}')"><strong>${escapeHTML(u)}</strong><br><small>${escapeHTML(groups[u][groups[u].length-1].message.slice(0,55))}</small></button>`).join(""):'<p class="muted">No customer messages yet.</p>';
+        window.__chatGroups=groups;
+        if(selectedChatUsername && groups[selectedChatUsername]) renderChatMessages(document.getElementById("adminChatMessages"),groups[selectedChatUsername],selectedChatUsername);
+        updateChatNotifications("admin", data.messages||[]);
+    }catch(err){console.error(err);}
+}
+function selectAdminChat(username){selectedChatUsername=username;document.getElementById("adminChatTitle").textContent="Chat with "+username;loadAdminChats();}
+async function sendAdminMessage(){
+    const input=document.getElementById("adminChatInput"); const message=input.value.trim();
+    if(!message || !selectedChatUsername) {showToast("Select a customer first.");return;}
+    try{await apiRequest("chat.php",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:selectedChatUsername,senderRole:"admin",message})});input.value="";await loadAdminChats();}
+    catch(err){showToast(err.message);}
+}
+
+// Poll messages so customer/admin chats update without refreshing the page.
+setInterval(()=>{
+    if(currentUser?.type==="customer"){
+        loadCustomerChat();
+        renderNotifications("customer");
+    }
+    if(currentUser?.type==="admin"){
+        loadAdminChats();
+        renderNotifications("admin");
+    }
+},5000);
+
+async function checkLogin() {
+    if (!currentUser) return;
+
+    try {
+        await loadAllData();
+
+        if (currentUser.type === "admin") {
+            openAdmin();
+        } else {
+            openCustomer();
+        }
+    } catch {
+        localStorage.removeItem("lorence_currentUser");
+        currentUser = null;
+    }
+}
+
+/* =========================================================
+   CUSTOMER NAVIGATION
+========================================================= */
+
+function showCustomerPage(page, button) {
+    document.querySelectorAll("#customerApp .page")
+        .forEach(p => p.classList.remove("active"));
+
+    const target = document.getElementById("customer-" + page);
+
+    if (target) target.classList.add("active");
+
+    if (button) {
+        document.querySelectorAll("#customerSidebar .nav-btn")
+            .forEach(b => b.classList.remove("active"));
+        button.classList.add("active");
+    }
+
+    if (page === "cart") renderCart();
+    if (page === "orders") renderCustomerOrders();
+    if (page === "checkout") renderCheckout();
+    if (page === "profile") loadProfile();
+    if (page === "chat") loadCustomerChat();
+}
+
+function toggleSidebar() {
+    document.getElementById("customerSidebar").classList.toggle("open");
+}
+
+/* =========================================================
+   PRODUCTS
+========================================================= */
+
+function productImage(product, className = "") {
+    const path = product.image || "";
+    if (!path) {
+        return `<div class="${className}">No Image</div>`;
+    }
+
+    return `<img
+        src="${escapeHTML(path)}"
+        alt="${escapeHTML(product.name)}"
+        class="${className}"
+        onerror="this.style.display='none';this.parentElement.classList.add('no-image')"
+    >`;
+}
+
+function renderHomeProducts() {
+    renderProducts();
+}
+
+
+function productHTML(product) {
+    return `
+        <div class="product-card">
+            <div class="product-image">
+                <span class="stock-tag">
+                    ${Number(product.stock) > 0 ? "In Stock" : "Out of Stock"}
+                </span>
+                ${productImage(product, "")}
+            </div>
+
+            <div class="product-info">
+                <h3>${escapeHTML(product.name)}</h3>
+
+                <div class="rating">⭐⭐⭐⭐⭐</div>
+
+                <div>
+                    <span class="price">
+                        ₱${Number(product.price).toLocaleString(undefined, {
+                            minimumFractionDigits: 2
+                        })}
+                    </span>
+                </div>
+
+                <div class="product-bottom">
+                    <small>${Number(product.stock)} available</small>
+
+                    <button
+                        class="add-btn"
+                        onclick="addToCart('${escapeHTML(product.id)}')"
+                        ${Number(product.stock) <= 0 ? "disabled" : ""}
+                    >
+                        🛒 Add
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderProducts() {
+    const container = document.getElementById("productGrid");
+    if (!container) return;
+
+    const search = (
+        document.getElementById("searchInput")?.value || ""
+    ).toLowerCase();
+
+    const filtered = products.filter(product =>
+        String(product.name).toLowerCase().includes(search)
+    );
+
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div class="card">
+                <h3>No fish found</h3>
+                <p>Try another search term.</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = filtered.map(productHTML).join("");
+}
+
+
+/* =========================================================
+   CART - LOCAL STORAGE ONLY
+========================================================= */
+
+function getCart() {
+    return JSON.parse(
+        localStorage.getItem(
+            "lorence_cart_" + (currentUser?.username || "guest")
+        ) || "[]"
+    );
+}
+
+function saveCart(cart) {
+    localStorage.setItem(
+        "lorence_cart_" + currentUser.username,
+        JSON.stringify(cart)
+    );
+}
+
+function addToCart(productId) {
+    const product = products.find(p => String(p.id) === String(productId));
+
+    if (!product) return;
+
+    if (Number(product.stock) <= 0) {
+        showToast("This product is out of stock.");
+        return;
+    }
+
+    const cart = getCart();
+    const existing = cart.find(
+        item => String(item.productId) === String(productId)
+    );
+
+    if (existing) {
+        if (existing.quantity >= Number(product.stock)) {
+            showToast("You reached the available stock.");
+            return;
+        }
+        existing.quantity++;
+    } else {
+        cart.push({
+            productId: product.id,
+            quantity: 1
+        });
+    }
+
+    saveCart(cart);
+    updateCartCount();
+    showToast(product.name + " added to cart!");
+}
+
+function updateCartCount() {
+    const cart = getCart();
+
+    const count = cart.reduce(
+        (sum, item) => sum + Number(item.quantity),
+        0
+    );
+
+    document.getElementById("cartCount").textContent = count;
+}
+
+function changeQuantity(productId, change) {
+    const cart = getCart();
+
+    const item = cart.find(
+        i => String(i.productId) === String(productId)
+    );
+
+    const product = products.find(
+        p => String(p.id) === String(productId)
+    );
+
+    if (!item || !product) return;
+
+    item.quantity += change;
+
+    if (item.quantity <= 0) {
+        const index = cart.indexOf(item);
+        cart.splice(index, 1);
+    }
+
+    if (item.quantity > Number(product.stock)) {
+        item.quantity = Number(product.stock);
+        showToast("Maximum available stock reached.");
+    }
+
+    saveCart(cart);
+    renderCart();
+    updateCartCount();
+}
+
+function removeFromCart(productId) {
+    let cart = getCart();
+
+    cart = cart.filter(
+        item => String(item.productId) !== String(productId)
+    );
+
+    saveCart(cart);
+    renderCart();
+    updateCartCount();
+}
+
+function calculateCartTotal() {
+    const cart = getCart();
+
+    return cart.reduce((total, item) => {
+        const product = products.find(
+            p => String(p.id) === String(item.productId)
+        );
+
+        if (!product) return total;
+
+        return total +
+            Number(product.price) * Number(item.quantity);
+    }, 0);
+}
+
+function renderCart() {
+    const container = document.getElementById("cartContainer");
+    if (!container) return;
+
+    const cart = getCart();
+
+    if (cart.length === 0) {
+        container.innerHTML = `
+            <div class="card" style="text-align:center;padding:50px">
+                <div style="font-size:70px">🛒</div>
+                <h2>Your cart is empty</h2>
+                <p style="margin:10px 0;color:#71818a">
+                    Add some beautiful Bettas to your cart.
+                </p>
+                <button
+                    class="primary-btn"
+                    onclick="showCustomerPage('shop')"
+                >
+                    Start Shopping
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    let subtotal = 0;
+
+    const itemsHTML = cart.map(item => {
+        const product = products.find(
+            p => String(p.id) === String(item.productId)
+        );
+
+        if (!product) return "";
+
+        const total =
+            Number(product.price) * Number(item.quantity);
+
+        subtotal += total;
+
+        return `
+            <div class="cart-item">
+
+                <div class="cart-image">
+                    ${product.image
+                        ? `<img src="${escapeHTML(product.image)}"
+                               alt="${escapeHTML(product.name)}"
+                               style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`
+                        : "No Image"
+                    }
+                </div>
+
+                <div class="cart-details">
+                    <h4>${escapeHTML(product.name)}</h4>
+                    <div class="cart-price">
+                        ₱${Number(product.price).toLocaleString(undefined,{
+                            minimumFractionDigits:2
+                        })}
+                    </div>
+                </div>
+
+                <div class="qty">
+                    <button onclick="changeQuantity('${product.id}',-1)">−</button>
+                    <b>${item.quantity}</b>
+                    <button onclick="changeQuantity('${product.id}',1)">+</button>
+                </div>
+
+                <strong>
+                    ₱${total.toLocaleString(undefined,{
+                        minimumFractionDigits:2
+                    })}
+                </strong>
+
+                <button
+                    class="remove-btn"
+                    onclick="removeFromCart('${product.id}')"
+                >
+                    🗑️
+                </button>
+            </div>
+        `;
+    }).join("");
+
+    const shipping = null;
+    const grand = null;
+
+    container.innerHTML = `
+        <div class="cart-panel">
+            ${itemsHTML}
+
+            <div class="cart-summary">
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <strong>₱${subtotal.toFixed(2)}</strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Shipping</span>
+                    <strong class="pending-total">To be confirmed</strong>
+                </div>
+
+                <div class="shipping-pending">🚚 Shipping fee will be confirmed by the admin before the final total and payment are shown.</div>
+
+                <div class="summary-row summary-total">
+                    <span>Final Total</span>
+                    <strong class="pending-total">Waiting for shipping fee</strong>
+                </div>
+
+                <br>
+
+                <button
+                    class="primary-btn full-btn"
+                    onclick="openCheckout()"
+                >
+                    Proceed to Checkout →
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+/* =========================================================
+   CHECKOUT
+========================================================= */
+
+function openCheckout() {
+    const cart = getCart();
+
+    if (cart.length === 0) {
+        showToast("Your cart is empty.");
+        return;
+    }
+
+    showCustomerPage("checkout");
+    renderCheckout();
+}
+
+function renderCheckout() {
+    const cart = getCart();
+    const container = document.getElementById("checkoutSummary");
+
+    if (!container) return;
+
+    let subtotal = 0;
+    let html = "";
+
+    cart.forEach(item => {
+        const product = products.find(
+            p => String(p.id) === String(item.productId)
+        );
+
+        if (!product) return;
+
+        const total =
+            Number(product.price) * Number(item.quantity);
+
+        subtotal += total;
+
+        html += `
+            <div class="summary-row">
+                <span>
+                    ${escapeHTML(product.name)} × ${item.quantity}
+                </span>
+                <strong>₱${total.toFixed(2)}</strong>
+            </div>
+        `;
+    });
+
+    const shipping = null;
+    const total = null;
+
+    html += `
+        <hr style="border:none;border-top:1px solid #ddd;margin:15px 0">
+
+        <div class="summary-row">
+            <span>Subtotal</span>
+            <strong>₱${subtotal.toFixed(2)}</strong>
+        </div>
+
+        <div class="summary-row">
+            <span>Shipping</span>
+            <strong>To be confirmed by admin</strong>
+        </div>
+
+        <div class="shipping-pending">🚚 You can place the order first. The admin will confirm the shipping fee, then your final total will appear here.</div>
+
+        <div class="summary-row summary-total">
+            <span>Final Total</span>
+            <strong>Waiting for shipping fee</strong>
+        </div>
+    `;
+
+    container.innerHTML = html;
+
+    const user = users.find(
+        u => u.username === currentUser.username
+    );
+
+    if (user) {
+        document.getElementById("checkoutName").value = user.name || "";
+        document.getElementById("checkoutPhone").value = user.phone || "";
+        document.getElementById("checkoutAddress").value = user.address || "";
+    }
+}
+
+async function placeOrder() {
+    const cart = getCart();
+
+    if (cart.length === 0) {
+        showToast("Your cart is empty.");
+        return;
+    }
+
+    const name = document.getElementById("checkoutName").value.trim();
+    const phone = document.getElementById("checkoutPhone").value.trim();
+    const address = document.getElementById("checkoutAddress").value.trim();
+
+    if (!name || !phone || !address) {
+        showToast("Please complete your delivery information.");
+        return;
+    }
+
+    const payment = document.querySelector(
+        'input[name="payment"]:checked'
+    ).value;
+
+    const items = cart.map(item => ({
+        productId: item.productId,
+        quantity: Number(item.quantity)
+    }));
+
+    try {
+        const data = await apiRequest("place_order.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                username: currentUser.username,
+                customerName: name,
+                phone,
+                address,
+                payment,
+                items
+            })
+        });
+
+        await loadProducts();
+        await loadOrders();
+
+        saveCart([]);
+        updateCartCount();
+
+        showToast("Order placed successfully!");
+
+        document.getElementById("checkoutPhone").value = "";
+        document.getElementById("checkoutAddress").value = "";
+
+        showCustomerPage("orders");
+        renderCustomerOrders();
+
+        renderProducts();
+        renderHomeProducts();
+        renderStock();
+        renderAdminDashboard();
+
+        if (data.order_id) {
+            console.log("Created order:", data.order_id);
+        }
+    } catch (err) {
+        showToast(err.message);
+    }
+}
+
+/* =========================================================
+   CUSTOMER ORDERS
+========================================================= */
+
+function renderCustomerOrders() {
+    const container = document.getElementById("customerOrders");
+    if (!container || !currentUser) return;
+
+    const myOrders = orders.filter(
+        o => o.username === currentUser.username
+    );
+
+    if (myOrders.length === 0) {
+        container.innerHTML = `
+            <div class="card" style="text-align:center;padding:50px">
+                <div style="font-size:60px">📦</div>
+                <h2>No orders yet</h2>
+                <p style="margin:10px;color:#71818a">
+                    Your purchases will appear here.
+                </p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = myOrders
+        .map(order => orderHTML(order))
+        .join("");
+}
+
+function orderHTML(order) {
+    const statuses=["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Shipped","Delivered"];
+    const currentIndex=statuses.indexOf(order.status);
+    let progress="";
+    statuses.forEach((status,index)=>{
+        const done=order.status!=="Cancelled" && index<=currentIndex;
+        progress+=`<div class="progress-step ${done?'done':''}"><div class="progress-dot">${done?'✓':index+1}</div>${status}</div>`;
+    });
+    const items=(order.items||[]).map(item=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">${item.image?`<img src="${escapeHTML(item.image)}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:8px">`:''}<span>${escapeHTML(item.name)} ×${item.quantity}</span></div>`).join('');
+    const paymentAction=order.payment==='GCash' && order.shipping_confirmed && order.payment_status!=='Paid'
+      ? `<div class="admin-shipping-box"><strong>GCash payment</strong><p class="payment-note">Final amount: ₱${Number(order.total).toFixed(2)}. Scan the shop's GCash QR code to pay directly.</p><div class="gcash-box"><img src="images/gcash_qr.png" class="gcash-qr" alt="Lorence Betta Fish GCash QR"><strong>Scan with your GCash app</strong><div class="payment-note">After successful payment, enter your GCash reference number below.</div><div class="chat-compose" style="padding:10px 0 0;border:0"><input id="payref-${escapeHTML(order.id)}" placeholder="GCash reference number" value="${escapeHTML(order.payment_reference||'')}"><button class="primary-btn" onclick="submitGCashPayment('${escapeHTML(order.id)}')">Submit Reference</button></div></div></div>`
+      : '';
+    return `<div class="order-card">
+      <div class="order-head"><div><div class="order-id">${escapeHTML(order.id)}</div><small>${escapeHTML(order.date)}</small></div><span class="status ${escapeHTML(order.status)}">${escapeHTML(order.status)}</span></div>
+      <div style="margin-bottom:15px">${items}</div>
+      ${order.shipping_confirmed?`<div class="shipping-confirmed">🚚 Shipping: <strong>₱${Number(order.shipping).toFixed(2)}</strong> · Final total: <strong>₱${Number(order.total).toFixed(2)}</strong></div>`:`<div class="shipping-pending">⏳ Waiting for admin to confirm the shipping fee. Your final total will appear after confirmation.</div>`}
+      <div class="progress">${progress}</div>
+      <div class="summary-row"><span>Payment: ${escapeHTML(order.payment)}</span><strong>${order.shipping_confirmed?'₱'+Number(order.total).toFixed(2):'Pending final total'}</strong></div>
+      <div class="payment-note">Payment status: <strong>${escapeHTML(order.payment_status||'Waiting for shipping fee')}</strong></div>
+      ${paymentAction}
+      <small>📍 ${escapeHTML(order.address)}</small>
+    </div>`;
+}
+
+/* =========================================================
+   GCash payment reference
+========================================================= */
+
+async function markGCashPaid(orderId){
+    if(!confirm('Mark this GCash payment as verified and paid?')) return;
+    try{await apiRequest('mark_payment.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId})});await loadOrders();renderAdminOrders();renderAdminDashboard();viewOrder(orderId);showToast('GCash payment marked as paid.');}
+    catch(err){showToast(err.message);}
+}
+
+async function submitGCashPayment(orderId){
+    const input=document.getElementById('payref-'+orderId);const reference=input?.value.trim();
+    if(!reference){showToast('Enter your GCash reference number.');return;}
+    try{await apiRequest('submit_payment.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:currentUser.username,orderId,reference})});await loadOrders();renderCustomerOrders();showToast('GCash payment submitted for admin verification.');}
+    catch(err){showToast(err.message);}
+}
+
+/* =========================================================
+   PROFILE
+========================================================= */
+
+function loadProfile() {
+    const user = users.find(
+        u => u.username === currentUser.username
+    );
+
+    if (!user) return;
+
+    document.getElementById("profileName").value = user.name || "";
+    document.getElementById("profileUsername").value = user.username || "";
+    document.getElementById("profileEmail").value = user.email || "";
+    document.getElementById("profilePhone").value = user.phone || "";
+    document.getElementById("profileAddress").value = user.address || "";
+}
+
+async function saveProfile() {
+    const name = document.getElementById("profileName").value.trim();
+    const email = document.getElementById("profileEmail").value.trim();
+    const phone = document.getElementById("profilePhone").value.trim();
+    const address = document.getElementById("profileAddress").value.trim();
+
+    try {
+        await apiRequest("update_profile.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                username: currentUser.username,
+                name,
+                email,
+                phone,
+                address
+            })
+        });
+
+        await loadUsers();
+
+        document.getElementById("customerName").textContent = name;
+        showToast("Profile updated.");
+    } catch (err) {
+        showToast(err.message);
+    }
+}
+
+/* =========================================================
+   ADMIN NAVIGATION
+========================================================= */
+
+function showAdminPage(page, button) {
+    document.querySelectorAll("#adminApp .page")
+        .forEach(p => p.classList.remove("active"));
+
+    const target = document.getElementById("admin-" + page);
+    if (target) target.classList.add("active");
+
+    if (button) {
+        document.querySelectorAll("#adminSidebar .nav-btn")
+            .forEach(b => b.classList.remove("active"));
+        button.classList.add("active");
+    }
+
+    if (page === "dashboard") renderAdminDashboard();
+    if (page === "orders") renderAdminOrders();
+    if (page === "products") renderAdminProducts();
+    if (page === "customers") renderCustomers();
+    if (page === "stock") renderStock();
+    if (page === "chat") loadAdminChats();
+}
+
+function toggleAdminSidebar() {
+    document.getElementById("adminSidebar").classList.toggle("open");
+}
+
+/* =========================================================
+   ADMIN DASHBOARD
+========================================================= */
+
+function renderAdminDashboard() {
+    const sales = orders
+        .filter(o => o.status !== "Cancelled")
+        .reduce((sum, o) => sum + Number(o.total), 0);
+
+    document.getElementById("statSales").textContent =
+        "₱" + sales.toLocaleString(undefined, {
+            minimumFractionDigits: 2
+        });
+
+    document.getElementById("statOrders").textContent =
+        orders.length;
+
+    document.getElementById("statProducts").textContent =
+        products.length;
+
+    document.getElementById("statCustomers").textContent =
+        users.length;
+
+    renderSalesChart();
+    renderRecentOrders();
+}
+
+function renderSalesChart() {
+    const chart = document.getElementById("salesChart");
+    if (!chart) return;
+
+    const values = [];
+
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+
+        const dateString = date.toLocaleDateString();
+
+        const total = orders
+            .filter(o =>
+                new Date(o.date).toLocaleDateString() === dateString &&
+                o.status !== "Cancelled"
+            )
+            .reduce((sum, o) => sum + Number(o.total), 0);
+
+        values.push({
+            label: date.toLocaleDateString(undefined, {
+                weekday: "short"
+            }),
+            value: total
+        });
+    }
+
+    const max = Math.max(
+        ...values.map(v => v.value),
+        100
+    );
+
+    chart.innerHTML = values.map(v => `
+        <div
+            class="bar"
+            style="height:${Math.max(
+                10,
+                (v.value / max) * 190
+            )}px"
+        >
+            <span>${v.label}</span>
+        </div>
+    `).join("");
+}
+
+function renderRecentOrders() {
+    const container = document.getElementById("recentOrders");
+    if (!container) return;
+
+    const recent = orders.slice(0, 5);
+
+    if (recent.length === 0) {
+        container.innerHTML = "<p>No orders yet.</p>";
+        return;
+    }
+
+    container.innerHTML = recent.map(o => `
+        <div style="
+            padding:12px 0;
+            border-bottom:1px solid #edf3f5;
+        ">
+            <div style="
+                display:flex;
+                justify-content:space-between;
+            ">
+                <strong>${escapeHTML(o.id)}</strong>
+
+                <span class="status ${escapeHTML(o.status)}">
+                    ${escapeHTML(o.status)}
+                </span>
+            </div>
+
+            <small>${escapeHTML(o.customerName)}</small>
+
+            <div style="
+                color:#0088b3;
+                font-weight:bold;
+                margin-top:4px;
+            ">
+                ₱${Number(o.total).toFixed(2)}
+            </div>
+        </div>
+    `).join("");
+}
+
+/* =========================================================
+   ADMIN ORDER MANAGEMENT
+========================================================= */
+
+function renderAdminOrders() {
+    const tbody = document.getElementById("adminOrdersTable");
+    if (!tbody) return;
+
+    if (orders.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center">No orders yet.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = orders.map(order => `
+        <tr>
+            <td><strong>${escapeHTML(order.id)}</strong></td>
+            <td>${escapeHTML(order.customerName)}</td>
+            <td>${escapeHTML(order.date)}</td>
+            <td>₱${Number(order.subtotal).toFixed(2)}</td>
+            <td>${order.shipping_confirmed ? "₱" + Number(order.shipping).toFixed(2) : "Pending"}</td>
+            <td>${order.shipping_confirmed ? "₱" + Number(order.total).toFixed(2) : "Pending"}</td>
+            <td>${escapeHTML(order.payment)}</td>
+            <td>${escapeHTML(order.payment_status || "Waiting for shipping fee")}</td>
+            <td>
+                <select onchange="updateOrderStatus('${escapeHTML(order.id)}',this.value)">
+                    ${["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Shipped","Delivered","Cancelled"].map(st => `<option ${st === order.status ? "selected" : ""}>${st}</option>`).join("")}
+                </select>
+            </td>
+            <td>
+                <button class="action-btn view-btn" onclick="viewOrder('${escapeHTML(order.id)}')">View</button>
+            </td>
+        </tr>
+    `).join("");
+}
+
+async function updateOrderStatus(orderId, status) {
+    try {
+        await apiRequest("update_order.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                orderId,
+                status
+            })
+        });
+
+        await loadOrders();
+
+        renderAdminOrders();
+        renderAdminDashboard();
+        renderCustomerOrders();
+
+        showToast("Order status updated.");
+    } catch (err) {
+        showToast(err.message);
+    }
+}
+
+/* =========================================================
+   VIEW ORDER
+========================================================= */
+
+function viewOrder(orderId) {
+    const order = orders.find(o => String(o.id) === String(orderId));
+    if (!order) return;
+
+    const details = document.getElementById("orderDetails");
+    const items = (order.items || []).map(item => `
+        <div class="cart-item">
+            <div class="cart-image">${item.image ? `<img src="${escapeHTML(item.image)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:12px">` : "No Image"}</div>
+            <div class="cart-details"><h4>${escapeHTML(item.name)}</h4><small>₱${Number(item.price).toFixed(2)} × ${item.quantity}</small></div>
+            <strong>₱${(Number(item.price) * Number(item.quantity)).toFixed(2)}</strong>
+        </div>`).join("");
+
+    const shippingBlock = order.shipping_confirmed
+        ? `<div class="shipping-confirmed">✅ Shipping fee confirmed: <strong>₱${Number(order.shipping).toFixed(2)}</strong><br>Final total: <strong>₱${Number(order.total).toFixed(2)}</strong></div>`
+        : `<div class="shipping-pending">⏳ Shipping fee has not been confirmed yet. Customer cannot see the final total or proceed with GCash payment.</div>
+           <div class="admin-shipping-box">
+             <h4>Confirm Shipping Fee</h4>
+             <p class="payment-note">Enter the actual delivery fee for this order. This will calculate the customer's final total.</p>
+             <div class="inline">
+               <div class="form-group" style="margin:0"><label>Shipping Fee</label><input id="shippingFeeInput" type="number" min="0" step="0.01" placeholder="0.00"></div>
+               <button class="primary-btn" onclick="confirmShipping('${escapeHTML(order.id)}')">Confirm Shipping</button>
+             </div>
+           </div>`;
+
+    const paymentBlock = order.payment === "GCash" && order.shipping_confirmed
+        ? `<div class="admin-shipping-box"><strong>GCash</strong><p class="payment-note">Final amount: ₱${Number(order.total).toFixed(2)} · Payment status: ${escapeHTML(order.payment_status || "Unpaid")}</p>${order.payment_reference ? `<p><strong>Reference:</strong> ${escapeHTML(order.payment_reference)}</p>${order.payment_status !== 'Paid' ? `<button class="primary-btn" onclick="markGCashPaid('${escapeHTML(order.id)}')">Mark GCash as Paid</button>` : `<div class="shipping-confirmed">✅ Payment verified</div>`}` : `<p class="payment-note">Waiting for the customer's GCash payment reference.</p>`}</div>`
+        : `<p class="payment-note">Payment method: ${escapeHTML(order.payment)} · ${escapeHTML(order.payment_status || "Waiting for shipping fee")}</p>`;
+
+    details.innerHTML = `
+        <p><strong>Order:</strong> ${escapeHTML(order.id)}</p>
+        <p><strong>Customer:</strong> ${escapeHTML(order.customerName)}</p>
+        <p><strong>Phone:</strong> ${escapeHTML(order.phone)}</p>
+        <p><strong>Address:</strong> ${escapeHTML(order.address)}</p>
+        <p><strong>Status:</strong> <span class="status ${escapeHTML(order.status)}">${escapeHTML(order.status)}</span></p>
+        ${shippingBlock}
+        ${paymentBlock}
+        <hr style="border:none;border-top:1px solid #ddd;margin:18px 0">
+        ${items}
+        <div class="summary-row"><span>Subtotal</span><strong>₱${Number(order.subtotal).toFixed(2)}</strong></div>
+        <div class="summary-row"><span>Shipping</span><strong>${order.shipping_confirmed ? "₱"+Number(order.shipping).toFixed(2) : "Pending"}</strong></div>
+        <div class="summary-row summary-total"><span>Final Total</span><strong>${order.shipping_confirmed ? "₱"+Number(order.total).toFixed(2) : "Pending"}</strong></div>
+    `;
+    document.getElementById("orderModal").classList.remove("hidden");
+}
+
+function closeOrderModal() {
+    document.getElementById("orderModal")
+        .classList.add("hidden");
+}
+
+/* =========================================================
+   ADMIN PRODUCT MANAGEMENT - MYSQL + IMAGE UPLOAD
+========================================================= */
+
+function renderAdminProducts() {
+    const tbody = document.getElementById("adminProductsTable");
+    if (!tbody) return;
+
+    tbody.innerHTML = products.map(product => `
+        <tr>
+            <td>
+                <div style="display:flex;align-items:center;gap:10px">
+                    ${product.image
+                        ? `<img
+                            src="${escapeHTML(product.image)}"
+                            alt="${escapeHTML(product.name)}"
+                            style="width:55px;height:55px;object-fit:cover;border-radius:10px"
+                           >`
+                        : `<div style="
+                            width:55px;height:55px;border-radius:10px;
+                            background:#e8faff;display:flex;
+                            align-items:center;justify-content:center;
+                            font-size:11px
+                          ">No Image</div>`
+                    }
+
+                    <strong>${escapeHTML(product.name)}</strong>
+                </div>
+            </td>
+
+            <td>₱${Number(product.price).toFixed(2)}</td>
+
+            <td>${Number(product.stock)}</td>
+
+            <td>
+                <span class="status ${
+                    Number(product.stock) > 0
+                    ? "Delivered"
+                    : "Cancelled"
+                }">
+                    ${
+                        Number(product.stock) > 0
+                        ? "Available"
+                        : "Out of Stock"
+                    }
+                </span>
+            </td>
+
+            <td>
+                <button
+                    class="action-btn edit-btn"
+                    onclick="editProduct('${escapeHTML(product.id)}')"
+                >
+                    Edit
+                </button>
+
+                <button
+                    class="action-btn delete-btn"
+                    onclick="deleteProduct('${escapeHTML(product.id)}')"
+                >
+                    Delete
+                </button>
+            </td>
+        </tr>
+    `).join("");
+}
+
+function openProductModal(product = null) {
+    document.getElementById("productModal")
+        .classList.remove("hidden");
+
+    document.getElementById("productImage").value = "";
+
+    if (product) {
+        document.getElementById("productModalTitle").textContent =
+            "Edit Product";
+
+        document.getElementById("editProductId").value =
+            product.id;
+
+        document.getElementById("productName").value =
+            product.name;
+
+        document.getElementById("productPrice").value =
+            product.price;
+
+        document.getElementById("productStock").value =
+            product.stock;
+
+        document.getElementById("productDescription").value =
+            product.description || "";
+
+        const preview = document.getElementById("productImagePreview");
+
+        if (product.image) {
+            preview.innerHTML = `
+                <img
+                    src="${escapeHTML(product.image)}"
+                    alt="${escapeHTML(product.name)}"
+                    style="
+                        width:120px;
+                        height:120px;
+                        object-fit:cover;
+                        border-radius:12px;
+                        margin-top:10px
+                    "
+                >
+                <div style="font-size:12px;color:#71818a;margin-top:5px">
+                    Current picture
+                </div>
+            `;
+        } else {
+            preview.innerHTML = "";
+        }
+    } else {
+        document.getElementById("productModalTitle").textContent =
+            "Add Product";
+
+        document.getElementById("editProductId").value = "";
+        document.getElementById("productName").value = "";
+        document.getElementById("productPrice").value = "";
+        document.getElementById("productStock").value = "";
+        document.getElementById("productDescription").value = "";
+        document.getElementById("productImagePreview").innerHTML = "";
+    }
+}
+
+function closeProductModal() {
+    document.getElementById("productModal")
+        .classList.add("hidden");
+}
+
+async function saveProduct() {
+    const id = document.getElementById("editProductId").value;
+
+    const name = document.getElementById("productName")
+        .value.trim();
+
+    const category = "";
+
+    const price = Number(
+        document.getElementById("productPrice").value
+    );
+
+    const stock = Number(
+        document.getElementById("productStock").value
+    );
+
+    const description = document.getElementById("productDescription")
+        .value.trim();
+
+    const imageInput = document.getElementById("productImage");
+    const imageFile = imageInput.files[0];
+
+    if (!name || price < 0 || stock < 0) {
+        showToast("Please enter valid product information.");
+        return;
+    }
+
+    if (!id && !imageFile) {
+        showToast("Please choose a product picture.");
+        return;
+    }
+
+    const formData = new FormData();
+
+    formData.append("name", name);
+    formData.append("category", category);
+    formData.append("price", price);
+    formData.append("stock", stock);
+    formData.append("description", description);
+
+    if (id) {
+        formData.append("id", id);
+    }
+
+    if (imageFile) {
+        formData.append("image", imageFile);
+    }
+
+    try {
+        const endpoint = id
+            ? "update_product.php"
+            : "add_product.php";
+
+        await apiRequest(endpoint, {
+            method: "POST",
+            body: formData
+        });
+
+        await loadProducts();
+
+        closeProductModal();
+
+        renderAdminProducts();
+        renderStock();
+        renderProducts();
+        renderHomeProducts();
+        renderAdminDashboard();
+
+        showToast(
+            id
+                ? "Product updated successfully."
+                : "Product added successfully."
+        );
+    } catch (err) {
+        showToast(err.message);
+    }
+}
+
+function editProduct(id) {
+    const product = products.find(
+        p => String(p.id) === String(id)
+    );
+
+    if (product) openProductModal(product);
+}
+
+async function deleteProduct(id) {
+    const product = products.find(
+        p => String(p.id) === String(id)
+    );
+
+    if (!product) return;
+
+    if (!confirm("Delete " + product.name + "?")) return;
+
+    try {
+        await apiRequest("delete_product.php", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({id})
+        });
+
+        await loadProducts();
+
+        renderAdminProducts();
+        renderProducts();
+        renderHomeProducts();
+        renderStock();
+        renderAdminDashboard();
+
+        showToast("Product deleted.");
+    } catch (err) {
+        showToast(err.message);
+    }
+}
+
+/* =========================================================
+   CUSTOMER RECORDS
+========================================================= */
+
+function renderCustomers() {
+    const tbody = document.getElementById("customersTable");
+    if (!tbody) return;
+
+    if (users.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" style="text-align:center">
+                    No registered customers.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = users.map(user => {
+        const orderCount = orders.filter(
+            o => o.username === user.username
+        ).length;
+
+        return `
+            <tr>
+                <td>${escapeHTML(user.name)}</td>
+                <td>${escapeHTML(user.username)}</td>
+                <td>${escapeHTML(user.email || "")}</td>
+                <td>${escapeHTML(user.registered || "")}</td>
+                <td>${orderCount}</td>
+            </tr>
+        `;
+    }).join("");
+}
+
+/* =========================================================
+   STOCK CONTROL
+========================================================= */
+
+function renderStock() {
+    const container = document.getElementById("stockCards");
+    if (!container) return;
+
+    container.innerHTML = products.map(product => {
+        let level = "Good";
+
+        if (Number(product.stock) === 0) {
+            level = "Out of Stock";
+        } else if (Number(product.stock) <= 3) {
+            level = "Low Stock";
+        }
+
+        return `
+            <div class="product-card">
+                <div class="product-image">
+                    ${product.image
+                        ? `<img
+                            src="${escapeHTML(product.image)}"
+                            alt="${escapeHTML(product.name)}"
+                            style="width:100%;height:100%;object-fit:cover"
+                           >`
+                        : "No Image"
+                    }
+                </div>
+
+                <div class="product-info">
+                    <h3>${escapeHTML(product.name)}</h3>
+                    <p>${escapeHTML(product.category)}</p>
+                    <br>
+
+                    <div class="summary-row">
+                        <span>Current Stock</span>
+                        <strong>${Number(product.stock)}</strong>
+                    </div>
+
+                    <div class="status ${
+                        level === "Good"
+                            ? "Delivered"
+                            : level === "Low Stock"
+                            ? "Preparing"
+                            : "Cancelled"
+                    }">
+                        ${level}
+                    </div>
+
+                    <br>
+
+                    <button
+                        class="primary-btn full-btn"
+                        onclick="editProduct('${escapeHTML(product.id)}')"
+                    >
+                        Update Stock
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+/* =========================================================
+   UTILITIES
+========================================================= */
+
+function showToast(message) {
+    const toast = document.getElementById("toast");
+
+    toast.textContent = message;
+    toast.classList.add("show");
+
+    setTimeout(
+        () => toast.classList.remove("show"),
+        2500
+    );
+}
+
+function escapeHTML(value) {
+    if (value === null || value === undefined) return "";
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
+checkLogin();
+if (new URLSearchParams(location.search).get("reset")) {
+    document.getElementById("resetModal")?.classList.remove("hidden");
+}
+</script>
+
+</body>
+</html>
