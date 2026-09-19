@@ -8,7 +8,7 @@ $price = (float)($_POST["price"] ?? 0);
 $stock = (int)($_POST["stock"] ?? 0);
 $description = trim($_POST["description"] ?? "");
 
-if ($name === "" || $price < 0 || $stock < 0) {
+if ($name === "" || $category === "" || $price < 0 || $stock < 0) {
     respond(false, "Please enter valid product information.", [], 400);
 }
 
