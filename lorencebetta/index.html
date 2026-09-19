@@ -979,7 +979,7 @@ textarea{
 
 .stat-grid{
     display:grid;
-    grid-template-columns:repeat(4,1fr);
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
     gap:17px;
     margin-bottom:25px;
 }
@@ -1895,6 +1895,12 @@ th{
                         <div class="stat-icon">💰</div>
                         <p>Total Sales</p>
                         <h2 id="statSales">₱0.00</h2>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">🚚</div>
+                        <p>Total Shipping Fees</p>
+                        <h2 id="statShipping">₱0.00</h2>
                     </div>
 
                     <div class="stat-card">
@@ -3379,7 +3385,7 @@ function orderHTML(order) {
     });
     const items=(order.items||[]).map(item=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">${item.image?`<img src="${escapeHTML(item.image)}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:8px">`:''}<span>${escapeHTML(item.name)} ×${item.quantity}</span></div>`).join('');
     const paymentAction=order.payment==='GCash' && order.shipping_confirmed && order.payment_status!=='Paid'
-      ? `<div class="admin-shipping-box"><strong>GCash payment</strong><p class="payment-note">Exact amount: <strong>₱${Number(order.total).toFixed(2)}</strong></p><div class="gcash-box">${gcashSettings.qr_image?`<img src="${escapeHTML(gcashSettings.qr_image)}" class="gcash-qr" alt="Shop GCash QR">`:''}<strong>${escapeHTML(gcashSettings.merchant_name||'GCash Account')}</strong><div>${escapeHTML(gcashSettings.gcash_number||'Ask the admin for the GCash number')}</div><button class="primary-btn" style="margin:12px 0" onclick="openGCashApp()">📱 Open GCash</button><div class="payment-note">Pay the exact amount, then enter the GCash reference number below.</div><div class="chat-compose" style="padding:10px 0 0;border:0"><input id="payref-${escapeHTML(order.id)}" placeholder="GCash reference number" value="${escapeHTML(order.payment_reference||'')}"><button class="primary-btn" onclick="submitGCashPayment('${escapeHTML(order.id)}')">Submit Reference</button></div></div></div>`
+      ? `<div class="admin-shipping-box"><strong>GCash payment</strong><p class="payment-note">Exact amount: <strong>₱${Number(order.total).toFixed(2)}</strong></p><div class="gcash-box">${gcashSettings.qr_image?`<img src="${escapeHTML(gcashSettings.qr_image)}" class="gcash-qr" alt="Shop GCash QR">`:''}<strong>${escapeHTML(gcashSettings.merchant_name||'GCash Account')}</strong><div>${escapeHTML(gcashSettings.gcash_number||'Ask the admin for the GCash number')}</div><button class="primary-btn" style="margin:12px 0" onclick="openGCashApp()">📱 Open GCash</button><div class="payment-note">Submit either the reference number or a payment screenshot.</div><div class="form-group" style="text-align:left;margin-top:12px"><label>Reference Number (optional)</label><input id="payref-${escapeHTML(order.id)}" placeholder="GCash reference number" value="${escapeHTML(order.payment_reference||'')}"></div><div class="form-group" style="text-align:left"><label>Payment Screenshot (optional)</label><input id="payproof-${escapeHTML(order.id)}" type="file" accept="image/jpeg,image/png,image/webp"></div><button class="primary-btn" onclick="submitGCashPayment('${escapeHTML(order.id)}')">Submit Payment Proof</button></div></div>`
       : '';
     return `<div class="order-card">
       <div class="order-head"><div><div class="order-id">${escapeHTML(order.id)}</div><small>${escapeHTML(order.date)}</small></div><span class="status ${escapeHTML(order.status)}">${escapeHTML(order.status)}</span></div>
@@ -3405,8 +3411,10 @@ async function markGCashPaid(orderId){
 
 async function submitGCashPayment(orderId){
     const input=document.getElementById('payref-'+orderId);const reference=input?.value.trim();
-    if(!reference){showToast('Enter your GCash reference number.');return;}
-    try{await apiRequest('submit_payment.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:currentUser.username,orderId,reference})});await loadOrders();renderCustomerOrders();showToast('GCash payment submitted for admin verification.');}
+    const screenshot=document.getElementById('payproof-'+orderId)?.files[0];
+    if(!reference&&!screenshot){showToast('Enter a reference number or upload a payment screenshot.');return;}
+    const form=new FormData();form.append('username',currentUser.username);form.append('orderId',orderId);form.append('reference',reference||'');if(screenshot)form.append('screenshot',screenshot);
+    try{await apiRequest('submit_payment.php',{method:'POST',body:form});await loadOrders();renderCustomerOrders();showToast('GCash payment proof submitted for admin verification.');}
     catch(err){showToast(err.message);}
 }
 
@@ -3519,12 +3527,14 @@ function toggleAdminSidebar() {
 function renderAdminDashboard() {
     const sales = orders
         .filter(o => o.status !== "Cancelled")
-        .reduce((sum, o) => sum + Number(o.total), 0);
+        .reduce((sum, o) => sum + Number(o.subtotal), 0);
+    const shipping = orders.filter(o => o.status !== "Cancelled" && o.shipping_confirmed).reduce((sum, o) => sum + Number(o.shipping), 0);
 
     document.getElementById("statSales").textContent =
         "₱" + sales.toLocaleString(undefined, {
             minimumFractionDigits: 2
         });
+    document.getElementById("statShipping").textContent = "₱" + shipping.toLocaleString(undefined, {minimumFractionDigits:2});
 
     document.getElementById("statOrders").textContent =
         orders.length;
@@ -3556,7 +3566,7 @@ function renderSalesChart() {
                 new Date(o.date).toLocaleDateString() === dateString &&
                 o.status !== "Cancelled"
             )
-            .reduce((sum, o) => sum + Number(o.total), 0);
+            .reduce((sum, o) => sum + Number(o.subtotal), 0);
 
         values.push({
             label: date.toLocaleDateString(undefined, {
@@ -3711,7 +3721,7 @@ function viewOrder(orderId) {
            </div>`;
 
     const paymentBlock = order.payment === "GCash" && order.shipping_confirmed
-        ? `<div class="admin-shipping-box"><strong>GCash</strong><p class="payment-note">Final amount: ₱${Number(order.total).toFixed(2)} · Payment status: ${escapeHTML(order.payment_status || "Unpaid")}</p>${order.payment_reference ? `<p><strong>Reference:</strong> ${escapeHTML(order.payment_reference)}</p>${order.payment_status !== 'Paid' ? `<button class="primary-btn" onclick="markGCashPaid('${escapeHTML(order.id)}')">Mark GCash as Paid</button>` : `<div class="shipping-confirmed">✅ Payment verified</div>`}` : `<p class="payment-note">Waiting for the customer's GCash payment reference.</p>`}</div>`
+        ? `<div class="admin-shipping-box"><strong>GCash</strong><p class="payment-note">Final amount: ₱${Number(order.total).toFixed(2)} · Payment status: ${escapeHTML(order.payment_status || "Unpaid")}</p>${order.payment_reference ? `<p><strong>Reference:</strong> ${escapeHTML(order.payment_reference)}</p>` : ''}${order.payment_screenshot ? `<a href="${escapeHTML(order.payment_screenshot)}" target="_blank" rel="noopener"><img src="${escapeHTML(order.payment_screenshot)}" alt="GCash payment screenshot" style="width:260px;max-width:100%;border-radius:12px;margin:12px 0;display:block"></a>` : ''}${order.payment_reference||order.payment_screenshot ? (order.payment_status !== 'Paid' ? `<button class="primary-btn" onclick="markGCashPaid('${escapeHTML(order.id)}')">Mark GCash as Paid</button>` : `<div class="shipping-confirmed">✅ Payment verified</div>`) : `<p class="payment-note">Waiting for the customer's reference number or payment screenshot.</p>`}</div>`
         : `<p class="payment-note">Payment method: ${escapeHTML(order.payment)} · ${escapeHTML(order.payment_status || "Waiting for shipping fee")}</p>`;
 
     details.innerHTML = `
@@ -4172,5 +4182,5 @@ if (new URLSearchParams(location.search).get("reset")) {
 }
 </script>
 
-<!-- Deployment refresh: GCash Settings menu -->\n</body>
+</body>
 </html>
