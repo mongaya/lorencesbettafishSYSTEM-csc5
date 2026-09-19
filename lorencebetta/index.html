@@ -633,6 +633,11 @@ textarea{
     color:var(--gray);
 }
 
+.category-manager{display:grid;grid-template-columns:minmax(220px,1fr) auto;gap:10px;align-items:end}
+.category-list{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.category-chip{display:flex;align-items:center;gap:8px;background:#e8faff;color:#075a78;border:1px solid #bde8f5;border-radius:999px;padding:8px 10px 8px 14px}
+.category-chip button{background:white;color:#087ea4;border-radius:999px;padding:5px 8px;font-size:12px}
+
 /* =========================================================
    PRODUCTS
 ========================================================= */
@@ -1998,6 +2003,16 @@ th{
 
                 </div>
 
+                <div class="card">
+                    <h3>🏷️ Fish Categories</h3>
+                    <p class="muted">Create and manage categories used when adding products.</p>
+                    <div class="category-manager">
+                        <div class="form-group" style="margin:0"><label>New Category</label><input id="newCategoryName" maxlength="80" placeholder="Example: Halfmoon"></div>
+                        <button class="primary-btn" onclick="addFishCategory()">+ Add Category</button>
+                    </div>
+                    <div id="adminCategoryList" class="category-list"></div>
+                </div>
+
                 <div class="table-wrap">
 
                     <table>
@@ -2006,6 +2021,7 @@ th{
 
                             <tr>
                                 <th>Product</th>
+                                <th>Category</th>
                                 <th>Price</th>
                                 <th>Stock</th>
                                 <th>Status</th>
@@ -2142,6 +2158,11 @@ th{
             >
         </div>
         <div class="form-group">
+            <label>Fish Category</label>
+            <select id="productCategory" required></select>
+            <small style="color:#71818a">Manage this list from Admin → Products.</small>
+        </div>
+        <div class="form-group">
             <label>Price</label>
 
             <input
@@ -2271,6 +2292,7 @@ const API = "api/";
 let products = [];
 let users = [];
 let orders = [];
+let fishCategories = [];
 let selectedFishCategory = "all";
 let currentUser = JSON.parse(
     localStorage.getItem("lorence_currentUser") || "null"
@@ -2313,6 +2335,11 @@ async function loadProducts() {
     products = data.products || [];
 }
 
+async function loadCategories() {
+    const data = await apiRequest("categories.php");
+    fishCategories = data.categories || [];
+}
+
 async function loadUsers() {
     const data = await apiRequest("customers.php");
     users = data.customers || [];
@@ -2326,6 +2353,7 @@ async function loadOrders() {
 async function loadAllData() {
     await Promise.all([
         loadProducts(),
+        loadCategories(),
         loadUsers(),
         loadOrders()
     ]);
@@ -2466,6 +2494,7 @@ async function openAdmin() {
     renderAdminDashboard();
     renderAdminOrders();
     renderAdminProducts();
+    renderAdminCategoryManager();
     renderCustomers();
     renderStock();
     renderNotifications("admin");
@@ -3422,7 +3451,10 @@ function showAdminPage(page, button) {
 
     if (page === "dashboard") renderAdminDashboard();
     if (page === "orders") renderAdminOrders();
-    if (page === "products") renderAdminProducts();
+    if (page === "products") {
+        renderAdminProducts();
+        renderAdminCategoryManager();
+    }
     if (page === "customers") renderCustomers();
     if (page === "stock") renderStock();
     if (page === "chat") loadAdminChats();
@@ -3686,6 +3718,8 @@ function renderAdminProducts() {
                 </div>
             </td>
 
+            <td>${escapeHTML(product.category || "Uncategorized")}</td>
+
             <td>₱${Number(product.price).toFixed(2)}</td>
 
             <td>${Number(product.stock)}</td>
@@ -3723,11 +3757,59 @@ function renderAdminProducts() {
     `).join("");
 }
 
+function populateProductCategorySelect(selected = "") {
+    const select = document.getElementById("productCategory");
+    if (!select) return;
+    select.innerHTML = fishCategories.length
+        ? `<option value="">Select a category</option>` + fishCategories.map(category => `<option value="${escapeHTML(category.name)}" ${category.name === selected ? "selected" : ""}>${escapeHTML(category.name)}</option>`).join("")
+        : `<option value="">Create a category first</option>`;
+}
+
+function renderAdminCategoryManager() {
+    const container = document.getElementById("adminCategoryList");
+    if (!container) return;
+    container.innerHTML = fishCategories.length ? fishCategories.map(category => `
+        <div class="category-chip"><strong>${escapeHTML(category.name)}</strong>
+        <button onclick="renameFishCategory(${Number(category.id)})">Rename</button>
+        <button onclick="deleteFishCategory(${Number(category.id)})">Delete</button></div>
+    `).join("") : `<p class="muted">No categories yet. Add your first category above.</p>`;
+}
+
+async function categoryAction(payload) {
+    await apiRequest("categories.php", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)});
+    await Promise.all([loadCategories(), loadProducts()]);
+    renderAdminCategoryManager(); renderAdminProducts(); renderProducts();
+}
+
+async function addFishCategory() {
+    const input = document.getElementById("newCategoryName");
+    const name = input?.value.trim();
+    if (!name) return showToast("Enter a category name.");
+    try { await categoryAction({action:"add",name}); input.value=""; showToast("Category added."); }
+    catch (err) { showToast(err.message); }
+}
+
+async function renameFishCategory(id) {
+    const currentName = fishCategories.find(category => Number(category.id) === Number(id))?.name || "";
+    const name = prompt("Rename category:", currentName)?.trim();
+    if (!name || name === currentName) return;
+    try { await categoryAction({action:"rename",id,name}); showToast("Category renamed."); }
+    catch (err) { showToast(err.message); }
+}
+
+async function deleteFishCategory(id) {
+    const name = fishCategories.find(category => Number(category.id) === Number(id))?.name || "this category";
+    if (!confirm(`Delete the category "${name}"? It cannot be deleted while products use it.`)) return;
+    try { await categoryAction({action:"delete",id}); showToast("Category deleted."); }
+    catch (err) { showToast(err.message); }
+}
+
 function openProductModal(product = null) {
     document.getElementById("productModal")
         .classList.remove("hidden");
 
     document.getElementById("productImage").value = "";
+    populateProductCategorySelect(product?.category || "");
 
     if (product) {
         document.getElementById("productModalTitle").textContent =
@@ -3779,6 +3861,7 @@ function openProductModal(product = null) {
         document.getElementById("productPrice").value = "";
         document.getElementById("productStock").value = "";
         document.getElementById("productDescription").value = "";
+        document.getElementById("productCategory").value = "";
         document.getElementById("productImagePreview").innerHTML = "";
     }
 }
@@ -3794,7 +3877,7 @@ async function saveProduct() {
     const name = document.getElementById("productName")
         .value.trim();
 
-    const category = "";
+    const category = document.getElementById("productCategory").value;
 
     const price = Number(
         document.getElementById("productPrice").value
@@ -3810,7 +3893,7 @@ async function saveProduct() {
     const imageInput = document.getElementById("productImage");
     const imageFile = imageInput.files[0];
 
-    if (!name || price < 0 || stock < 0) {
+    if (!name || !category || price < 0 || stock < 0) {
         showToast("Please enter valid product information.");
         return;
     }
