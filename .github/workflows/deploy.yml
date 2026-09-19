@@ -31,6 +31,7 @@ jobs:
             **/.git*
             **/.git*/**
             **/node_modules/**
+            api/db.php
             README.txt
             database.sql
             database_v2.sql
