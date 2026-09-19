@@ -1845,6 +1845,10 @@ th{
                 <span>🐠</span> Products
             </button>
 
+            <button class="nav-btn" onclick="showAdminPage('payments',this)">
+                <span>📱</span> GCash Settings
+            </button>
+
             <button
                 class="nav-btn"
                 onclick="showAdminPage('customers',this)"
@@ -2038,6 +2042,18 @@ th{
 
             </section>
 
+
+            <!-- ADMIN GCASH SETTINGS -->
+            <section id="admin-payments" class="page">
+                <div class="page-title"><h2>📱 GCash Payment Settings</h2><p>Set the GCash account customers will use for payments.</p></div>
+                <div class="card">
+                    <div class="form-group"><label>GCash Account Name</label><input id="gcashMerchantName" placeholder="Account holder or business name"></div>
+                    <div class="form-group"><label>GCash Number</label><input id="gcashNumber" inputmode="numeric" maxlength="11" placeholder="09XXXXXXXXX"></div>
+                    <div class="form-group"><label>GCash QR Code</label><input id="gcashQrFile" type="file" accept="image/jpeg,image/png,image/webp"><small>JPG, PNG or WEBP • Maximum 5MB</small></div>
+                    <div id="gcashAdminPreview"></div>
+                    <button class="primary-btn" onclick="saveGCashSettings()">Save GCash Settings</button>
+                </div>
+            </section>
 
             <!-- ADMIN CUSTOMERS -->
 
@@ -2293,6 +2309,7 @@ let products = [];
 let users = [];
 let orders = [];
 let fishCategories = [];
+let gcashSettings = {merchant_name:"", gcash_number:"", qr_image:""};
 let selectedFishCategory = "all";
 let currentUser = JSON.parse(
     localStorage.getItem("lorence_currentUser") || "null"
@@ -2340,6 +2357,11 @@ async function loadCategories() {
     fishCategories = data.categories || [];
 }
 
+async function loadPaymentSettings() {
+    const data = await apiRequest("payment_settings.php");
+    gcashSettings = data.settings || gcashSettings;
+}
+
 async function loadUsers() {
     const data = await apiRequest("customers.php");
     users = data.customers || [];
@@ -2354,6 +2376,7 @@ async function loadAllData() {
     await Promise.all([
         loadProducts(),
         loadCategories(),
+        loadPaymentSettings(),
         loadUsers(),
         loadOrders()
     ]);
@@ -2495,6 +2518,7 @@ async function openAdmin() {
     renderAdminOrders();
     renderAdminProducts();
     renderAdminCategoryManager();
+    renderGCashSettings();
     renderCustomers();
     renderStock();
     renderNotifications("admin");
@@ -3355,7 +3379,7 @@ function orderHTML(order) {
     });
     const items=(order.items||[]).map(item=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">${item.image?`<img src="${escapeHTML(item.image)}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:8px">`:''}<span>${escapeHTML(item.name)} ×${item.quantity}</span></div>`).join('');
     const paymentAction=order.payment==='GCash' && order.shipping_confirmed && order.payment_status!=='Paid'
-      ? `<div class="admin-shipping-box"><strong>GCash payment</strong><p class="payment-note">Final amount: ₱${Number(order.total).toFixed(2)}. Scan the shop's GCash QR code to pay directly.</p><div class="gcash-box"><img src="images/gcash_qr.png" class="gcash-qr" alt="Lorence Betta Fish GCash QR"><strong>Scan with your GCash app</strong><div class="payment-note">After successful payment, enter your GCash reference number below.</div><div class="chat-compose" style="padding:10px 0 0;border:0"><input id="payref-${escapeHTML(order.id)}" placeholder="GCash reference number" value="${escapeHTML(order.payment_reference||'')}"><button class="primary-btn" onclick="submitGCashPayment('${escapeHTML(order.id)}')">Submit Reference</button></div></div></div>`
+      ? `<div class="admin-shipping-box"><strong>GCash payment</strong><p class="payment-note">Exact amount: <strong>₱${Number(order.total).toFixed(2)}</strong></p><div class="gcash-box">${gcashSettings.qr_image?`<img src="${escapeHTML(gcashSettings.qr_image)}" class="gcash-qr" alt="Shop GCash QR">`:''}<strong>${escapeHTML(gcashSettings.merchant_name||'GCash Account')}</strong><div>${escapeHTML(gcashSettings.gcash_number||'Ask the admin for the GCash number')}</div><button class="primary-btn" style="margin:12px 0" onclick="openGCashApp()">📱 Open GCash</button><div class="payment-note">Pay the exact amount, then enter the GCash reference number below.</div><div class="chat-compose" style="padding:10px 0 0;border:0"><input id="payref-${escapeHTML(order.id)}" placeholder="GCash reference number" value="${escapeHTML(order.payment_reference||'')}"><button class="primary-btn" onclick="submitGCashPayment('${escapeHTML(order.id)}')">Submit Reference</button></div></div></div>`
       : '';
     return `<div class="order-card">
       <div class="order-head"><div><div class="order-id">${escapeHTML(order.id)}</div><small>${escapeHTML(order.date)}</small></div><span class="status ${escapeHTML(order.status)}">${escapeHTML(order.status)}</span></div>
@@ -3383,6 +3407,29 @@ async function submitGCashPayment(orderId){
     const input=document.getElementById('payref-'+orderId);const reference=input?.value.trim();
     if(!reference){showToast('Enter your GCash reference number.');return;}
     try{await apiRequest('submit_payment.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:currentUser.username,orderId,reference})});await loadOrders();renderCustomerOrders();showToast('GCash payment submitted for admin verification.');}
+    catch(err){showToast(err.message);}
+}
+
+function openGCashApp(){
+    window.open("https://go.gcash.com/GCashAndroid", "_blank", "noopener");
+}
+
+function renderGCashSettings(){
+    const name=document.getElementById("gcashMerchantName");
+    if(!name) return;
+    name.value=gcashSettings.merchant_name||"";
+    document.getElementById("gcashNumber").value=gcashSettings.gcash_number||"";
+    document.getElementById("gcashAdminPreview").innerHTML=gcashSettings.qr_image
+      ? `<div class="gcash-box"><img class="gcash-qr" src="${escapeHTML(gcashSettings.qr_image)}" alt="Current GCash QR"><small>Current QR code</small></div>` : `<p class="muted">No QR code uploaded yet.</p>`;
+}
+
+async function saveGCashSettings(){
+    const merchantName=document.getElementById("gcashMerchantName").value.trim();
+    const gcashNumber=document.getElementById("gcashNumber").value.trim();
+    const qrFile=document.getElementById("gcashQrFile").files[0];
+    if(!merchantName || !/^09\d{9}$/.test(gcashNumber)){showToast("Enter a valid account name and 11-digit GCash number.");return;}
+    const form=new FormData(); form.append("merchant_name",merchantName); form.append("gcash_number",gcashNumber); if(qrFile) form.append("qr_image",qrFile);
+    try{const data=await apiRequest("payment_settings.php",{method:"POST",body:form});gcashSettings=data.settings;renderGCashSettings();showToast("GCash settings saved.");}
     catch(err){showToast(err.message);}
 }
 
@@ -3455,6 +3502,7 @@ function showAdminPage(page, button) {
         renderAdminProducts();
         renderAdminCategoryManager();
     }
+    if (page === "payments") renderGCashSettings();
     if (page === "customers") renderCustomers();
     if (page === "stock") renderStock();
     if (page === "chat") loadAdminChats();
