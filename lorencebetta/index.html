@@ -1575,6 +1575,8 @@ th{
                     <input id="searchInput" class="search-box" placeholder="🔎 Search Betta fish..." oninput="renderProducts()">
                 </div>
 
+                <div id="fishCategories" class="categories" aria-label="Betta fish categories"></div>
+
                 <div id="productGrid" class="products-grid"></div>
 
             </section>
@@ -1724,6 +1726,16 @@ th{
                     <div class="form-group">
                         <label>Email</label>
                         <input id="profileEmail">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input id="profilePhone" placeholder="09XXXXXXXXX">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Address</label>
+                        <textarea id="profileAddress" rows="3" placeholder="Complete delivery address"></textarea>
                     </div>
 
                     <button class="primary-btn" onclick="saveProfile()">
@@ -2259,6 +2271,7 @@ const API = "api/";
 let products = [];
 let users = [];
 let orders = [];
+let selectedFishCategory = "all";
 let currentUser = JSON.parse(
     localStorage.getItem("lorence_currentUser") || "null"
 );
@@ -2757,6 +2770,60 @@ function renderHomeProducts() {
     renderProducts();
 }
 
+function fishCategoryIcon(category) {
+    const name = String(category || "").toLowerCase();
+    if (name.includes("halfmoon")) return "🌙";
+    if (name.includes("plakat")) return "⚡";
+    if (name.includes("koi")) return "🎨";
+    if (name.includes("crowntail")) return "👑";
+    if (name.includes("galaxy")) return "✨";
+    if (name.includes("samurai")) return "🗡️";
+    return "🐠";
+}
+
+function renderFishCategories() {
+    const container = document.getElementById("fishCategories");
+    if (!container) return;
+
+    const availableProducts = products.filter(product =>
+        String(product.status || "available").toLowerCase() === "available"
+    );
+    const categories = [...new Set(
+        availableProducts
+            .map(product => String(product.category || "").trim())
+            .filter(Boolean)
+    )].sort((a, b) => a.localeCompare(b));
+
+    const categoryCards = [
+        { name: "all", label: "All Fish", icon: "🐟", count: availableProducts.length },
+        ...categories.map(category => ({
+            name: category,
+            label: category,
+            icon: fishCategoryIcon(category),
+            count: availableProducts.filter(product => product.category === category).length
+        }))
+    ];
+
+    container.innerHTML = categoryCards.map(category => `
+        <button
+            type="button"
+            class="category ${selectedFishCategory === category.name ? "selected" : ""}"
+            data-category="${escapeHTML(category.name)}"
+            onclick="selectFishCategory(this.dataset.category)"
+        >
+            <div class="icon">${category.icon}</div>
+            <strong>${escapeHTML(category.label)}</strong><br>
+            <small>${category.count} fish</small>
+        </button>
+    `).join("");
+}
+
+function selectFishCategory(category) {
+    selectedFishCategory = category || "all";
+    renderFishCategories();
+    renderProducts();
+}
+
 
 function productHTML(product) {
     return `
@@ -2801,19 +2868,24 @@ function renderProducts() {
     const container = document.getElementById("productGrid");
     if (!container) return;
 
+    renderFishCategories();
+
     const search = (
         document.getElementById("searchInput")?.value || ""
-    ).toLowerCase();
+    ).trim().toLowerCase();
 
-    const filtered = products.filter(product =>
-        String(product.name).toLowerCase().includes(search)
-    );
+    const filtered = products.filter(product => {
+        const isAvailable = String(product.status || "available").toLowerCase() === "available";
+        const matchesSearch = String(product.name).toLowerCase().includes(search);
+        const matchesCategory = selectedFishCategory === "all" || product.category === selectedFishCategory;
+        return isAvailable && matchesSearch && matchesCategory;
+    });
 
     if (filtered.length === 0) {
         container.innerHTML = `
             <div class="card">
                 <h3>No fish found</h3>
-                <p>Try another search term.</p>
+                <p>Try another search term or category.</p>
             </div>
         `;
         return;
