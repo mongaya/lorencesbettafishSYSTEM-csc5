@@ -36,6 +36,3 @@ jobs:
             database.sql
             database_v2.sql
             upgrade.sql
-
-      - name: Run one-time database repair
-        run: curl --fail --silent --show-error --max-time 45 "https://lorencesbettafish.kesug.com/api/__repair_db_once.php?token=repair-9f7c1e6b-20260919"
