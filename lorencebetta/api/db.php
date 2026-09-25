@@ -2,26 +2,31 @@
 
 header("Content-Type: application/json; charset=UTF-8");
 
-$host = "localhost";
-$username = "root";
-$password = "";
-$database = "lorence_betta_fish";
+// Production credentials can be supplied by the hosting environment.
+// Local defaults keep development working without committing hosting secrets.
+$host = getenv("DB_HOST") ?: "localhost";
+$username = getenv("DB_USER") ?: "root";
+$password = getenv("DB_PASS") ?: "";
+$database = getenv("DB_NAME") ?: "lorence_betta_fish";
+$port = (int) (getenv("DB_PORT") ?: 3306);
 
 $conn = new mysqli(
     $host,
     $username,
     $password,
-    $database
+    $database,
+    $port
 );
 
 if ($conn->connect_error) {
 
     http_response_code(500);
 
+    error_log("Database connection failed: " . $conn->connect_error);
+
     echo json_encode([
         "success" => false,
-        "message" => "Database connection failed: " .
-                     $conn->connect_error
+        "message" => "Database service is temporarily unavailable."
     ]);
 
     exit;
