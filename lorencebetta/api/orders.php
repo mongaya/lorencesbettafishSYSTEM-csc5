@@ -18,6 +18,16 @@ if ($column->num_rows === 0) {
     }
 }
 
+$courierColumn = $conn->query("SHOW COLUMNS FROM orders LIKE 'courier'");
+if ($courierColumn && $courierColumn->num_rows === 0) {
+    if (!$conn->query("ALTER TABLE orders ADD COLUMN courier VARCHAR(30) NULL AFTER address")) respond(false, "Unable to add courier field.", [], 500);
+}
+$trackingColumn = $conn->query("SHOW COLUMNS FROM orders LIKE 'tracking_url'");
+if ($trackingColumn && $trackingColumn->num_rows === 0) {
+    if (!$conn->query("ALTER TABLE orders ADD COLUMN tracking_url VARCHAR(500) NULL AFTER courier")) respond(false, "Unable to add tracking field.", [], 500);
+}
+$conn->query("ALTER TABLE orders MODIFY COLUMN status ENUM('Pending Shipping Fee','Awaiting Payment','Pending','Confirmed','Preparing','Ready for Pickup','Shipped','Delivered','Picked Up','Cancelled') NOT NULL DEFAULT 'Pending Shipping Fee'");
+
 $sql = "
     SELECT
         o.id,
@@ -26,6 +36,8 @@ $sql = "
         o.customer_name,
         o.phone,
         o.address,
+        o.courier,
+        o.tracking_url,
         o.subtotal,
         o.shipping,
         o.total,
@@ -97,6 +109,8 @@ while ($row = $orderResult->fetch_assoc()) {
         "customerName" => $row["customer_name"],
         "phone" => $row["phone"],
         "address" => $row["address"],
+        "courier" => $row["courier"],
+        "tracking_url" => $row["tracking_url"],
         "items" => $items,
         "subtotal" => (float)$row["subtotal"],
         "shipping" => (float)$row["shipping"],
