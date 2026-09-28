@@ -1643,6 +1643,14 @@ th{
                         </div>
 
                         <div class="card">
+                            <h3>🚚 Delivery Method / Courier</h3>
+                            <label class="payment-option"><input type="radio" name="courier" value="Lalamove" checked> 🛵 Lalamove</label>
+                            <label class="payment-option"><input type="radio" name="courier" value="J&T Express"> 📦 J&amp;T Express</label>
+                            <label class="payment-option"><input type="radio" name="courier" value="Pick Up"> 🏪 Pick Up</label>
+                            <div class="payment-note">Lalamove is booked by the admin and a tracking link will appear in My Orders when available. J&amp;T shipping is handled by the admin. For Pick Up, wait until your order is marked Ready for Pickup.</div>
+                        </div>
+
+                        <div class="card">
 
                             <h3>💰 Payment Method</h3>
 
@@ -2569,6 +2577,22 @@ async function confirmShipping(orderId) {
     } catch(err) { showToast(err.message); }
 }
 
+async function saveTrackingLink(orderId) {
+    const trackingUrl = document.getElementById("trackingUrlInput")?.value.trim() || "";
+    try {
+        await apiRequest("update_delivery.php", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({orderId, trackingUrl})
+        });
+        await loadOrders();
+        renderAdminOrders();
+        renderCustomerOrders();
+        viewOrder(orderId);
+        showToast("Lalamove tracking link saved.");
+    } catch(err) { showToast(err.message); }
+}
+
 /* =========================================================
    FORGOT / RESET PASSWORD
 ========================================================= */
@@ -3298,6 +3322,9 @@ async function placeOrder() {
     const payment = document.querySelector(
         'input[name="payment"]:checked'
     ).value;
+    const courier = document.querySelector(
+        'input[name="courier"]:checked'
+    )?.value || "Lalamove";
 
     const items = cart.map(item => ({
         productId: item.productId,
@@ -3314,6 +3341,7 @@ async function placeOrder() {
                 phone,
                 address,
                 payment,
+                courier,
                 items
             })
         });
@@ -3390,6 +3418,10 @@ function orderHTML(order) {
     return `<div class="order-card">
       <div class="order-head"><div><div class="order-id">${escapeHTML(order.id)}</div><small>${escapeHTML(order.date)}</small></div><span class="status ${escapeHTML(order.status)}">${escapeHTML(order.status)}</span></div>
       <div style="margin-bottom:15px">${items}</div>
+      <div class="admin-shipping-box"><strong>🚚 Delivery Method:</strong> ${escapeHTML(order.courier || "Not specified")}
+      ${order.courier==="Lalamove" && order.tracking_url ? `<br><a class="primary-btn" style="display:inline-block;margin-top:10px;text-decoration:none" href="${escapeHTML(order.tracking_url)}" target="_blank" rel="noopener">📍 Track Lalamove Delivery</a>` : ""}
+      ${order.courier==="Pick Up" ? `<p class="payment-note">Pickup status: <strong>${escapeHTML(order.status)}</strong></p>` : ""}
+      <button class="action-btn view-btn" style="margin-top:10px" onclick="showCustomerPage('chat');loadCustomerChat()">💬 Chat with Admin</button></div>
       ${order.shipping_confirmed?`<div class="shipping-confirmed">🚚 Shipping: <strong>₱${Number(order.shipping).toFixed(2)}</strong> · Final total: <strong>₱${Number(order.total).toFixed(2)}</strong></div>`:`<div class="shipping-pending">⏳ Waiting for admin to confirm the shipping fee. Your final total will appear after confirmation.</div>`}
       <div class="progress">${progress}</div>
       <div class="summary-row"><span>Payment: ${escapeHTML(order.payment)}</span><strong>${order.shipping_confirmed?'₱'+Number(order.total).toFixed(2):'Pending final total'}</strong></div>
@@ -3659,7 +3691,7 @@ function renderAdminOrders() {
             <td>${escapeHTML(order.payment_status || "Waiting for shipping fee")}</td>
             <td>
                 <select onchange="updateOrderStatus('${escapeHTML(order.id)}',this.value)">
-                    ${["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Shipped","Delivered","Cancelled"].map(st => `<option ${st === order.status ? "selected" : ""}>${st}</option>`).join("")}
+                    ${["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Shipped","Delivered","Picked Up","Cancelled"].map(st => `<option ${st === order.status ? "selected" : ""}>${st}</option>`).join("")}
                 </select>
             </td>
             <td>
@@ -3729,6 +3761,15 @@ function viewOrder(orderId) {
         <p><strong>Customer:</strong> ${escapeHTML(order.customerName)}</p>
         <p><strong>Phone:</strong> ${escapeHTML(order.phone)}</p>
         <p><strong>Address:</strong> ${escapeHTML(order.address)}</p>
+        <p><strong>Delivery Method:</strong> ${escapeHTML(order.courier || "Not specified")}</p>
+        ${order.courier === "Lalamove" ? `
+        <div class="admin-shipping-box">
+          <h4>Lalamove Tracking</h4>
+          <p class="payment-note">After booking Lalamove, paste the tracking link here so the customer can monitor the delivery.</p>
+          <div class="form-group"><label>Tracking Link</label><input id="trackingUrlInput" type="url" placeholder="https://..." value="${escapeHTML(order.tracking_url || "")}"></div>
+          <button class="primary-btn" onclick="saveTrackingLink('${escapeHTML(order.id)}')">Save Tracking Link</button>
+        </div>` : ""}
+        ${order.courier === "Pick Up" ? `<div class="shipping-confirmed">🏪 Pick Up order — set status to <strong>Ready for Pickup</strong> when the order can be collected, then <strong>Picked Up</strong> after collection.</div>` : ""}
         <p><strong>Status:</strong> <span class="status ${escapeHTML(order.status)}">${escapeHTML(order.status)}</span></p>
         ${shippingBlock}
         ${paymentBlock}
