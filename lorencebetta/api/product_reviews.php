@@ -59,7 +59,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $eligible = $conn->prepare("SELECT o.id
         FROM orders o
         INNER JOIN order_items oi ON oi.order_id=o.id
-        WHERE o.user_id=? AND oi.product_id=? AND o.status IN ('Delivered','Picked Up')
+        WHERE o.user_id=? AND oi.product_id=? AND o.status IN ('Order Received','Picked Up')
         LIMIT 1");
     $eligible->bind_param("ii", $userId, $productId);
     $eligible->execute();
