@@ -37,3 +37,4 @@ jobs:
             database_v2.sql
             upgrade.sql
             images/products/**
+            images/reviews/**
