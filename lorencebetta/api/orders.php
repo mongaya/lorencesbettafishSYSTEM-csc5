@@ -26,7 +26,7 @@ $trackingColumn = $conn->query("SHOW COLUMNS FROM orders LIKE 'tracking_url'");
 if ($trackingColumn && $trackingColumn->num_rows === 0) {
     if (!$conn->query("ALTER TABLE orders ADD COLUMN tracking_url VARCHAR(500) NULL AFTER courier")) respond(false, "Unable to add tracking field.", [], 500);
 }
-$conn->query("ALTER TABLE orders MODIFY COLUMN status ENUM('Pending Shipping Fee','Awaiting Payment','Pending','Confirmed','Preparing','Ready for Pickup','Shipped','Delivered','Order Received','Picked Up','Cancelled') NOT NULL DEFAULT 'Pending Shipping Fee'");
+$conn->query("ALTER TABLE orders MODIFY COLUMN status ENUM('Pending Shipping Fee','Awaiting Payment','Pending','Confirmed','Preparing','Ready for Pickup','Ready for Delivery','Lalamove Booked','Ready to Ship','Shipped','Out for Delivery','Delivered','Order Received','Picked Up','Cancelled') NOT NULL DEFAULT 'Pending Shipping Fee'");
 
 $sql = "
     SELECT
