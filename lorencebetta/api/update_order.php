@@ -1,30 +1,17 @@
 <?php
-require_once "db.php";
-$data=json_input();
-$orderId=trim($data["orderId"]??"");
-$status=trim($data["status"]??"");
-$sequenceDelivery=["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Shipped","Delivered"];
-$sequencePickup=["Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Picked Up"];
-$allowed=array_merge($sequenceDelivery,$sequencePickup,["Cancelled"]);
-if($orderId===""||!in_array($status,$allowed,true)) respond(false,"Invalid order status.",[],400);
-
-$q=$conn->prepare("SELECT status,courier,payment_status FROM orders WHERE order_code=? LIMIT 1");
-$q->bind_param("s",$orderId);$q->execute();$order=stmt_fetch_assoc_compat($q);
-if(!$order) respond(false,"Order not found.",[],404);
-
-$current=$order["status"];
-if($current===$status) respond(true,"Order status is already up to date.");
-if(in_array($current,["Delivered","Picked Up","Cancelled"],true)) respond(false,"Completed or cancelled orders can no longer be changed.",[],409);
-if($status==="Cancelled"){
-  respond(false,"Cancellation is not available from this status control.",[],409);
-}
-$seq=$order["courier"]==="Pick Up"?$sequencePickup:$sequenceDelivery;
-$from=array_search($current,$seq,true);$to=array_search($status,$seq,true);
-if($from===false||$to===false||$to!==$from+1) respond(false,"Order status must move forward one step at a time.",[],409);
-if(in_array($status,["Confirmed","Preparing","Ready for Pickup","Shipped","Delivered","Picked Up"],true) && $order["payment_status"]!=="Paid"){
-  respond(false,"Payment must be verified as Paid before this order can move forward.",[],409);
-}
-$stmt=$conn->prepare("UPDATE orders SET status=?,updated_at=NOW() WHERE order_code=?");
-$stmt->bind_param("ss",$status,$orderId);$stmt->execute();
-respond(true,"Order status updated.");
+require_once "db.php";$data=json_input();$orderId=trim($data["orderId"]??"");$status=trim($data["status"]??"");
+if($orderId===""||$status==="")respond(false,"Order and next status are required.",[],400);
+$q=$conn->prepare("SELECT status,courier,payment_status,tracking_url FROM orders WHERE order_code=? LIMIT 1");$q->bind_param("s",$orderId);$q->execute();$o=stmt_fetch_assoc_compat($q);if(!$o)respond(false,"Order not found.",[],404);
+$flows=[
+"Pick Up"=>["Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Picked Up"],
+"Lalamove"=>["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready for Delivery","Lalamove Booked","Out for Delivery","Delivered","Order Received"],
+"J&T Express"=>["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received"]
+];
+$flow=$flows[$o["courier"]]??null;if(!$flow)respond(false,"Unsupported courier.",[],400);
+$current=array_search($o["status"],$flow,true);$next=array_search($status,$flow,true);
+if($current===false||$next===false||$next!==$current+1)respond(false,"Status must follow the order process one step at a time.",[],409);
+if($o["status"]==="Awaiting Payment")respond(false,"Use Verify Payment after the customer submits payment.",[],409);
+if($o["payment_status"]!=="Paid"&&$next>=array_search("Confirmed",$flow,true))respond(false,"Payment must be verified before fulfillment can continue.",[],409);
+if($o["courier"]==="Lalamove"&&$status==="Lalamove Booked"&&trim((string)$o["tracking_url"])==="")respond(false,"Add the Lalamove tracking link before marking the booking complete.",[],409);
+$stmt=$conn->prepare("UPDATE orders SET status=?,updated_at=NOW() WHERE order_code=?");$stmt->bind_param("ss",$status,$orderId);$stmt->execute();respond(true,"Order moved to ".$status.".");
 ?>
