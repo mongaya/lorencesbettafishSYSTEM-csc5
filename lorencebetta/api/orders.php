@@ -1,6 +1,9 @@
 <?php
 
 require_once __DIR__ . "/db.php";
+require_once __DIR__ . "/stock_reservations.php";
+ensure_order_flow_columns($conn);
+release_expired_reservations($conn);
 
 $column = $conn->query("SHOW COLUMNS FROM orders LIKE 'payment_screenshot'");
 
@@ -45,6 +48,9 @@ $sql = "
         o.payment_status,
         o.payment_reference,
         o.payment_screenshot,
+        o.payment_rejection_reason,
+        o.reservation_expires_at,
+        o.stock_deducted,
         o.shipping_confirmed_at,
         o.status,
         DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i:%s') AS order_date
@@ -103,6 +109,9 @@ while ($row = $orderResult->fetch_assoc()) {
         ];
     }
 
+    $hist=$conn->prepare("SELECT status,DATE_FORMAT(changed_at, '%Y-%m-%d %H:%i:%s') changed_at FROM order_status_history WHERE order_id=? ORDER BY id ASC");
+    $hist->bind_param("i",$orderId);$hist->execute();$history=stmt_fetch_all_assoc_compat($hist);$hist->close();
+
     $orders[] = [
         "id" => $row["order_code"],
         "username" => $row["username"],
@@ -119,6 +128,10 @@ while ($row = $orderResult->fetch_assoc()) {
         "payment_status" => $row["payment_status"],
         "payment_reference" => $row["payment_reference"],
         "payment_screenshot" => $row["payment_screenshot"],
+        "payment_rejection_reason" => $row["payment_rejection_reason"],
+        "reservation_expires_at" => $row["reservation_expires_at"],
+        "stock_deducted" => (bool)$row["stock_deducted"],
+        "status_history" => $history,
         "shipping_confirmed" => !empty($row["shipping_confirmed_at"]),
         "status" => $row["status"],
         "date" => $row["order_date"]
