@@ -6,6 +6,7 @@ function ensure_couriers($conn){
  if((int)$r["c"]===0)$conn->query("INSERT IGNORE INTO couriers(name,requires_shipping_fee,courier_type,tracking_enabled,status) VALUES('Lalamove',1,'delivery',1,'active'),('J&T Express',1,'delivery',0,'active'),('Pick Up',0,'pickup',0,'active')");
 }
 ensure_couriers($conn);
+if(basename($_SERVER["SCRIPT_FILENAME"]??"")!==basename(__FILE__)) return;
 if($_SERVER["REQUEST_METHOD"]==="GET"){$r=$conn->query("SELECT id,name,requires_shipping_fee,courier_type,tracking_enabled,status FROM couriers ORDER BY status='active' DESC,name");$rows=[];while($x=$r->fetch_assoc()){$x["id"]=(int)$x["id"];$x["requires_shipping_fee"]=(bool)$x["requires_shipping_fee"];$x["tracking_enabled"]=(bool)$x["tracking_enabled"];$rows[]=$x;}respond(true,"",["couriers"=>$rows]);}
 $d=json_input();$action=trim($d["action"]??"save");
 if($action==="disable"){$id=(int)($d["id"]??0);$s=$conn->prepare("UPDATE couriers SET status='disabled' WHERE id=?");$s->bind_param("i",$id);$s->execute();respond(true,"Courier disabled.");}
