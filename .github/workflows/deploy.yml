@@ -38,3 +38,4 @@ jobs:
             upgrade.sql
             images/products/**
             images/reviews/**
+            images/payments/**
