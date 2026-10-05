@@ -123,7 +123,7 @@ while ($row = $orderResult->fetch_assoc()) {
         "courier" => $row["courier"],
         "tracking_url" => $row["tracking_url"],
         "tracking_number" => $row["tracking_number"],
-        "is_new" => empty($row["admin_seen_at"]),
+        "is_new" => ($row["status"] === "Pending Shipping Fee"),
         "items" => $items,
         "subtotal" => (float)$row["subtotal"],
         "shipping" => (float)$row["shipping"],
