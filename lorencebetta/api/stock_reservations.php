@@ -40,7 +40,7 @@ function reserved_quantity($conn,$productId){
     $s=$conn->prepare("SELECT COALESCE(SUM(oi.quantity),0) q
         FROM order_items oi
         JOIN orders o ON o.id=oi.order_id
-        LEFT JOIN couriers c ON c.name=o.courier
+        LEFT JOIN couriers c ON CONVERT(c.name USING utf8mb4) COLLATE utf8mb4_unicode_ci = CONVERT(o.courier USING utf8mb4) COLLATE utf8mb4_unicode_ci
         WHERE oi.product_id=? AND o.stock_deducted=0 AND o.status<>'Cancelled'
         AND (
             o.payment_status='Payment Submitted'
