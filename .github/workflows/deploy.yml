@@ -31,6 +31,7 @@ jobs:
             **/.git*
             **/.git*/**
             **/node_modules/**
+            index.html
             api/db.php
             api/login.php
             README.txt
