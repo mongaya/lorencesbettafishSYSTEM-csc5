@@ -2431,6 +2431,9 @@ function showAuth(type) {
 
     error.classList.add("hidden");
 
+    document.getElementById("googleLoginButton").parentElement.classList.toggle("hidden", type !== "login");
+    document.getElementById("googleSignupButton").parentElement.classList.toggle("hidden", type === "login");
+    document.getElementById("googleOtpPanel").classList.add("hidden");
     if (type === "login") {
         loginForm.classList.remove("hidden");
         signupForm.classList.add("hidden");
@@ -2518,6 +2521,7 @@ document.getElementById("signupForm").addEventListener("submit", async function(
 /* =========================================================
    GOOGLE SIGN-IN (staged; requires server-side setup)
 ========================================================= */
+document.getElementById("googleSignupButton").parentElement.classList.add("hidden");
 const GOOGLE_WEB_CLIENT_ID = "821976549681-969e5u5de30gu6823tuq8s8jl33dvimn.apps.googleusercontent.com";
 function googleAuthError(message) {
     const el = document.getElementById("authError");
