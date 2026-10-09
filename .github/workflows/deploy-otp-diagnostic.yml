@@ -1,0 +1,28 @@
+name: Deploy OTP Diagnostic (Manual)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout selected branch
+        uses: actions/checkout@v4
+
+      - name: Prepare only the diagnostic file
+        run: |
+          mkdir -p deploy-only
+          cp lorencebetta/api/php_diagnostic_v2.php deploy-only/php_diagnostic_v2.php
+
+      - name: Upload diagnostic to InfinityFree
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          port: 21
+          local-dir: ./deploy-only/
+          server-dir: /htdocs/api/
+          dangerous-clean-slate: false
