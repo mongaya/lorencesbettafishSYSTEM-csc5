@@ -16,3 +16,8 @@ CREATE TABLE IF NOT EXISTS google_login_otps (
 
 -- Account linking needs a separate migration after confirming the live users schema.
 -- Never automatically link an existing admin account using an email match alone.
+
+-- Required by google_auth.php. Run only after backing up users table.
+-- If this column or index already exists, review before applying.
+ALTER TABLE users ADD COLUMN google_sub VARCHAR(255) NULL DEFAULT NULL;
+ALTER TABLE users ADD UNIQUE KEY uq_users_google_sub (google_sub);
