@@ -14,10 +14,6 @@ CREATE TABLE IF NOT EXISTS google_login_otps (
     INDEX idx_expires (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Account linking needs a separate migration after confirming the live users schema.
--- Never automatically link an existing admin account using an email match alone.
-
--- Required by google_auth.php. Run only after backing up users table.
--- If this column or index already exists, review before applying.
+-- Confirmed against the live users structure on 2026-10-09.\n-- Execute ONCE after exporting a database backup.\n-- Never link existing admin or password accounts by email alone.
 ALTER TABLE users ADD COLUMN google_sub VARCHAR(255) NULL DEFAULT NULL;
 ALTER TABLE users ADD UNIQUE KEY uq_users_google_sub (google_sub);
