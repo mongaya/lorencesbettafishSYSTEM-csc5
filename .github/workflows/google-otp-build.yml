@@ -32,7 +32,8 @@ jobs:
       - name: Syntax check Google authentication endpoint
         run: php -l lorencebetta/api/google_auth.php
       - name: Verify autoloader
-        run: php -r "require 'lorencebetta/vendor/autoload.php'; exit(class_exists('PHPMailer\\PHPMailer\\PHPMailer') ? 0 : 1);"
+        run: |
+          php -r 'require "lorencebetta/vendor/autoload.php"; exit(class_exists("PHPMailer\\PHPMailer\\PHPMailer") ? 0 : 1);'
       - name: Upload vendor for review (does not deploy)
         uses: actions/upload-artifact@v4
         with:
