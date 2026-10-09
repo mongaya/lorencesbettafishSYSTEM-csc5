@@ -1317,6 +1317,13 @@ th{
 
 @media(max-width:800px){.admin-chat-layout{grid-template-columns:1fr}.chat-messages{height:350px}.auth-logo{width:250px;height:250px}.logo-image{width:120px;height:120px}.brand-logo{width:38px;height:38px}}
 
+.google-auth-divider{text-align:center;margin:16px 0 10px;color:#657887;font-size:13px}
+.google-auth-button{display:flex;justify-content:center;min-height:42px}
+#googleOtpPanel{margin-top:16px;padding:18px;border:1px solid #d8e6ef;border-radius:12px;background:#f8fcff}
+#googleOtpPanel h3{margin-bottom:8px}
+#googleOtpPanel p{margin:8px 0 12px;font-size:13px}
+#googleOtpPanel input{width:100%;padding:12px;margin:8px 0 14px;border:1px solid #bacdd8;border-radius:8px}
+#googleOtpPanel .text-btn{margin-top:8px}
 </style>
 
 <style>
@@ -1326,6 +1333,7 @@ th{
     font-size:14px;
 }
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
@@ -1414,6 +1422,8 @@ th{
             </button>
 
         </form>
+<div class="google-auth-divider">or continue with</div>
+<div class="google-auth-button" id="googleLoginButton"></div>
 
         <!-- SIGNUP -->
 
@@ -1474,6 +1484,18 @@ th{
             </button>
 
         </form>
+<div class="google-auth-divider">or sign up with</div>
+<div class="google-auth-button" id="googleSignupButton"></div>
+
+        <div id="googleOtpPanel" class="hidden" role="region" aria-label="Google email verification">
+          <h3>Verify your email</h3>
+          <p>Enter the 6-digit code sent to your Google email. It expires in 5 minutes.</p>
+          <label for="googleOtpCode">Verification code</label>
+          <input id="googleOtpCode" type="text" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="one-time-code" placeholder="6-digit code">
+          <button type="button" class="primary-btn full-btn" id="googleOtpVerify">Verify and continue</button>
+          <button type="button" class="text-btn" id="googleOtpCancel">Cancel</button>
+          <p id="googleOtpMessage" role="status" aria-live="polite"></p>
+        </div>
 
         </div>
     </div>
@@ -2491,6 +2513,66 @@ document.getElementById("signupForm").addEventListener("submit", async function(
         error.textContent = err.message;
         error.classList.remove("hidden");
     }
+});
+
+/* =========================================================
+   GOOGLE SIGN-IN (staged; requires server-side setup)
+========================================================= */
+const GOOGLE_WEB_CLIENT_ID = "821976549681-969e5u5de30gu6823tuq8s8jl33dvimn.apps.googleusercontent.com";
+function googleAuthError(message) {
+    const el = document.getElementById("authError");
+    el.textContent = message;
+    el.classList.remove("hidden");
+}
+function initializeGoogleAuth() {
+    if (!window.google?.accounts?.id) return false;
+    google.accounts.id.initialize({
+        client_id: GOOGLE_WEB_CLIENT_ID,
+        callback: async ({credential}) => {
+            try {
+                const response = await apiRequest("google_auth.php", {
+                    method: "POST", headers: {"Content-Type":"application/json"},
+                    body: JSON.stringify({action:"start", credential})
+                });
+                document.getElementById("googleOtpPanel").classList.remove("hidden");
+                document.getElementById("googleOtpMessage").textContent = response.message || "Code sent.";
+                document.getElementById("authError").classList.add("hidden");
+            } catch(err) { googleAuthError(err.message); }
+        }
+    });
+    for (const id of ["googleLoginButton","googleSignupButton"]) {
+        const target = document.getElementById(id);
+        if (target) google.accounts.id.renderButton(target, {theme:"outline",size:"large",width:280,text:"continue_with"});
+    }
+    return true;
+}
+window.addEventListener("load", () => {
+    if (initializeGoogleAuth()) return;
+    // GIS may be blocked or unavailable; ordinary password login stays usable.
+    for (const id of ["googleLoginButton","googleSignupButton"]) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = "Google sign-in temporarily unavailable";
+    }
+});
+document.getElementById("googleOtpVerify").addEventListener("click", async () => {
+    const code = document.getElementById("googleOtpCode").value.trim();
+    const message = document.getElementById("googleOtpMessage");
+    if (!/^[0-9]{6}$/.test(code)) { message.textContent = "Enter the 6-digit code."; return; }
+    try {
+        const data = await apiRequest("google_auth.php", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({action:"verify",code})
+        });
+        currentUser = data.user;
+        localStorage.setItem("lorence_currentUser",JSON.stringify(currentUser));
+        document.getElementById("googleOtpPanel").classList.add("hidden");
+        await loadAllData();
+        openCustomer();
+    } catch(err) { message.textContent = err.message; }
+});
+document.getElementById("googleOtpCancel").addEventListener("click", () => {
+    document.getElementById("googleOtpPanel").classList.add("hidden");
+    document.getElementById("googleOtpCode").value = "";
 });
 
 /* =========================================================
