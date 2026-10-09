@@ -1,0 +1,39 @@
+name: Build Google OTP dependencies (staging only)
+
+on:
+  push:
+    branches:
+      - feature/google-login-otp-prep
+    paths:
+      - "lorencebetta/composer.json"
+      - "lorencebetta/api/google_otp_mailer.php"
+      - ".github/workflows/google-otp-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PHP and Composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+          coverage: none
+      - name: Install PHPMailer
+        working-directory: lorencebetta
+        run: composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+      - name: Syntax check email helper
+        run: php -l lorencebetta/api/google_otp_mailer.php
+      - name: Verify autoloader
+        run: php -r "require 'lorencebetta/vendor/autoload.php'; exit(class_exists('PHPMailer\\PHPMailer\\PHPMailer') ? 0 : 1);"
+      - name: Upload vendor for review (does not deploy)
+        uses: actions/upload-artifact@v4
+        with:
+          name: phpmailer-vendor-staging
+          path: lorencebetta/vendor/
+          retention-days: 7
