@@ -57,8 +57,12 @@ jobs:
           login=(api/"login.php").read_text()
           assert 'session_regenerate_id(true)' in login
           assert '$_SESSION["user_id"]' in login and '$_SESSION["role"]' in login
+          assert "session_write_close()" in login
           auth=(api/"auth.php").read_text()
           assert 'function require_admin_session' in auth
+          assert 'function require_customer_owner' in auth
+          for name in ["place_order.php","submit_payment.php","receive_order.php"]:
+              assert "require_customer_owner($conn,$username)" in (api/name).read_text(), name
           for name in ["mark_payment.php","reject_payment.php","update_order.php","add_product.php","update_product.php","delete_product.php"]:
               assert 'require_admin_session($conn)' in (api/name).read_text(), name
           settings=(api/"payment_settings.php").read_text()
