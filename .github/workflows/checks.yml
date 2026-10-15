@@ -66,6 +66,6 @@ jobs:
           received=(api/"receive_order.php").read_text()
           assert "o.status='Picked Up'" in received
           flow=(api/"update_order.php").read_text()
-          assert '$status==="Shipped"&&!$hasTracking' in flow
+          assert '$status==="Out for Delivery"&&!$hasTracking' in flow
           print("Authentication and fulfillment static checks passed")
           PY
