@@ -48,3 +48,24 @@ jobs:
             }
             echo "Shipping checks passed\n";
           '
+
+      - name: Test authentication and fulfillment invariants
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          api=Path("lorencebetta/api")
+          login=(api/"login.php").read_text()
+          assert 'session_regenerate_id(true)' in login
+          assert '$_SESSION["user_id"]' in login and '$_SESSION["role"]' in login
+          auth=(api/"auth.php").read_text()
+          assert 'function require_admin_session' in auth
+          for name in ["mark_payment.php","reject_payment.php","update_order.php","add_product.php","update_product.php","delete_product.php"]:
+              assert 'require_admin_session($conn)' in (api/name).read_text(), name
+          settings=(api/"payment_settings.php").read_text()
+          assert 'require_admin_session($conn)' in settings
+          received=(api/"receive_order.php").read_text()
+          assert "o.status='Picked Up'" in received
+          flow=(api/"update_order.php").read_text()
+          assert '$status==="Shipped"&&!$hasTracking' in flow
+          print("Authentication and fulfillment static checks passed")
+          PY
