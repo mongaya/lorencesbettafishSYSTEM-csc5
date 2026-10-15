@@ -2062,6 +2062,7 @@ th{
                     <div id="gcashAdminPreview"></div>
                     <button class="primary-btn" onclick="saveGCashSettings()">Save GCash Settings</button>
                 </div>
+                <div id="bankPaymentSettings"></div>
             </section>
 
             <!-- ADMIN CUSTOMERS -->
@@ -2319,6 +2320,7 @@ let users = [];
 let orders = [];
 let fishCategories = [];
 let gcashSettings = {merchant_name:"", gcash_number:"", qr_image:""};
+let paymentMethods = {MariBank:{account_name:"",account_number:"",qr_image:""},AUB:{account_name:"",account_number:"",qr_image:""}};
 let selectedFishCategory = "all";
 let currentUser = JSON.parse(
     localStorage.getItem("lorence_currentUser") || "null"
@@ -2369,6 +2371,7 @@ async function loadCategories() {
 async function loadPaymentSettings() {
     const data = await apiRequest("payment_settings.php");
     gcashSettings = data.settings || gcashSettings;
+    paymentMethods = data.methods || paymentMethods;
 }
 
 async function loadUsers() {
@@ -3468,6 +3471,31 @@ function openGCashApp(){
     window.open("https://go.gcash.com/GCashAndroid", "_blank", "noopener");
 }
 
+function renderBankPaymentSettings(){
+    const container=document.getElementById("bankPaymentSettings");
+    if(!container)return;
+    container.innerHTML=["MariBank","AUB"].map(method=>{
+        const details=paymentMethods[method]||{};
+        return '<div class="card"><h3>'+method+' Payment Settings</h3>'+
+          '<div class="form-group"><label>Account Name</label><input id="bankName'+method+'" value="'+escapeHTML(details.account_name||'')+'" placeholder="Bank account holder"></div>'+
+          '<div class="form-group"><label>Account Number</label><input id="bankNumber'+method+'" value="'+escapeHTML(details.account_number||'')+'" inputmode="numeric" placeholder="Bank account number"></div>'+
+          '<div class="form-group"><label>QR Code (optional)</label><input type="file" id="bankQr'+method+'" accept="image/jpeg,image/png,image/webp"></div>'+
+          (details.qr_image?'<img class="gcash-qr" src="'+escapeHTML(details.qr_image)+'" alt="'+method+' QR">':'<p class="muted">No QR uploaded.</p>')+
+          '<button class="primary-btn" onclick="saveBankPaymentSettings(\''+method+'\')">Save '+method+' Settings</button></div>';
+    }).join("");
+}
+async function saveBankPaymentSettings(method){
+    if(!["MariBank","AUB"].includes(method))return;
+    const name=document.getElementById("bankName"+method).value.trim();
+    const number=document.getElementById("bankNumber"+method).value.trim();
+    if(!name||!/^\\d{6,25}$/.test(number)){showToast("Enter a valid account name and 6-25 digit account number.");return;}
+    const form=new FormData();
+    form.append("method",method);form.append("account_name",name);form.append("account_number",number);
+    const file=document.getElementById("bankQr"+method).files[0];if(file)form.append("qr_image",file);
+    try{const data=await apiRequest("payment_settings.php",{method:"POST",body:form});paymentMethods=data.methods;renderBankPaymentSettings();showToast(method+" settings saved.");}
+    catch(err){showToast(err.message);}
+}
+
 function renderGCashSettings(){
     const name=document.getElementById("gcashMerchantName");
     if(!name) return;
@@ -3556,7 +3584,7 @@ function showAdminPage(page, button) {
         renderAdminProducts();
         renderAdminCategoryManager();
     }
-    if (page === "payments") renderGCashSettings();
+    if (page === "payments") {renderGCashSettings();renderBankPaymentSettings();}
     if (page === "customers") renderCustomers();
     if (page === "stock") renderStock();
     if (page === "chat") loadAdminChats();
