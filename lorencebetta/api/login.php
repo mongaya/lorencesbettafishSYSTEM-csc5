@@ -3,6 +3,10 @@
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . "/db.php";
+require_once __DIR__ . "/auth.php";
+
+// Never retain an earlier authenticated session after a failed login attempt.
+$_SESSION = [];
 
 function login_result($success, $message, $user = null)
 {
@@ -60,6 +64,10 @@ if (isset($user["status"]) && strtolower((string)$user["status"]) !== "active") 
 if (!password_verify($password, $user["password"])) {
     login_result(false, "Invalid username or password.");
 }
+
+session_regenerate_id(true);
+$_SESSION["user_id"] = (int)$user["id"];
+$_SESSION["role"] = strtolower((string)$user["role"]) === "admin" ? "admin" : "customer";
 
 login_result(true, "Login successful.", [
     "id" => (int)$user["id"],
