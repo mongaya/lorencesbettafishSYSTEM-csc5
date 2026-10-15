@@ -1646,7 +1646,7 @@ th{
                         <div class="card">
                             <h3>🚚 Delivery Mode</h3>
 <label class="payment-option"><input type="radio" name="deliveryMode" value="delivery" checked onchange="updateCheckoutShipping()"> 🚚 Delivery</label>
-<label class="payment-option"><input type="radio" name="deliveryMode" value="pickup" onchange="updateDeliveryMode()"> 🏪 Pick Up</label>
+<label class="payment-option"><input type="radio" name="deliveryMode" value="pickup" onchange="updateCheckoutShipping()"> 🏪 Pick Up</label>
 <div id="automaticCourier" class="payment-note"><strong>Courier: J&amp;T Express</strong> (automatically assigned)</div>
                         </div>
 
@@ -3415,7 +3415,7 @@ function renderCustomerOrders() {
 }
 
 function orderHTML(order) {
-    const statuses=["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Shipped","Delivered"];
+    const statuses = order.courier === "Pick Up" ? ["Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Picked Up","Order Received"] : order.courier === "Lalamove" ? ["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready for Delivery","Lalamove Booked","Out for Delivery","Delivered","Order Received"] : ["Awaiting Payment","Confirmed","Preparing","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received"];
     const currentIndex=statuses.indexOf(order.status);
     let progress="";
     statuses.forEach((status,index)=>{
@@ -3702,7 +3702,7 @@ function renderAdminOrders() {
             <td>${escapeHTML(order.payment_status || "Waiting for shipping fee")}</td>
             <td>
                 <select onchange="updateOrderStatus('${escapeHTML(order.id)}',this.value)">
-                    ${["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Shipped","Delivered","Picked Up","Cancelled"].map(st => `<option ${st === order.status ? "selected" : ""}>${st}</option>`).join("")}
+                    ${(order.courier === "Pick Up" ? ["Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Picked Up","Order Received","Cancelled"] : order.courier === "Lalamove" ? ["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready for Delivery","Lalamove Booked","Out for Delivery","Delivered","Order Received","Cancelled"] : ["Awaiting Payment","Confirmed","Preparing","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received","Cancelled"]).map(st => `<option ${st === order.status ? "selected" : ""}>${st}</option>`).join("")}
                 </select>
             </td>
             <td>
