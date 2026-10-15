@@ -35,7 +35,8 @@ if ($username === "" || $password === "") {
 $stmt = $conn->prepare(
     "SELECT id, name, username, email, password, phone, address, role, status
      FROM users
-     WHERE username = ?
+     WHERE username = ? OR email = ?
+     ORDER BY CASE WHEN username = ? THEN 0 ELSE 1 END
      LIMIT 1"
 );
 
@@ -43,7 +44,7 @@ if (!$stmt) {
     login_result(false, "Unable to prepare login.");
 }
 
-$stmt->bind_param("s", $username);
+$stmt->bind_param("sss", $username, $username, $username);
 
 if (!$stmt->execute()) {
     $stmt->close();
@@ -68,6 +69,7 @@ if (!password_verify($password, $user["password"])) {
 session_regenerate_id(true);
 $_SESSION["user_id"] = (int)$user["id"];
 $_SESSION["role"] = strtolower((string)$user["role"]) === "admin" ? "admin" : "customer";
+session_write_close();
 
 login_result(true, "Login successful.", [
     "id" => (int)$user["id"],
