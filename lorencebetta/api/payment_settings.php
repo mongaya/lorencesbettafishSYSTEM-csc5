@@ -25,6 +25,10 @@ function all_payment_settings($conn) {
     return ["GCash"=>read_gcash_settings($conn),"MariBank"=>read_bank_settings($conn,"MariBank"),"AUB"=>read_bank_settings($conn,"AUB")];
 }
 
+if ($_SERVER["REQUEST_METHOD"] !== "GET") {
+    require_once __DIR__ . "/auth.php";
+    require_admin_session($conn);
+}
 if ($_SERVER["REQUEST_METHOD"] === "GET") respond(true, "", ["settings" => read_gcash_settings($conn),"methods"=>all_payment_settings($conn)]);
 $method=trim($_POST["method"]??"GCash");
 if(!in_array($method,["GCash","MariBank","AUB"],true))respond(false,"Unsupported payment method.",[],400);
