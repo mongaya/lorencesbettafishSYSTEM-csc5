@@ -1635,7 +1635,7 @@ th{
                                 <label>Complete Address</label>
                                 <textarea
                                     id="checkoutAddress"
-                                    oninput="renderCheckoutSummary()"
+                                    oninput="renderCheckout()"
                                     rows="4"
                                     placeholder="House No., Street, Barangay, Municipality, Province"
                                 ></textarea>
@@ -2903,7 +2903,7 @@ function estimateShipping(address, mode) {
 }
 function updateCheckoutShipping() {
     updateDeliveryMode();
-    renderCheckoutSummary();
+    renderCheckout();
 }
 function updateDeliveryMode() {
     const mode = document.querySelector('input[name="deliveryMode"]:checked')?.value;
@@ -3311,7 +3311,6 @@ function renderCheckout() {
         document.getElementById("checkoutPhone").value = user.phone || "";
         document.getElementById("checkoutAddress").value = user.address || "";
     }
-    renderCheckoutSummary();
 }
 
 async function placeOrder() {
