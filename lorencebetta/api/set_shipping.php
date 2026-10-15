@@ -1,5 +1,7 @@
 <?php
 require_once "db.php";
+require_once __DIR__ . "/auth.php";
+require_admin_session($conn);
 require_once "stock_reservations.php";
 ensure_order_flow_columns($conn);
 
