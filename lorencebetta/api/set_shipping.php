@@ -5,7 +5,7 @@ ensure_order_flow_columns($conn);
 
 $data=json_input();
 $orderId=trim($data["orderId"]??"");
-$shipping=(float)($data["shippingFee"]??-1);
+$shipping=(float)($data["shippingFee"]??-1); // Legacy orders only; new orders have server-calculated shipping.
 if($orderId===""||$shipping<0)respond(false,"Enter a valid shipping fee.",[],400);
 
 /* Do not JOIN orders.courier to couriers.name here: older hosted tables may use
