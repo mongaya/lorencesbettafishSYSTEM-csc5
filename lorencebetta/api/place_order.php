@@ -1,6 +1,9 @@
 <?php
+require_once __DIR__ . "/db.php";
+require_once __DIR__ . "/auth.php";
 require_once "db.php";require_once "stock_reservations.php";require_once "couriers.php";require_once "shipping_rates.php";ensure_order_flow_columns($conn);release_expired_reservations($conn);
-$data=json_input();$username=trim($data["username"]??"");$customerName=trim($data["customerName"]??"");$phone=trim($data["phone"]??"");$address=trim($data["address"]??"");$payment=trim($data["payment"]??"");$mode=trim($data["deliveryMode"]??"");$courier=$mode==="pickup"?"Pick Up":"J&T Express";$items=$data["items"]??[];
+$data=json_input();$username=trim($data["username"]??"");
+require_customer_owner($conn,$username);$customerName=trim($data["customerName"]??"");$phone=trim($data["phone"]??"");$address=trim($data["address"]??"");$payment=trim($data["payment"]??"");$mode=trim($data["deliveryMode"]??"");$courier=$mode==="pickup"?"Pick Up":"J&T Express";$items=$data["items"]??[];
 if($username===""||$customerName===""||$phone===""||$address===""||!in_array($payment,["GCash","MariBank","AUB"],true)||!in_array($mode,["delivery","pickup"],true)||!is_array($items)||!count($items))respond(false,"Please complete your order information.",[],400);
 $u=$conn->prepare("SELECT id FROM users WHERE username=? AND role='customer' AND status='active' LIMIT 1");$u->bind_param("s",$username);$u->execute();$user=stmt_fetch_assoc_compat($u);if(!$user)respond(false,"Customer account not found.",[],404);
 $cq=$conn->prepare("SELECT requires_shipping_fee,courier_type FROM couriers WHERE name=? AND status='active' LIMIT 1");$cq->bind_param("s",$courier);$cq->execute();$courierRow=stmt_fetch_assoc_compat($cq);if(!$courierRow)respond(false,"Selected courier is not available.",[],409);$requiresFee=(int)$courierRow["requires_shipping_fee"]===1;
