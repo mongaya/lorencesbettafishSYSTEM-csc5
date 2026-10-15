@@ -5,7 +5,7 @@ if($orderId===""||$status==="")respond(false,"Order and next status are required
 $q=$conn->prepare("SELECT id,status,courier,payment_status,tracking_url,tracking_number FROM orders WHERE order_code=? LIMIT 1");
 $q->bind_param("s",$orderId);$q->execute();$o=stmt_fetch_assoc_compat($q);if(!$o)respond(false,"Order not found.",[],404);
 $flows=[
- "Pick Up"=>["Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Picked Up"],
+ "Pick Up"=>["Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Picked Up","Order Received"],
  "Lalamove"=>["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready for Delivery","Lalamove Booked","Out for Delivery","Delivered","Order Received"],
  "J&T Express"=>["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received"]
 ];
