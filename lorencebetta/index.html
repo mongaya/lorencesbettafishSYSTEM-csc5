@@ -3488,7 +3488,7 @@ async function saveBankPaymentSettings(method){
     if(!["MariBank","AUB"].includes(method))return;
     const name=document.getElementById("bankName"+method).value.trim();
     const number=document.getElementById("bankNumber"+method).value.trim();
-    if(!name||!/^\\d{6,25}$/.test(number)){showToast("Enter a valid account name and 6-25 digit account number.");return;}
+    if(!name||!/^\d{6,25}$/.test(number)){showToast("Enter a valid account name and 6-25 digit account number.");return;}
     const form=new FormData();
     form.append("method",method);form.append("account_name",name);form.append("account_number",number);
     const file=document.getElementById("bankQr"+method).files[0];if(file)form.append("qr_image",file);
