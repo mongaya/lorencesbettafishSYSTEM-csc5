@@ -1,0 +1,50 @@
+name: Pre-deployment checks
+
+on:
+  pull_request:
+    paths:
+      - "lorencebetta/**"
+      - ".github/workflows/checks.yml"
+  workflow_dispatch:
+
+jobs:
+  syntax-and-shipping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check PHP syntax
+        run: |
+          find lorencebetta/api -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Extract inline JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("lorencebetta/index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script(?:\s[^>]*)?>(.*?)</script\s*>", html, re.I | re.S)
+          if not scripts:
+              raise SystemExit("No inline JavaScript found")
+          Path("/tmp/lorence-inline.js").write_text("\n;\n".join(scripts), encoding="utf-8")
+          PY
+      - name: Check JavaScript syntax
+        run: node --check /tmp/lorence-inline.js
+      - name: Test regional shipping rates
+        run: |
+          php -r '
+            require "lorencebetta/api/shipping_rates.php";
+            $cases = [
+              ["Quezon City, Metro Manila", 80],
+              ["Puerto Princesa, Palawan", 80],
+              ["Cebu City, Cebu", 170],
+              ["Cagayan de Oro, Misamis Oriental", 170],
+              ["Unknown address", null],
+            ];
+            foreach ($cases as [$address, $expected]) {
+              $actual = regional_shipping_fee($address);
+              if ($actual !== $expected && !($actual !== null && $expected !== null && (float)$actual === (float)$expected)) {
+                fwrite(STDERR, "Wrong shipping for $address: " . var_export($actual, true) . PHP_EOL);
+                exit(1);
+              }
+            }
+            echo "Shipping checks passed\n";
+          '
