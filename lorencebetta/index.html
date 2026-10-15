@@ -1635,6 +1635,7 @@ th{
                                 <label>Complete Address</label>
                                 <textarea
                                     id="checkoutAddress"
+                                    oninput="renderCheckoutSummary()"
                                     rows="4"
                                     placeholder="House No., Street, Barangay, Municipality, Province"
                                 ></textarea>
@@ -1644,7 +1645,7 @@ th{
 
                         <div class="card">
                             <h3>🚚 Delivery Mode</h3>
-<label class="payment-option"><input type="radio" name="deliveryMode" value="delivery" checked onchange="updateDeliveryMode()"> 🚚 Delivery</label>
+<label class="payment-option"><input type="radio" name="deliveryMode" value="delivery" checked onchange="updateCheckoutShipping()"> 🚚 Delivery</label>
 <label class="payment-option"><input type="radio" name="deliveryMode" value="pickup" onchange="updateDeliveryMode()"> 🏪 Pick Up</label>
 <div id="automaticCourier" class="payment-note"><strong>Courier: J&amp;T Express</strong> (automatically assigned)</div>
                         </div>
@@ -2893,6 +2894,17 @@ function renderFishCategories() {
     `).join("");
 }
 
+function estimateShipping(address, mode) {
+    if (mode === "pickup") return 0;
+    const normalized = " " + String(address || "").toLocaleLowerCase().normalize("NFC").replace(/[^\\p{L}\\p{N}]+/gu, " ").replace(/\\s+/g, " ").trim() + " ";
+    const regions = [["Abra","Albay","Apayao","Aurora","Bataan","Batanes","Batangas","Benguet","Bulacan","Cagayan","Camarines Norte","Camarines Sur","Catanduanes","Cavite","Ifugao","Ilocos Norte","Ilocos Sur","Isabela","Kalinga","La Union","Laguna","Marinduque","Masbate","Mountain Province","Nueva Ecija","Nueva Vizcaya","Occidental Mindoro","Oriental Mindoro","Palawan","Pampanga","Pangasinan","Quezon","Quirino","Rizal","Romblon","Sorsogon","Tarlac","Zambales","Metro Manila","NCR","Manila","Quezon City","Caloocan","Makati","Taguig","Pasig","Pasay","Paranaque","Parañaque","Muntinlupa","Marikina","Mandaluyong","Valenzuela","Malabon","Navotas","San Juan","Las Pinas","Las Piñas","Pateros"],["Aklan","Antique","Biliran","Bohol","Capiz","Cebu","Eastern Samar","Guimaras","Iloilo","Leyte","Negros Occidental","Negros Oriental","Northern Samar","Samar","Southern Leyte","Siquijor","Western Samar","Agusan del Norte","Agusan del Sur","Basilan","Bukidnon","Camiguin","Compostela Valley","Davao de Oro","Davao del Norte","Davao del Sur","Davao Occidental","Davao Oriental","Dinagat Islands","Lanao del Norte","Lanao del Sur","Maguindanao","Maguindanao del Norte","Maguindanao del Sur","Misamis Occidental","Misamis Oriental","North Cotabato","Cotabato","Sarangani","South Cotabato","Sultan Kudarat","Sulu","Surigao del Norte","Surigao del Sur","Tawi-Tawi","Zamboanga del Norte","Zamboanga del Sur","Zamboanga Sibugay","Cebu City","Davao City","Iloilo City","Bacolod","Cagayan de Oro","General Santos","Zamboanga City","Butuan","Tacloban","Tagbilaran","Dumaguete","Puerto Princesa"]];
+    const found = regions.map(places => places.some(place => normalized.includes(" " + place.toLocaleLowerCase() + " ")));
+    return found[0] === found[1] ? null : (found[0] ? 80 : 170);
+}
+function updateCheckoutShipping() {
+    updateDeliveryMode();
+    renderCheckoutSummary();
+}
 function updateDeliveryMode() {
     const mode = document.querySelector('input[name="deliveryMode"]:checked')?.value;
     const courier = document.getElementById("automaticCourier");
@@ -3262,8 +3274,10 @@ function renderCheckout() {
         `;
     });
 
-    const shipping = null;
-    const total = null;
+    const mode = document.querySelector('input[name="deliveryMode"]:checked')?.value || "delivery";
+    const address = document.getElementById("checkoutAddress")?.value || "";
+    const shipping = estimateShipping(address, mode);
+    const total = shipping === null ? null : subtotal + shipping;
 
     html += `
         <hr style="border:none;border-top:1px solid #ddd;margin:15px 0">
@@ -3275,14 +3289,14 @@ function renderCheckout() {
 
         <div class="summary-row">
             <span>Shipping</span>
-            <strong>To be confirmed by admin</strong>
+            <strong>${shipping === null ? "Complete province/address required" : "₱" + shipping.toFixed(2)}</strong>
         </div>
 
-        <div class="shipping-pending">🚚 You can place the order first. The admin will confirm the shipping fee, then your final total will appear here.</div>
+        ${shipping === null ? `<div class="shipping-pending">Please enter a complete Philippine address including the province so shipping can be calculated automatically.</div>` : ""}
 
         <div class="summary-row summary-total">
             <span>Final Total</span>
-            <strong>Waiting for shipping fee</strong>
+            <strong>${total === null ? "Enter complete address" : "₱" + total.toFixed(2)}</strong>
         </div>
     `;
 
@@ -3297,6 +3311,7 @@ function renderCheckout() {
         document.getElementById("checkoutPhone").value = user.phone || "";
         document.getElementById("checkoutAddress").value = user.address || "";
     }
+    renderCheckoutSummary();
 }
 
 async function placeOrder() {
@@ -3316,6 +3331,11 @@ async function placeOrder() {
         return;
     }
 
+    const mode = document.querySelector('input[name="deliveryMode"]:checked')?.value || "delivery";
+    if (estimateShipping(address, mode) === null) {
+        showToast("Please include a recognizable province in your complete address.");
+        return;
+    }
     const payment = document.querySelector(
         'input[name="payment"]:checked'
     ).value;
