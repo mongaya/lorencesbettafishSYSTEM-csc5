@@ -10,6 +10,7 @@ function regional_shipping_fee($address) {
     foreach (['Luzon'=>$luzon,'Visayas/Mindanao'=>$vismin] as $region=>$places) {
         foreach ($places as $place) {
             $term = ' '.preg_replace('/\s+/u',' ',mb_strtolower($place,'UTF-8')).' ';
+            if ($region==='Luzon' && $place==='Cagayan' && strpos($address,' cagayan de oro ')!==false) continue;
             if (strpos($address,$term)!==false) $matches[$region]=true;
         }
     }
