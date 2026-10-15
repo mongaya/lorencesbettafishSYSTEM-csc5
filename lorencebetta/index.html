@@ -1643,36 +1643,28 @@ th{
                         </div>
 
                         <div class="card">
-                            <h3>🚚 Delivery Method / Courier</h3>
-                            <label class="payment-option"><input type="radio" name="courier" value="Lalamove" checked> 🛵 Lalamove</label>
-                            <label class="payment-option"><input type="radio" name="courier" value="J&T Express"> 📦 J&amp;T Express</label>
-                            <label class="payment-option"><input type="radio" name="courier" value="Pick Up"> 🏪 Pick Up</label>
-                            <div class="payment-note">Lalamove is booked by the admin and a tracking link will appear in My Orders when available. J&amp;T shipping is handled by the admin. For Pick Up, wait until your order is marked Ready for Pickup.</div>
+                            <h3>🚚 Delivery Mode</h3>
+<label class="payment-option"><input type="radio" name="deliveryMode" value="delivery" checked onchange="updateDeliveryMode()"> 🚚 Delivery</label>
+<label class="payment-option"><input type="radio" name="deliveryMode" value="pickup" onchange="updateDeliveryMode()"> 🏪 Pick Up</label>
+<div id="automaticCourier" class="payment-note"><strong>Courier: J&amp;T Express</strong> (automatically assigned)</div>
                         </div>
 
                         <div class="card">
 
                             <h3>💰 Payment Method</h3>
 
-                            <label class="payment-option">
-                                <input
-                                    type="radio"
-                                    name="payment"
-                                    value="Cash on Delivery"
-                                    checked
-                                >
-                                💵 Cash on Delivery
-                            </label>
+                            
 
                             <label class="payment-option">
                                 <input
                                     type="radio"
                                     name="payment"
                                     value="GCash"
+                                    checked
                                 >
                                 📱 GCash
                             </label>
-                            <div class="payment-note">After the admin confirms the shipping fee and final total, your order page will show the GCash QR code for direct payment.</div>
+                            <div class="payment-note">Shipping is calculated automatically from your complete address before payment.</div>
 
                         </div>
 
@@ -2572,7 +2564,7 @@ async function confirmShipping(orderId) {
         renderAdminOrders();
         renderAdminDashboard();
         renderCustomerOrders();
-        showToast("Shipping fee confirmed. Final total updated.");
+        showToast("Shipping fee calculated. Final total updated.");
         viewOrder(orderId);
     } catch(err) { showToast(err.message); }
 }
@@ -2901,6 +2893,11 @@ function renderFishCategories() {
     `).join("");
 }
 
+function updateDeliveryMode() {
+    const mode = document.querySelector('input[name="deliveryMode"]:checked')?.value;
+    const courier = document.getElementById("automaticCourier");
+    if (courier) courier.style.display = mode === "pickup" ? "none" : "block";
+}
 function selectFishCategory(category) {
     selectedFishCategory = category || "all";
     renderFishCategories();
@@ -3322,9 +3319,7 @@ async function placeOrder() {
     const payment = document.querySelector(
         'input[name="payment"]:checked'
     ).value;
-    const courier = document.querySelector(
-        'input[name="courier"]:checked'
-    )?.value || "Lalamove";
+    const deliveryMode = document.querySelector('input[name="deliveryMode"]:checked')?.value || "delivery";
 
     const items = cart.map(item => ({
         productId: item.productId,
@@ -3341,7 +3336,7 @@ async function placeOrder() {
                 phone,
                 address,
                 payment,
-                courier,
+                deliveryMode,
                 items
             })
         });
@@ -3741,16 +3736,8 @@ function viewOrder(orderId) {
         </div>`).join("");
 
     const shippingBlock = order.shipping_confirmed
-        ? `<div class="shipping-confirmed">✅ Shipping fee confirmed: <strong>₱${Number(order.shipping).toFixed(2)}</strong><br>Final total: <strong>₱${Number(order.total).toFixed(2)}</strong></div>`
-        : `<div class="shipping-pending">⏳ Shipping fee has not been confirmed yet. Customer cannot see the final total or proceed with GCash payment.</div>
-           <div class="admin-shipping-box">
-             <h4>Confirm Shipping Fee</h4>
-             <p class="payment-note">Enter the actual delivery fee for this order. This will calculate the customer's final total.</p>
-             <div class="inline">
-               <div class="form-group" style="margin:0"><label>Shipping Fee</label><input id="shippingFeeInput" type="number" min="0" step="0.01" placeholder="0.00"></div>
-               <button class="primary-btn" onclick="confirmShipping('${escapeHTML(order.id)}')">Confirm Shipping</button>
-             </div>
-           </div>`;
+        ? `<div class="shipping-confirmed">Shipping fee: <strong>₱${Number(order.shipping).toFixed(2)}</strong><br>Final total: <strong>₱${Number(order.total).toFixed(2)}</strong></div>`
+        : `<div class="shipping-pending">Legacy order: shipping fee awaiting confirmation.</div>`;
 
     const paymentBlock = order.payment === "GCash" && order.shipping_confirmed
         ? `<div class="admin-shipping-box"><strong>GCash</strong><p class="payment-note">Final amount: ₱${Number(order.total).toFixed(2)} · Payment status: ${escapeHTML(order.payment_status || "Unpaid")}</p>${order.payment_reference ? `<p><strong>Reference:</strong> ${escapeHTML(order.payment_reference)}</p>` : ''}${order.payment_screenshot ? `<a href="${escapeHTML(order.payment_screenshot)}" target="_blank" rel="noopener"><img src="${escapeHTML(order.payment_screenshot)}" alt="GCash payment screenshot" style="width:260px;max-width:100%;border-radius:12px;margin:12px 0;display:block"></a>` : ''}${order.payment_reference||order.payment_screenshot ? (order.payment_status !== 'Paid' ? `<button class="primary-btn" onclick="markGCashPaid('${escapeHTML(order.id)}')">Mark GCash as Paid</button>` : `<div class="shipping-confirmed">✅ Payment verified</div>`) : `<p class="payment-note">Waiting for the customer's reference number or payment screenshot.</p>`}</div>`
