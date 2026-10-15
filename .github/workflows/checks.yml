@@ -38,6 +38,12 @@ jobs:
               ["Cebu City, Cebu", 170],
               ["Cagayan de Oro, Misamis Oriental", 170],
               ["Unknown address", null],
+              ["San Jose, Occidental Mindoro", 80],
+              ["Baguio, Benguet", 80],
+              ["Parañaque, Metro Manila", 80],
+              ["Iloilo City, Iloilo", 170],
+              ["Davao City, Davao del Sur", 170],
+              ["Quezon City, Cebu", null],
             ];
             foreach ($cases as [$address, $expected]) {
               $actual = regional_shipping_fee($address);
