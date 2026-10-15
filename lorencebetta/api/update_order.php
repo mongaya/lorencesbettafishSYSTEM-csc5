@@ -19,7 +19,7 @@ if($o["status"]==="Awaiting Payment")respond(false,"Use Verify Payment after the
 if($o["payment_status"]!=="Paid"&&$next>=array_search("Confirmed",$flow,true))respond(false,"Payment must be verified before fulfillment can continue.",[],409);
 $hasTracking=trim((string)$o["tracking_url"])!==""||trim((string)$o["tracking_number"])!=="";
 if($o["courier"]==="Lalamove"&&$status==="Lalamove Booked"&&!$hasTracking)respond(false,"Add a tracking number or tracking link before marking the Lalamove booking complete.",[],409);
-if($o["courier"]==="J&T Express"&&$status==="Out for Delivery"&&!$hasTracking)respond(false,"Add a tracking number or tracking link before marking the order as shipped.",[],409);
+if($o["courier"]==="J&T Express"&&$status==="Shipped"&&!$hasTracking)respond(false,"Add a tracking number or tracking link before marking the order as shipped.",[],409);
 $stmt=$conn->prepare("UPDATE orders SET status=?,updated_at=NOW() WHERE order_code=?");$stmt->bind_param("ss",$status,$orderId);$stmt->execute();
 log_order_status($conn,(int)$o["id"],$status);respond(true,"Order moved to ".$status.".");
 ?>
