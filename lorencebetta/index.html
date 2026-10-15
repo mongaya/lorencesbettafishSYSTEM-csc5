@@ -3240,6 +3240,12 @@ function openCheckout() {
     }
 
     showCustomerPage("checkout");
+    const user = users.find(u => u.username === currentUser.username);
+    if (user) {
+        document.getElementById("checkoutName").value = user.name || "";
+        document.getElementById("checkoutPhone").value = user.phone || "";
+        document.getElementById("checkoutAddress").value = user.address || "";
+    }
     renderCheckout();
 }
 
@@ -3302,15 +3308,6 @@ function renderCheckout() {
 
     container.innerHTML = html;
 
-    const user = users.find(
-        u => u.username === currentUser.username
-    );
-
-    if (user) {
-        document.getElementById("checkoutName").value = user.name || "";
-        document.getElementById("checkoutPhone").value = user.phone || "";
-        document.getElementById("checkoutAddress").value = user.address || "";
-    }
 }
 
 async function placeOrder() {
