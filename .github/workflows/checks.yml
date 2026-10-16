@@ -71,6 +71,9 @@ jobs:
               assert "require_customer_owner($conn,$username)" in (api/name).read_text(), name
           for name in ["mark_payment.php","reject_payment.php","update_order.php","add_product.php","update_product.php","delete_product.php","set_shipping.php"]:
               assert 'require_admin_session($conn)' in (api/name).read_text(), name
+          courier=(api/"couriers.php").read_text()
+          assert 'require_admin_session($conn)' in courier
+          assert courier.index('if($_SERVER["REQUEST_METHOD"]==="GET")') < courier.index('require_admin_session($conn)')
           settings=(api/"payment_settings.php").read_text()
           assert 'require_admin_session($conn)' in settings
           received=(api/"receive_order.php").read_text()
