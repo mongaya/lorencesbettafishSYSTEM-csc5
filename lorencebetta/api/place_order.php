@@ -19,9 +19,6 @@ if(!move_uploaded_file($file["tmp_name"],$diskPath))respond(false,"Unable to sav
 $proofPath="/images/payments/".$filename;
 $u=$conn->prepare("SELECT id FROM users WHERE username=? AND role='customer' AND status='active' LIMIT 1");$u->bind_param("s",$username);$u->execute();$user=stmt_fetch_assoc_compat($u);if(!$user){unlink($diskPath);respond(false,"Customer account not found.",[],404);}
 $cq=$conn->prepare("SELECT requires_shipping_fee,courier_type FROM couriers WHERE name=? AND status='active' LIMIT 1");$cq->bind_param("s",$courier);$cq->execute();$courierRow=stmt_fetch_assoc_compat($cq);if(!$courierRow){unlink($diskPath);respond(false,"Selected courier is not available.",[],409);}$requiresFee=(int)$courierRow["requires_shipping_fee"]===1;
-$dup=$conn->prepare("SELECT id FROM orders WHERE payment_method=? AND payment_reference=? LIMIT 1");
-$dup->bind_param("ss",$payment,$reference);$dup->execute();$existing=stmt_fetch_assoc_compat($dup);$dup->close();
-if($existing){if(is_file($diskPath))unlink($diskPath);respond(false,"This transaction reference has already been submitted.",[],409);}
 $prefix=strtolower($payment)."_";
 $keys=$payment==="GCash"?["merchant_name","gcash_number","qr_image"]:[$prefix."account_name",$prefix."account_number",$prefix."qr_image"];
 $settings=$conn->prepare("SELECT setting_key,setting_value FROM shop_settings WHERE setting_key IN (?,?,?)");
@@ -34,6 +31,9 @@ $lockName="payment_ref_".hash("sha256",$payment.":".$reference);
 $lockStmt=$conn->prepare("SELECT GET_LOCK(?,10) AS acquired");
 $lockStmt->bind_param("s",$lockName);$lockStmt->execute();$lockResult=stmt_fetch_assoc_compat($lockStmt);$lockStmt->close();
 if((int)($lockResult["acquired"]??0)!==1){unlink($diskPath);respond(false,"Payment reference is being processed. Please retry.",[],409);}
+$dup=$conn->prepare("SELECT id FROM orders WHERE payment_method=? AND payment_reference=? LIMIT 1");
+$dup->bind_param("ss",$payment,$reference);$dup->execute();$existing=stmt_fetch_assoc_compat($dup);$dup->close();
+if($existing){$release=$conn->prepare("SELECT RELEASE_LOCK(?)");$release->bind_param("s",$lockName);$release->execute();$release->close();unlink($diskPath);respond(false,"This transaction reference has already been submitted.",[],409);}
 $conn->begin_transaction();
 try{$subtotal=0;$validated=[];
 // Aggregate duplicate product lines to prevent overselling.
