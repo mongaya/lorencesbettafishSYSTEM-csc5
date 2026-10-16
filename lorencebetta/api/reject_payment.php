@@ -15,15 +15,14 @@ try {
   if(!$o||$o["status"]==="Cancelled"||$o["payment_status"]!=="Payment Submitted") throw new Exception("Only submitted, unverified payments can be rejected.");
   if((int)$o["stock_deducted"]!==0) throw new Exception("This order has already had stock deducted and cannot be rejected here.");
   $id=(int)$o["id"];
-  $u=$conn->prepare("UPDATE orders SET status='Cancelled',payment_status='Rejected',payment_rejection_reason=?,reservation_expires_at=NULL,updated_at=NOW() WHERE id=? AND stock_deducted=0 AND payment_status='Payment Submitted'");
+  $u=$conn->prepare("UPDATE orders SET status='Awaiting Payment',payment_status='Payment Needs Correction',payment_rejection_reason=?,reservation_expires_at=NULL,updated_at=NOW() WHERE id=? AND stock_deducted=0 AND payment_status='Payment Submitted'");
   $u->bind_param("si",$reason,$id);$u->execute();
   if($u->affected_rows!==1) throw new Exception("Order state changed. Refresh and retry.");
   $u->close();
-  // Reserved inventory was never physically deducted. Cancelling removes the reservation,
-  // making the reserved quantity available again without incrementing physical stock.
-  log_order_status($conn,$id,"Cancelled");
+  // Keep the order available for correction without deducting stock.
+  log_order_status($conn,$id,"Payment Needs Correction");
   $conn->commit();
-  respond(true,"Payment rejected, order cancelled, and reserved stock released.");
+  respond(true,"Payment needs correction. The customer can resubmit payment proof for this order.");
 } catch(Throwable $e) {
   $conn->rollback();respond(false,$e->getMessage(),[],409);
 }
