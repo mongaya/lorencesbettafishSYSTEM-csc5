@@ -9870,52 +9870,66 @@ renderCheckoutCouriers();
 </style>
 <script id="notification-time-v30-script">
 (function(){
- function stamp(raw){
+ function parseDate(raw){
    if(!raw)return null;
    const value=String(raw).trim();
-   const iso=value.includes("T")?value:value.replace(" ","T");
-   const parsed=new Date(iso);
-   return Number.isFinite(parsed.getTime())?parsed:null;
+   // MySQL DATETIME values have no timezone; interpret them consistently as Philippine time.
+   const normalized=/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)
+     ?value.replace(" ","T")+"+08:00":value;
+   const date=new Date(normalized);
+   return Number.isFinite(date.getTime())?date:null;
  }
- function timeLabel(date){
+ function relative(date){
    const seconds=Math.max(0,Math.floor((Date.now()-date.getTime())/1000));
    if(seconds<60)return "Just now";
    if(seconds<3600)return Math.floor(seconds/60)+" min ago";
    if(seconds<86400)return Math.floor(seconds/3600)+" hr ago";
    if(seconds<172800)return "Yesterday";
    if(seconds<604800)return Math.floor(seconds/86400)+" days ago";
-   return date.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
+   return date.toLocaleDateString("en-PH",{month:"short",day:"numeric",year:"numeric",timeZone:"Asia/Manila"});
  }
- const previousBuild=buildNotifications;
+ const originalBuild=buildNotifications;
  buildNotifications=function(role){
-   const items=previousBuild(role);
-   // Only timestamp records with an actual server-provided date.
-   if(role==="customer"){
-     for(const n of items){
-       if(n.kind==="chat")continue;
-       const o=(orders||[]).find(o=>String(n.id).startsWith("order-status-"+o.id+"-")||String(n.id).startsWith("payment-"+o.id+"-")||String(n.id).startsWith("shipping-"+o.id+"-"));
-       if(o)n.createdAt=o.order_date||null;
-     }
+   const items=originalBuild(role);
+   const byId=new Map((orders||[]).map(o=>[String(o.id),o]));
+   for(const n of items){
+     if(n.kind==="chat")continue;
+     const id=String(n.id||"");
+     const match=id.match(/^(?:new-order|order-status|payment|shipping)-(.+?)(?:-|$)/);
+     const order=match?byId.get(match[1]):null;
+     if(order)n.createdAt=order.order_date||null;
    }
-   return items.map((n,i)=>({...n,_position:i,_time:stamp(n.createdAt)?.getTime()||0}))
-     .sort((a,b)=>b._time-a._time||b._position-a._position);
+   return items.map((n,i)=>({...n,_originalPosition:i,_sortTime:parseDate(n.createdAt)?.getTime()||0}))
+     .sort((a,b)=>b._sortTime-a._sortTime||a._originalPosition-b._originalPosition);
  };
- function decorateTime(role){
-   const list=document.getElementById(role+"NotificationList");if(!list)return;
+ function addTimes(role){
+   const list=document.getElementById(role+"NotificationList");
+   if(!list)return;
    const items=(notificationCache[role]||[]).slice(0,50);
    [...list.querySelectorAll(".notification-item")].forEach((el,i)=>{
-     const date=stamp(items[i]?.createdAt);
-     if(!date)return;
+     const n=items[i],date=parseDate(n?.createdAt);
      const copy=el.querySelector(".notification-copy-v29")||el;
      let node=copy.querySelector(".notification-time-v30");
+     if(!date){if(node)node.remove();return;}
      if(!node){node=document.createElement("time");node.className="notification-time-v30";copy.appendChild(node);}
-     node.dateTime=date.toISOString();node.textContent=timeLabel(date);node.title=date.toLocaleString();
+     node.dateTime=date.toISOString();
+     // An order's creation date must never be presented as a status/payment update time.
+     const isChat=n.kind==="chat",isNewOrder=String(n.id||"").startsWith("new-order-");
+     const prefix=isChat?"":isNewOrder?"Ordered ":"Order placed ";
+     node.textContent=prefix+relative(date);
+     node.title=(isChat?"Message sent: ":"Order placed: ")+date.toLocaleString("en-PH",{timeZone:"Asia/Manila"});
    });
  }
- const previousRender=renderNotifications;
- renderNotifications=function(role){previousRender(role);decorateTime(role);};
- const previousCache=renderNotificationsFromCache;
- renderNotificationsFromCache=function(role){previousCache(role);decorateTime(role);};
+ const oldRender=renderNotifications;
+ renderNotifications=function(role){oldRender(role);addTimes(role);};
+ const oldCache=renderNotificationsFromCache;
+ renderNotificationsFromCache=function(role){oldCache(role);addTimes(role);};
+ // Refresh relative labels while a notification panel is open.
+ setInterval(function(){
+   for(const role of ["admin","customer"]){
+     if(!document.getElementById(role+"NotificationPanel")?.classList.contains("hidden"))addTimes(role);
+   }
+ },60000);
 })();
 </script>
 </body>
