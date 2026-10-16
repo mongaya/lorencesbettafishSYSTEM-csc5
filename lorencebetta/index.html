@@ -2704,7 +2704,7 @@ async function loadCategories() {
 
 async function loadPaymentSettings() {
     const data = await apiRequest("payment_settings.php");
-    paymentSettings = data.settings || paymentSettings;
+    paymentSettings = data.methods || paymentSettings;
 }
 
 async function loadProductReviews() {
@@ -9681,6 +9681,7 @@ renderCheckout=function(){
 renderCheckoutCouriers();
 </script>
 <script src="checkout_shipping_ui.js"></script>
+<script src="checkout_pay_first.js"></script>
 </body>
 </html>
 
