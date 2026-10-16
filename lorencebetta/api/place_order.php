@@ -29,6 +29,11 @@ $settings->bind_param("sss",$keys[0],$keys[1],$keys[2]);$settings->execute();
 $rows=stmt_fetch_all_assoc_compat($settings);$settings->close();
 $config=[];foreach($rows as $row)$config[$row["setting_key"]]=$row["setting_value"];
 foreach($keys as $key){if(trim((string)($config[$key]??""))===""){unlink($diskPath);respond(false,"Selected payment account is not configured.",[],409);}}
+// Serialize reference checks by wallet/bank and reference, including concurrent checkouts.
+$lockName="payment_ref_".hash("sha256",$payment.":".$reference);
+$lockStmt=$conn->prepare("SELECT GET_LOCK(?,10) AS acquired");
+$lockStmt->bind_param("s",$lockName);$lockStmt->execute();$lockResult=stmt_fetch_assoc_compat($lockStmt);$lockStmt->close();
+if((int)($lockResult["acquired"]??0)!==1){unlink($diskPath);respond(false,"Payment reference is being processed. Please retry.",[],409);}
 $conn->begin_transaction();
 try{$subtotal=0;$validated=[];
 // Aggregate duplicate product lines to prevent overselling.
@@ -53,7 +58,7 @@ $sql="INSERT INTO orders(order_code,user_id,customer_name,phone,address,subtotal
 $stmt=$conn->prepare($sql);$stmt->bind_param("sisssdddssssssi",$orderCode,$user["id"],$customerName,$phone,$address,$subtotal,$shipping,$total,$payment,$paymentStatus,$reference,$proofPath,$status,$courier,$shipConfirmed);$stmt->execute();$orderId=$conn->insert_id;
 $it=$conn->prepare("INSERT INTO order_items(order_id,product_id,product_name,price,quantity) VALUES(?,?,?,?,?)");
 foreach($validated as $v){$it->bind_param("iisdi",$orderId,$v["id"],$v["name"],$v["price"],$v["quantity"]);$it->execute();}
-log_order_status($conn,$orderId,"Payment Submitted");$conn->commit();
+log_order_status($conn,$orderId,"Payment Submitted");$conn->commit();$release=$conn->prepare("SELECT RELEASE_LOCK(?)");$release->bind_param("s",$lockName);$release->execute();$release->close();
 respond(true,"Payment submitted for admin verification.",["order_id"=>$orderCode,"shipping"=>$shipping,"total"=>$total]);
-}catch(Throwable $e){$conn->rollback();if(isset($diskPath)&&is_file($diskPath))unlink($diskPath);respond(false,$e->getMessage(),[],409);}
+}catch(Throwable $e){$conn->rollback();$release=$conn->prepare("SELECT RELEASE_LOCK(?)");$release->bind_param("s",$lockName);$release->execute();$release->close();if(isset($diskPath)&&is_file($diskPath))unlink($diskPath);respond(false,$e->getMessage(),[],409);}
 ?>
