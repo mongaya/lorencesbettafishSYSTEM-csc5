@@ -1,0 +1,22 @@
+const fs=require('node:fs');
+const assert=require('node:assert/strict');
+const vm=require('node:vm');
+const js=fs.readFileSync('lorencebetta/checkout_pay_first.js','utf8');
+const html=fs.readFileSync('lorencebetta/index.html','utf8');
+const php=fs.readFileSync('lorencebetta/api/place_order.php','utf8');
+new vm.Script(js);
+function contains(haystack,needle,message){assert.ok(haystack.includes(needle),message||('Missing: '+needle));}
+contains(html,'checkout_pay_first.js?v=','Checkout script must be cache-busted');
+contains(html,'id="checkoutPlaceOrder"');
+contains(js,"const placed=await apiRequest('place_order.php'");
+contains(js,"if(!newCode)throw new Error",'Missing order ID must fail');
+contains(js,'saveCart(getCart().filter','Cart must clear purchased lines');
+assert.ok(js.indexOf("const placed=await apiRequest('place_order.php'")<js.indexOf('saveCart(getCart().filter'),'Cart may clear only after API success');
+contains(js,'Order submitted:','Confirmation must show order ID');
+contains(js,'Order not visible in the list yet','Missing order must be surfaced');
+contains(js,'Please upload a payment screenshot');
+contains(js,'Please enter your payment transaction reference number');
+contains(php,'$status="Pending";$paymentStatus="Payment Submitted"');
+contains(php,'$conn->commit()');
+contains(php,'["order_id"=>$orderCode');
+console.log('Checkout pre-deploy contract checks passed.');
