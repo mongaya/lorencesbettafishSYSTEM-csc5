@@ -5266,6 +5266,13 @@ paymentActionHTML=function(order){
 const _finalShowAdminPage=showAdminPage;
 showAdminPage=function(page,btn){_finalShowAdminPage(page,btn);if(page==="couriers")loadCouriers()}
 
+async function updateOrderStatusAndRefresh(id,status){
+ try{
+  await apiRequest("update_order.php",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId:id,status})});
+  await loadOrders();renderAdminOrders();renderAdminDashboard();viewOrder(id);
+  showToast("Order moved to "+status+".","success");
+ }catch(e){showToast(e.message||"Could not update order status.","error")}
+}
 const _finalViewOrder=viewOrder;
 viewOrder=function(orderId){
  _finalViewOrder(orderId);
@@ -5274,7 +5281,15 @@ viewOrder=function(orderId){
  let actions="";
  if(o.payment_status==="Payment Submitted")actions=`<div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:12px"><button class="primary-btn" onclick="markPaymentPaid('${escapeHTML(o.id)}')">Confirm Payment</button><button class="danger-solid-btn" onclick="requestNewPaymentProof('${escapeHTML(o.id)}')">Request New Payment Proof</button></div>`;
  else if(o.payment_status==="Payment Needs Correction")actions=`<div class="payment-correction"><strong>Waiting for corrected payment proof</strong><p>${escapeHTML(o.payment_rejection_reason||"")}</p></div>`;
- else if(o.payment_status==="Paid")actions=`<div class="payment-verified"><strong>✓ Payment Verified</strong></div>`;
+ else if(o.payment_status==="Paid"){
+   const pickup=String(o.courier||"").trim().toLowerCase()==="pick up";
+   const flow=pickup?["Confirmed","Preparing","Ready for Pickup","Picked Up","Order Received"]:o.courier==="Lalamove"?["Confirmed","Preparing","Ready for Delivery","Lalamove Booked","Out for Delivery","Delivered","Order Received"]:["Confirmed","Preparing","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received"];
+   const current=flow.indexOf(o.status);
+   const next=current>=0?flow[current+1]:null;
+   actions=`<div class="payment-verified"><strong>✓ Payment Verified</strong></div>`+
+     (next&&o.status!=="Cancelled"?`<button class="primary-btn" style="margin-top:12px" onclick="updateOrderStatusAndRefresh('${escapeHTML(o.id)}','${escapeHTML(next)}')">Mark as ${escapeHTML(next)}</button>`:
+       `<p class="payment-note" style="margin-top:12px">${current===flow.length-1?"Order completed.":"No next status available."}</p>`);
+ }
  extra.innerHTML=`<h4>Order Activity</h4>${timelineHTML(o)}${actions}`;
 }
 
