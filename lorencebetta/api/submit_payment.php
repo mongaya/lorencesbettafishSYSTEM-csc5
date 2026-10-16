@@ -34,6 +34,18 @@ $filename="payment_".date("Ymd_His")."_".bin2hex(random_bytes(4)).".".$allowed[$
 if(!move_uploaded_file($file["tmp_name"],$folder.DIRECTORY_SEPARATOR.$filename))respond(false,"Could not save the payment receipt.",[],500);
 $path="/images/payments/".$filename;
 
+// Serialize reference reuse checks across checkout and payment corrections.
+$sharedPaymentLock="payment_global_".substr(hash("sha256",$reference),0,48);
+$sharedLockStmt=$conn->prepare("SELECT GET_LOCK(?,10) AS acquired");
+if(!$sharedLockStmt)respond(false,"Unable to validate payment reference.",[],500);
+$sharedLockStmt->bind_param("s",$sharedPaymentLock);
+if(!$sharedLockStmt->execute()){$sharedLockStmt->close();respond(false,"Unable to validate payment reference.",[],500);}
+$sharedLockResult=stmt_fetch_assoc_compat($sharedLockStmt);$sharedLockStmt->close();
+if((int)($sharedLockResult["acquired"]??0)!==1)respond(false,"Payment reference is being processed. Please retry.",[],409);
+register_shutdown_function(static function()use($conn,$sharedPaymentLock){
+    $release=$conn->prepare("SELECT RELEASE_LOCK(?)");
+    if($release){$release->bind_param("s",$sharedPaymentLock);$release->execute();$release->close();}
+});
 // Prevent legacy payment resubmissions from reusing another order's reference.
 $duplicate=$conn->prepare("SELECT id FROM orders WHERE payment_reference=? AND order_code<>? LIMIT 1");
 if(!$duplicate){@unlink($folder.DIRECTORY_SEPARATOR.$filename);respond(false,"Unable to validate payment reference.",[],500);}
