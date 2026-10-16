@@ -43,7 +43,7 @@ function reserved_quantity($conn,$productId){
         LEFT JOIN couriers c ON CONVERT(c.name USING utf8mb4) COLLATE utf8mb4_unicode_ci = CONVERT(o.courier USING utf8mb4) COLLATE utf8mb4_unicode_ci
         WHERE oi.product_id=? AND o.stock_deducted=0 AND o.status<>'Cancelled'
         AND (
-            o.payment_status='Payment Submitted'
+            o.payment_status IN ('Payment Submitted','Payment Needs Correction')
             OR o.status='Pending Shipping Fee'
             OR (o.status='Awaiting Payment' AND COALESCE(c.requires_shipping_fee,0)=0 AND o.payment_status IN ('Unpaid','Payment Needs Correction'))
             OR (o.reservation_expires_at IS NOT NULL AND o.reservation_expires_at>NOW())

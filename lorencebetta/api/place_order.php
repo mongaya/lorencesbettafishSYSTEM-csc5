@@ -26,19 +26,60 @@ $settings->bind_param("sss",$keys[0],$keys[1],$keys[2]);$settings->execute();
 $rows=stmt_fetch_all_assoc_compat($settings);$settings->close();
 $config=[];foreach($rows as $row)$config[$row["setting_key"]]=$row["setting_value"];
 foreach($keys as $key){if(trim((string)($config[$key]??""))===""){unlink($diskPath);respond(false,"Selected payment account is not configured.",[],409);}}
+// Serialize reference reuse checks across checkout and payment corrections.
+$sharedPaymentLock="payment_global_".substr(hash("sha256",$reference),0,48);
+$sharedLockStmt=$conn->prepare("SELECT GET_LOCK(?,10) AS acquired");
+if(!$sharedLockStmt)respond(false,"Unable to validate payment reference.",[],500);
+$sharedLockStmt->bind_param("s",$sharedPaymentLock);
+if(!$sharedLockStmt->execute()){$sharedLockStmt->close();respond(false,"Unable to validate payment reference.",[],500);}
+$sharedLockResult=stmt_fetch_assoc_compat($sharedLockStmt);$sharedLockStmt->close();
+if((int)($sharedLockResult["acquired"]??0)!==1)respond(false,"Payment reference is being processed. Please retry.",[],409);
+register_shutdown_function(static function()use($conn,$sharedPaymentLock){
+    $release=$conn->prepare("SELECT RELEASE_LOCK(?)");
+    if($release){$release->bind_param("s",$sharedPaymentLock);$release->execute();$release->close();}
+});
 // Serialize reference checks by wallet/bank and reference, including concurrent checkouts.
 $lockName="payment_ref_".substr(hash("sha256",$payment.":".$reference),0,48);
 $lockStmt=$conn->prepare("SELECT GET_LOCK(?,10) AS acquired");
 $lockStmt->bind_param("s",$lockName);$lockStmt->execute();$lockResult=stmt_fetch_assoc_compat($lockStmt);$lockStmt->close();
 if((int)($lockResult["acquired"]??0)!==1){unlink($diskPath);respond(false,"Payment reference is being processed. Please retry.",[],409);}
-$dup=$conn->prepare("SELECT o.id,o.order_code,o.user_id,o.status,o.payment_status FROM orders o WHERE o.payment_method=? AND o.payment_reference=? LIMIT 1");
-$dup->bind_param("ss",$payment,$reference);$dup->execute();$existing=stmt_fetch_assoc_compat($dup);$dup->close();
+$dup=$conn->prepare("SELECT o.id,o.order_code,o.user_id,o.status,o.payment_status FROM orders o WHERE o.payment_reference=? LIMIT 1");
+$dup->bind_param("s",$reference);$dup->execute();$existing=stmt_fetch_assoc_compat($dup);$dup->close();
 if($existing){
     $release=$conn->prepare("SELECT RELEASE_LOCK(?)");$release->bind_param("s",$lockName);$release->execute();$release->close();unlink($diskPath);
     if((int)$existing["user_id"]===(int)$user["id"]){
         respond(false,"Payment Already Used! This transaction reference has already been submitted for order ".$existing["order_code"]." (".$existing["status"]."). Check My Orders; do not pay again.",["existing_order_id"=>$existing["order_code"],"existing_order_status"=>$existing["status"]],409);
     }
     respond(false,"Payment Already Used! This transaction reference has already been submitted for another order. Please contact the shop; do not pay again.",[],409);
+}
+// Reject a reused receipt even if the buyer changes the transaction reference.
+// Compare file bytes by SHA-256, not uploaded filenames (which are randomized).
+$incomingReceiptHash=hash_file("sha256",$diskPath);
+$receiptLockName="payment_receipt_".substr($incomingReceiptHash,0,48);
+$receiptLock=$conn->prepare("SELECT GET_LOCK(?,10) AS acquired");
+$receiptLock->bind_param("s",$receiptLockName);$receiptLock->execute();
+$receiptLockResult=stmt_fetch_assoc_compat($receiptLock);$receiptLock->close();
+if((int)($receiptLockResult["acquired"]??0)!==1){
+    $release=$conn->prepare("SELECT RELEASE_LOCK(?)");$release->bind_param("s",$lockName);$release->execute();$release->close();
+    unlink($diskPath);respond(false,"Payment receipt is being processed. Please retry.",[],409);
+}
+$receiptQuery=$conn->prepare("SELECT order_code,payment_screenshot FROM orders WHERE payment_screenshot IS NOT NULL AND payment_screenshot<>''");
+if(!$receiptQuery || !$receiptQuery->execute()){
+    if($receiptQuery)$receiptQuery->close();
+    foreach([$receiptLockName,$lockName] as $heldLock){$release=$conn->prepare("SELECT RELEASE_LOCK(?)");$release->bind_param("s",$heldLock);$release->execute();$release->close();}
+    unlink($diskPath);respond(false,"Unable to verify receipt uniqueness. Please retry.",[],500);
+}
+$duplicateReceipt=false;
+$receiptQuery->bind_result($existingReceiptOrder,$existingReceiptPath);
+while($receiptQuery->fetch()){
+    $storedPath=dirname(__DIR__)."/".ltrim((string)$existingReceiptPath,"/");
+    if(is_file($storedPath) && hash_file("sha256",$storedPath)===$incomingReceiptHash){$duplicateReceipt=true;break;}
+}
+$receiptQuery->close();
+if($duplicateReceipt){
+    foreach([$receiptLockName,$lockName] as $heldLock){$release=$conn->prepare("SELECT RELEASE_LOCK(?)");$release->bind_param("s",$heldLock);$release->execute();$release->close();}
+    unlink($diskPath);
+    respond(false,"Payment Already Used! This receipt image was already submitted for another order. Check My Orders or contact the shop; do not pay again.",[],409);
 }
 $conn->begin_transaction();
 try{$subtotal=0;$validated=[];
@@ -64,7 +105,7 @@ $sql="INSERT INTO orders(order_code,user_id,customer_name,phone,address,subtotal
 $stmt=$conn->prepare($sql);$stmt->bind_param("sisssdddssssssi",$orderCode,$user["id"],$customerName,$phone,$address,$subtotal,$shipping,$total,$payment,$paymentStatus,$reference,$proofPath,$status,$courier,$shipConfirmed);$stmt->execute();$orderId=$conn->insert_id;
 $it=$conn->prepare("INSERT INTO order_items(order_id,product_id,product_name,price,quantity) VALUES(?,?,?,?,?)");
 foreach($validated as $v){$it->bind_param("iisdi",$orderId,$v["id"],$v["name"],$v["price"],$v["quantity"]);$it->execute();}
-log_order_status($conn,$orderId,"Payment Submitted");$conn->commit();$release=$conn->prepare("SELECT RELEASE_LOCK(?)");$release->bind_param("s",$lockName);$release->execute();$release->close();
+log_order_status($conn,$orderId,"Payment Submitted");$conn->commit();foreach([$receiptLockName,$lockName] as $heldLock){$release=$conn->prepare("SELECT RELEASE_LOCK(?)");$release->bind_param("s",$heldLock);$release->execute();$release->close();}
 respond(true,"Payment submitted for admin verification.",["order_id"=>$orderCode,"shipping"=>$shipping,"total"=>$total]);
-}catch(Throwable $e){$conn->rollback();$release=$conn->prepare("SELECT RELEASE_LOCK(?)");$release->bind_param("s",$lockName);$release->execute();$release->close();if(isset($diskPath)&&is_file($diskPath))unlink($diskPath);respond(false,$e->getMessage(),[],409);}
+}catch(Throwable $e){$conn->rollback();foreach([$receiptLockName,$lockName] as $heldLock){$release=$conn->prepare("SELECT RELEASE_LOCK(?)");$release->bind_param("s",$heldLock);$release->execute();$release->close();}if(isset($diskPath)&&is_file($diskPath))unlink($diskPath);respond(false,$e->getMessage(),[],409);}
 ?>

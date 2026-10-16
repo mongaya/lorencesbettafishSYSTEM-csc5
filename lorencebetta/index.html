@@ -4987,33 +4987,36 @@ if (new URLSearchParams(location.search).get("reset")) {
 <script>
 /* One consolidated customer-order workflow. No renderer wrappers. */
 function smartOrderFlow(order){
+ if(order.payment_reference && ["Payment Submitted","Paid"].includes(order.payment_status)) return order.courier==="Pick Up"?["Payment Submitted","Payment Verified","Preparing","Ready for Pickup","Completed"]:["Payment Submitted","Payment Verified","Preparing","Ready to Ship","Shipped","Out for Delivery","Completed"];
  if(order.courier==="Pick Up") return ["Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Picked Up"];
  if(order.courier==="Lalamove") return ["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready for Delivery","Lalamove Booked","Out for Delivery","Delivered","Order Received"];
  return ["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received"];
 }
 function smartOrderBucket(order){
  if(order.status==="Cancelled") return "Cancelled";
+ if(order.payment_status==="Payment Submitted") return "Payment Submitted";
+ if(order.payment_status==="Payment Needs Correction") return "To Pay";
  if(["Pending Shipping Fee","Awaiting Payment"].includes(order.status)) return "To Pay";
  if(["Confirmed","Preparing","Ready for Delivery","Ready to Ship","Lalamove Booked"].includes(order.status)) return "To Prepare";
  if(["Ready for Pickup","Shipped","Out for Delivery","Delivered"].includes(order.status)) return "To Receive";
  if(["Delivered","Order Received","Picked Up"].includes(order.status)) return "Completed";
  return "To Prepare";
 }
-customerOrderFilter="To Pay";
+customerOrderFilter="Payment Submitted";
 renderOrderStatusTabs=function(allOrders){
  const el=document.getElementById("orderStatusTabs"); if(!el)return;
- const tabs=["To Pay","To Prepare","To Receive","Completed","Cancelled"];
- if(!tabs.includes(customerOrderFilter)) customerOrderFilter="To Pay";
+ const tabs=["Payment Submitted","To Pay","To Prepare","To Receive","Completed","Cancelled"];
+ if(!tabs.includes(customerOrderFilter)) customerOrderFilter="Payment Submitted";
  el.innerHTML=tabs.map(t=>`<button class="order-status-tab ${customerOrderFilter===t?'active':''}" onclick="setCustomerOrderFilter('${t}')">${t} <b>${allOrders.filter(o=>smartOrderBucket(o)===t).length}</b></button>`).join("");
 };
 setCustomerOrderFilter=function(status){customerOrderFilter=status;renderCustomerOrders();};
 
 orderHTML=function(order){
- const statuses=smartOrderFlow(order), currentIndex=statuses.indexOf(order.status);
+ const statuses=smartOrderFlow(order), payFirst=!!order.payment_reference&&["Payment Submitted","Paid"].includes(order.payment_status), currentStage=payFirst?(order.payment_status==="Payment Submitted"?"Payment Submitted":["Pending","Confirmed"].includes(order.status)?"Payment Verified":["Picked Up","Order Received","Delivered"].includes(order.status)?"Completed":order.status):order.status, currentIndex=statuses.indexOf(currentStage);
  const progress=statuses.map((status,index)=>{const done=order.status!=="Cancelled"&&index<=currentIndex;return `<div class="progress-step ${done?'done':''}"><div class="progress-dot">${done?'✓':index+1}</div>${escapeHTML(status)}</div>`}).join("");
  const items=(order.items||[]).map(item=>{const product=products.find(p=>Number(p.db_id)===Number(item.productId));const reviewReady=["Delivered","Order Received","Picked Up"].includes(order.status)&&product;const reviewed=product?alreadyReviewed(product):false;return `<div class="order-item-row">${item.image?`<img src="${escapeHTML(item.image)}" alt="${escapeHTML(item.name)}">`:`<div></div>`}<div><div class="order-item-name">${escapeHTML(item.name)}</div><div class="order-item-sub">Qty ${Number(item.quantity)} · ₱${Number(item.price).toFixed(2)}</div></div><div>${reviewReady?`<button class="action-btn view-btn" onclick="openProductDetail('${escapeHTML(product.id)}')">${reviewed?"View Rating":"Rate Product"}</button>`:""}</div></div>`}).join("");
- const paymentAction=order.status!=="Cancelled"&&["GCash","MariBank","AUB"].includes(order.payment)&&order.shipping_confirmed&&order.payment_status!=="Paid"?paymentActionHTML(order):"";
- return `<div class="order-card"><div class="order-head"><div><div class="order-id">${escapeHTML(order.id)}</div><small>${escapeHTML(order.date)}</small></div><span class="status">${escapeHTML(order.status)}</span></div><div class="order-body-grid"><div class="order-main-column"><div class="order-items-list">${items}</div><div class="progress">${progress}</div>${paymentAction}</div><aside class="order-side-column"><div class="order-side-card"><h4>Order Summary</h4><div class="summary-row"><span>Subtotal</span><strong>₱${Number(order.subtotal||0).toFixed(2)}</strong></div><div class="summary-row"><span>Shipping</span><strong>${order.shipping_confirmed?'₱'+Number(order.shipping).toFixed(2):'Pending'}</strong></div><div class="summary-row"><span>Total</span><strong>${order.shipping_confirmed?'₱'+Number(order.total).toFixed(2):'Pending final total'}</strong></div></div><div class="order-side-card"><h4>Delivery</h4><p><strong>${escapeHTML(order.courier||"Not specified")}</strong></p>${order.courier==="Lalamove"&&order.payment_status==="Paid"&&order.status!=="Cancelled"&&order.tracking_url?`<a class="primary-btn" style="display:inline-block;text-decoration:none;margin-top:8px" href="${escapeHTML(order.tracking_url)}" target="_blank" rel="noopener">Track Delivery</a>`:""}</div>${order.status!=="Cancelled"?`<div class="order-side-card"><h4>Payment</h4><p>${escapeHTML(order.payment||"")}</p><p class="payment-note">Status: <strong>${escapeHTML(order.payment_status||"Waiting")}</strong></p>${order.payment_status==="Paid"?`<button class="action-btn view-btn" onclick="viewReceipt('${escapeHTML(order.id)}',false)">View Receipt</button>`:""}</div>`:""}${order.status==="Delivered"?`<div class="order-side-card receive-card"><h4>Package delivered?</h4><p class="payment-note">Confirm only after you have received and checked your order.</p><button class="primary-btn" onclick="confirmOrderReceived('${escapeHTML(order.id)}')">Order Received</button></div>`:""}</aside></div></div>`;
+ const paymentAction=order.status!=="Cancelled"&&["GCash","MariBank","AUB"].includes(order.payment)&&order.shipping_confirmed&&!["Paid","Payment Submitted"].includes(order.payment_status)?paymentActionHTML(order):"";
+ return `<div class="order-card"><div class="order-head"><div><div class="order-id">${escapeHTML(order.id)}</div><small>${escapeHTML(order.date)}</small></div><span class="status">${escapeHTML(currentStage)}</span></div><div class="order-body-grid"><div class="order-main-column"><div class="order-items-list">${items}</div><div class="progress">${progress}</div>${paymentAction}</div><aside class="order-side-column"><div class="order-side-card"><h4>Order Summary</h4><div class="summary-row"><span>Subtotal</span><strong>₱${Number(order.subtotal||0).toFixed(2)}</strong></div><div class="summary-row"><span>Shipping</span><strong>${order.shipping_confirmed?'₱'+Number(order.shipping).toFixed(2):'Pending'}</strong></div><div class="summary-row"><span>Total</span><strong>${order.shipping_confirmed?'₱'+Number(order.total).toFixed(2):'Pending final total'}</strong></div></div><div class="order-side-card"><h4>Delivery</h4><p><strong>${escapeHTML(order.courier||"Not specified")}</strong></p>${order.courier==="Lalamove"&&order.payment_status==="Paid"&&order.status!=="Cancelled"&&order.tracking_url?`<a class="primary-btn" style="display:inline-block;text-decoration:none;margin-top:8px" href="${escapeHTML(order.tracking_url)}" target="_blank" rel="noopener">Track Delivery</a>`:""}</div>${order.status!=="Cancelled"?`<div class="order-side-card"><h4>Payment</h4><p>${escapeHTML(order.payment||"")}</p><p class="payment-note">Status: <strong>${escapeHTML(order.payment_status||"Waiting")}</strong></p>${["Paid","Payment Submitted"].includes(order.payment_status)&&order.payment_screenshot?`<button class="action-btn view-btn" onclick="viewReceipt('${escapeHTML(order.id)}',false)">View Receipt</button>`:""}</div>`:""}${order.status==="Delivered"?`<div class="order-side-card receive-card"><h4>Package delivered?</h4><p class="payment-note">Confirm only after you have received and checked your order.</p><button class="primary-btn" onclick="confirmOrderReceived('${escapeHTML(order.id)}')">Order Received</button></div>`:""}</aside></div></div>`;
 };
 
 renderCustomerOrders=function(){
@@ -5148,8 +5151,9 @@ renderAdminOrders=function(){
  tbody.innerHTML=orders.map(o=>{
    const next=nextSmartStatus(o);
    let action="";
-   if(o.status==="Pending Shipping Fee") action=`<strong>Set Shipping Fee</strong><div class="admin-manage-hint">Open Manage to continue</div>`;
-   else if(o.status==="Awaiting Payment"&&o.payment_status==="Payment Submitted") action=`<strong>Verify Payment</strong><div class="admin-manage-hint">Payment proof submitted</div>`;
+   if(o.status==="Pending Shipping Fee" && o.payment_status!=="Payment Submitted") action=`<strong>Set Shipping Fee</strong><div class="admin-manage-hint">Open Manage to continue</div>`;
+   else if(o.payment_status==="Payment Submitted") action=`<strong>Verify Payment</strong><div class="admin-manage-hint">Payment proof submitted</div>`;
+   else if(o.payment_status==="Payment Needs Correction") action=`<strong>Payment Needs Correction</strong><div class="admin-manage-hint">Waiting for customer to resubmit</div>`;
    else if(o.status==="Awaiting Payment") action=`<strong>Waiting for Payment</strong><div class="admin-manage-hint">No admin action yet</div>`;
    else if(o.status==="Delivered") action=`<strong>Delivered</strong><div class="admin-manage-hint">Waiting for Order Received</div>`;
    else if(["Order Received","Picked Up","Cancelled"].includes(o.status)) action=`<strong>${escapeHTML(o.status)}</strong><div class="admin-manage-hint">No next status</div>`;
