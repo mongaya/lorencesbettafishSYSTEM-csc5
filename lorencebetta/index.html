@@ -4987,6 +4987,7 @@ if (new URLSearchParams(location.search).get("reset")) {
 <script>
 /* One consolidated customer-order workflow. No renderer wrappers. */
 function smartOrderFlow(order){
+ if(order.payment_reference && ["Payment Submitted","Paid"].includes(order.payment_status)) return order.courier==="Pick Up"?["Payment Submitted","Payment Verified","Preparing","Ready for Pickup","Completed"]:["Payment Submitted","Payment Verified","Preparing","Ready to Ship","Shipped","Out for Delivery","Completed"];
  if(order.courier==="Pick Up") return ["Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Picked Up"];
  if(order.courier==="Lalamove") return ["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready for Delivery","Lalamove Booked","Out for Delivery","Delivered","Order Received"];
  return ["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received"];
@@ -5010,7 +5011,7 @@ renderOrderStatusTabs=function(allOrders){
 setCustomerOrderFilter=function(status){customerOrderFilter=status;renderCustomerOrders();};
 
 orderHTML=function(order){
- const statuses=smartOrderFlow(order), currentIndex=statuses.indexOf(order.status);
+ const statuses=smartOrderFlow(order), payFirst=order.payment_reference&&["Payment Submitted","Paid"].includes(order.payment_status), currentStage=payFirst?(order.payment_status==="Payment Submitted"?"Payment Submitted":order.status==="Confirmed"?"Payment Verified":["Picked Up","Order Received","Delivered"].includes(order.status)?"Completed":order.status):order.status, currentIndex=statuses.indexOf(currentStage);
  const progress=statuses.map((status,index)=>{const done=order.status!=="Cancelled"&&index<=currentIndex;return `<div class="progress-step ${done?'done':''}"><div class="progress-dot">${done?'✓':index+1}</div>${escapeHTML(status)}</div>`}).join("");
  const items=(order.items||[]).map(item=>{const product=products.find(p=>Number(p.db_id)===Number(item.productId));const reviewReady=["Delivered","Order Received","Picked Up"].includes(order.status)&&product;const reviewed=product?alreadyReviewed(product):false;return `<div class="order-item-row">${item.image?`<img src="${escapeHTML(item.image)}" alt="${escapeHTML(item.name)}">`:`<div></div>`}<div><div class="order-item-name">${escapeHTML(item.name)}</div><div class="order-item-sub">Qty ${Number(item.quantity)} · ₱${Number(item.price).toFixed(2)}</div></div><div>${reviewReady?`<button class="action-btn view-btn" onclick="openProductDetail('${escapeHTML(product.id)}')">${reviewed?"View Rating":"Rate Product"}</button>`:""}</div></div>`}).join("");
  const paymentAction=order.status!=="Cancelled"&&["GCash","MariBank","AUB"].includes(order.payment)&&order.shipping_confirmed&&!["Paid","Payment Submitted"].includes(order.payment_status)?paymentActionHTML(order):"";
