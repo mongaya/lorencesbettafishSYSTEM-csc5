@@ -74,12 +74,25 @@
     data.append('screenshot',file);
     sending=true;refreshButton();
     try{
-      await apiRequest('place_order.php',{method:'POST',body:data});
+      const placed=await apiRequest('place_order.php',{method:'POST',body:data});
+      const newCode=String(placed.order_id||'');
       const ids=new Set(selected.map(i=>String(i.productId)));
       saveCart(getCart().filter(i=>!ids.has(String(i.productId))));
-      updateCartCount();await loadProducts();await loadOrders();
-      showToast('Payment submitted. Waiting for admin verification.');
-      showCustomerPage('orders');renderCustomerOrders();renderProducts();renderHomeProducts();renderStock();renderAdminDashboard();
+      updateCartCount();
+      showToast('Order '+newCode+' submitted. Pending admin verification.','success');
+      try {
+        await Promise.all([loadProducts(),loadOrders()]);
+        if(newCode && !(orders||[]).some(o=>String(o.id)===newCode)){
+          showToast('Order '+newCode+' was saved but is missing from the orders list. Contact the shop with this order ID.','warning');
+          console.error('Newly created order missing from orders.php response',newCode);
+        }
+      }catch(refreshError){
+        console.error('Order was saved, but refreshing the orders list failed',refreshError);
+        showToast('Order '+newCode+' saved, but orders could not refresh: '+refreshError.message,'warning');
+      }
+      customerOrderFilter='Pending';
+      showCustomerPage('orders');
+      renderCustomerOrders();renderProducts();renderHomeProducts();renderStock();renderAdminDashboard();
     }catch(e){showToast(e.message);}
     finally{sending=false;refreshButton();}
   };
