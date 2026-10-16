@@ -97,5 +97,31 @@ async function order(reference,receiptVariant=0){
   assert.equal(found.payment_status,'Paid');
   assert.equal(found.status,'Confirmed');
   assert.equal(Number(sql("SELECT stock FROM products WHERE product_code='P001'")),before-2,'Corrected order stock deducted exactly once');
+  // Concurrent submissions against one rejected order: only one may be accepted.
+  const raceOrder=await order('TEST-RACE-ORDER-006',1).catch(()=>null);
+  // Receipt reuse must be rejected at checkout; use an independently encoded proof below.
+  assert.equal(raceOrder,null,'Original rejected receipt cannot create another order');
+  const raceReceipt=new FormData();
+  const fields={username:'testbuyer',customerName:'Test Customer',phone:'09123456789',address:'Quezon City, Metro Manila',payment:'GCash',deliveryMode:'delivery',paymentReference:'TEST-RACE-ORDER-006',items:JSON.stringify([{productId:'P001',quantity:1}])};
+  for(const [k,v] of Object.entries(fields))raceReceipt.append(k,v);
+  raceReceipt.append('screenshot',new Blob([Buffer.concat([correctedPng,Buffer.from('race-order-original')])],{type:'image/png'}),'race-original.png');
+  const raceCreated=await call('buyer','place_order.php',{form:raceReceipt});
+  await call('admin','reject_payment.php',{json:{orderId:raceCreated.order_id,reason:'Correct the proof'}});
+  const raceForm=(suffix)=>{
+    const form=new FormData();
+    form.append('username','testbuyer');
+    form.append('orderId',raceCreated.order_id);
+    form.append('reference','TEST-RACE-REFERENCE-007');
+    form.append('screenshot',new Blob([Buffer.concat([correctedPng,Buffer.from('race-'+suffix)])],{type:'image/png'}),'race-'+suffix+'.png');
+    return form;
+  };
+  const results=await Promise.allSettled([
+    call('buyer','submit_payment.php',{form:raceForm('first')}),
+    call('buyer','submit_payment.php',{form:raceForm('second')})
+  ]);
+  assert.equal(results.filter(x=>x.status==='fulfilled').length,1,'Only one concurrent payment correction may succeed');
+  customer=await call('buyer','orders.php');
+  found=customer.orders.find(o=>o.id===raceCreated.order_id);
+  assert.equal(found.payment_status,'Payment Submitted');
   console.log('PASS: customer/admin visibility, pending, approve, reject, stock, payment correction reason');
 })().catch(e=>{console.error(e);process.exitCode=1});
