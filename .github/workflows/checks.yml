@@ -84,3 +84,23 @@ jobs:
           assert '$status==="Out for Delivery"&&!$hasTracking' in flow
           print("Authentication and fulfillment static checks passed")
           PY
+
+      - name: Test Google OTP security invariants
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          auth=Path("lorencebetta/api/google_auth.php")
+          if not auth.exists():
+              print("Google auth integration is not in GitHub yet; refusing deployment readiness")
+              raise SystemExit(1)
+          s=auth.read_text()
+          required=["GOOGLE_CLIENT_ID", "hash_equals(GOOGLE_CLIENT_ID", "google_login_otps", "password_verify(", "session_regenerate_id(true)", "send_google_login_otp("]
+          for token in required:
+              assert token in s, f"Missing Google auth invariant: {token}"
+          mail=Path("lorencebetta/api/google_otp_mailer.php")
+          assert mail.exists(), "Google OTP mailer missing"
+          m=mail.read_text()
+          for token in ["FILTER_VALIDATE_EMAIL", "vendor/autoload.php", "mail_secure/google_mail_config.php", "SMTPAuth = true"]:
+              assert token in m, f"Missing OTP mailer invariant: {token}"
+          print("Google OTP static security checks passed")
+          PY
