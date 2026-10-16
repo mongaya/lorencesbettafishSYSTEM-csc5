@@ -100,7 +100,7 @@ jobs:
           mail=Path("lorencebetta/api/google_otp_mailer.php")
           assert mail.exists(), "Google OTP mailer missing"
           m=mail.read_text()
-          for token in ["FILTER_VALIDATE_EMAIL", "vendor/autoload.php", "mail_secure/google_mail_config.php", "SMTPAuth=true"]:
+          for token in ["FILTER_VALIDATE_EMAIL", "smtp_mail.php", "send_gmail(", "expires in 5 minutes"]:
               assert token in m, f"Missing OTP mailer invariant: {token}"
           print("Google OTP static security checks passed")
           PY
