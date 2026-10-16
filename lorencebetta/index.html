@@ -4995,6 +4995,7 @@ function smartOrderFlow(order){
 function smartOrderBucket(order){
  if(order.status==="Cancelled") return "Cancelled";
  if(order.payment_status==="Payment Submitted") return "Payment Submitted";
+ if(order.payment_status==="Payment Needs Correction") return "To Pay";
  if(["Pending Shipping Fee","Awaiting Payment"].includes(order.status)) return "To Pay";
  if(["Confirmed","Preparing","Ready for Delivery","Ready to Ship","Lalamove Booked"].includes(order.status)) return "To Prepare";
  if(["Ready for Pickup","Shipped","Out for Delivery","Delivered"].includes(order.status)) return "To Receive";
