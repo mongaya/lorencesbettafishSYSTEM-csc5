@@ -3544,19 +3544,19 @@ function renderCustomerOrders() {
 
 function orderHTML(order) {
     const statuses = order.courier === "Pick Up"
-      ? ["Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Picked Up"]
-      : ["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Shipped","Delivered","Order Received"];
+      ? ["Pending","Confirmed","Preparing","Ready for Pickup","Picked Up"]
+      : ["Pending","Confirmed","Preparing","Shipped","Delivered","Order Received"];
     const currentIndex=statuses.indexOf(order.status);
-    const progress=statuses.map((status,index)=>{const done=order.status!=="Cancelled"&&index<=currentIndex;return `<div class="progress-step ${done?'done':''}"><div class="progress-dot">${done?'✓':index+1}</div>${status}</div>`;}).join("");
+    const progress=statuses.map((status,index)=>{const done=order.status!=="Cancelled"&&index<=currentIndex;return `<div class="progress-step ${done?'done':''}"><div class="progress-dot">${done?'✓':index+1}</div>${status==="Pending"?"Pending Verification":status}</div>`;}).join("");
     const items=(order.items||[]).map(item=>{
       const product=products.find(p=>Number(p.db_id)===Number(item.productId));
       const reviewReady=["Delivered","Order Received","Picked Up"].includes(order.status) && product;
       const reviewed=product?alreadyReviewed(product):false;
       return `<div class="order-item-row">${item.image?`<img src="${escapeHTML(item.image)}" alt="${escapeHTML(item.name)}">`:`<div></div>`}<div><div class="order-item-name">${escapeHTML(item.name)}</div><div class="order-item-sub">Qty ${Number(item.quantity)} · ₱${Number(item.price).toFixed(2)}</div></div><div>${reviewReady?`<button class="action-btn view-btn" onclick="openProductDetail('${escapeHTML(product.id)}')">${reviewed?"View Rating":"Rate Product"}</button>`:""}</div></div>`;
     }).join("");
-    const paymentAction=order.status!=="Cancelled"&&["GCash","MariBank","AUB"].includes(order.payment)&&order.shipping_confirmed&&order.payment_status!=="Paid"?paymentActionHTML(order):"";
+    const paymentAction=order.status!=="Cancelled"&&["GCash","MariBank","AUB"].includes(order.payment)&&order.shipping_confirmed&&!["Paid","Payment Submitted"].includes(order.payment_status)?paymentActionHTML(order):"";
     return `<div class="order-card">
-      <div class="order-head"><div><div class="order-id">${escapeHTML(order.id)}</div><small>${escapeHTML(order.date)}</small></div><span class="status ${escapeHTML(order.status)}">${escapeHTML(order.status)}</span></div>
+      <div class="order-head"><div><div class="order-id">${escapeHTML(order.id)}</div><small>${escapeHTML(order.date)}</small></div><span class="status ${escapeHTML(order.status)}">${escapeHTML(order.status==="Pending"?"Pending Verification":order.status)}</span></div>
       <div class="order-body-grid">
         <div class="order-main-column">
           <div class="order-items-list">${items}</div>
