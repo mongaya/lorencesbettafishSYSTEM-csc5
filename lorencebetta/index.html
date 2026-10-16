@@ -9822,6 +9822,49 @@ renderCheckoutCouriers();
  document.addEventListener("DOMContentLoaded",()=>setTimeout(refreshOrderAlerts,600));
 })();
 </script>
+<style id="notification-icons-v29-style">
+.notification-item.notification-with-icon-v29{display:flex;align-items:flex-start;gap:12px}
+.notification-icon-v29{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border-radius:11px;background:#e6f4fa;color:#087fa5}
+.notification-icon-v29 svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.notification-icon-v29.chat{background:#e7f8ef;color:#14865a}
+.notification-icon-v29.payment{background:#fff3dc;color:#a46b05}
+.notification-icon-v29.shipping{background:#eaf0ff;color:#4c64b8}
+.notification-icon-v29.order{background:#e6f4fa;color:#087fa5}
+.notification-copy-v29{min-width:0;flex:1}
+</style>
+<script id="notification-icons-v29-script">
+(function(){
+ const paths={
+  chat:'<path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 21l1.9-5.5a9 9 0 0 1-.9-4A8.5 8.5 0 0 1 12.5 3H13a8.5 8.5 0 0 1 8 8.5Z"/>',
+  order:'<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M3 11h18M9 7V5a3 3 0 0 1 6 0v2"/>',
+  payment:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>',
+  shipping:'<path d="M3 5h11v12H3zM14 9h4l3 4v4h-7z"/><circle cx="7.5" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/>'
+ };
+ function typeFor(n){
+  if(n.kind==="chat")return "chat";
+  if(n.kind==="payment"||/payment/i.test(n.title||""))return "payment";
+  if(/shipping|ship|delivery|tracking/i.test((n.title||"")+" "+(n.body||"")))return "shipping";
+  return "order";
+ }
+ function decorate(role){
+  const list=document.getElementById(role+"NotificationList");if(!list)return;
+  const items=(notificationCache[role]||[]).slice(0,50);
+  [...list.querySelectorAll(".notification-item")].forEach((el,i)=>{
+   const n=items[i];if(!n||el.querySelector(".notification-icon-v29"))return;
+   const type=typeFor(n);
+   const icon=document.createElement("span");icon.className="notification-icon-v29 "+type;icon.setAttribute("aria-hidden","true");
+   icon.innerHTML='<svg viewBox="0 0 24 24">'+paths[type]+'</svg>';
+   const copy=document.createElement("span");copy.className="notification-copy-v29";
+   while(el.firstChild)copy.appendChild(el.firstChild);
+   el.append(icon,copy);el.classList.add("notification-with-icon-v29");
+  });
+ }
+ const originalRender=renderNotifications;
+ renderNotifications=function(role){originalRender(role);decorate(role);};
+ const originalCache=renderNotificationsFromCache;
+ renderNotificationsFromCache=function(role){originalCache(role);decorate(role);};
+})();
+</script>
 </body>
 </html>
 
