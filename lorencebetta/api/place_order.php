@@ -22,6 +22,13 @@ $cq=$conn->prepare("SELECT requires_shipping_fee,courier_type FROM couriers WHER
 $dup=$conn->prepare("SELECT id FROM orders WHERE payment_method=? AND payment_reference=? LIMIT 1");
 $dup->bind_param("ss",$payment,$reference);$dup->execute();$existing=stmt_fetch_assoc_compat($dup);$dup->close();
 if($existing){if(is_file($diskPath))unlink($diskPath);respond(false,"This transaction reference has already been submitted.",[],409);}
+$prefix=strtolower($payment)."_";
+$keys=$payment==="GCash"?["merchant_name","gcash_number","qr_image"]:[$prefix."account_name",$prefix."account_number",$prefix."qr_image"];
+$settings=$conn->prepare("SELECT setting_key,setting_value FROM shop_settings WHERE setting_key IN (?,?,?)");
+$settings->bind_param("sss",$keys[0],$keys[1],$keys[2]);$settings->execute();
+$rows=stmt_fetch_all_assoc_compat($settings);$settings->close();
+$config=[];foreach($rows as $row)$config[$row["setting_key"]]=$row["setting_value"];
+foreach($keys as $key){if(trim((string)($config[$key]??""))===""){unlink($diskPath);respond(false,"Selected payment account is not configured.",[],409);}}
 $conn->begin_transaction();
 try{$subtotal=0;$validated=[];
 // Aggregate duplicate product lines to prevent overselling.
