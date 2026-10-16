@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . "/db.php";
+require_once __DIR__ . "/auth.php";
+require_admin_session($conn);
 require_once "db.php";
 require_once "product_helpers.php";
 

@@ -11,10 +11,48 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Verify PHP syntax before uploading
+        run: find lorencebetta/api -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Verify inline JavaScript before uploading
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("lorencebetta/index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script(?:\s[^>]*)?>(.*?)</script\s*>", html, re.I | re.S)
+          if not scripts:
+              raise SystemExit("No inline JavaScript found")
+          Path("/tmp/lorence-inline.js").write_text("\n;\n".join(scripts), encoding="utf-8")
+          PY
+          node --check /tmp/lorence-inline.js
+
+      - name: Block incomplete frontend and private files
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path("lorencebetta")
+          frontend=root/"index.html"
+          if not frontend.is_file() or frontend.stat().st_size < 400000:
+              raise SystemExit("DEPLOY BLOCKED: full integrated frontend not committed (expected >=400KB).")
+          forbidden=[
+              root/"api/gmail_config.php",
+              root/"mail_secure/google_mail_config.php",
+          ]
+          present=[str(p) for p in forbidden if p.exists()]
+          if present:
+              raise SystemExit("DEPLOY BLOCKED: private configuration present: "+", ".join(present))
+          workflow=Path(".github/workflows/deploy.yml").read_text()
+          if "            api/db.php" not in workflow or "            api/gmail_config.php" not in workflow:
+              raise SystemExit("DEPLOY BLOCKED: private-file FTP exclusions missing.")
+          print("Frontend completeness and private-config checks passed.")
+          PY
 
       - name: Deploy website to InfinityFree
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
@@ -31,9 +69,10 @@ jobs:
             **/.git*
             **/.git*/**
             **/node_modules/**
-            index.html
             api/db.php
-            api/login.php
+            api/gmail_config.php
+            mail_secure/**
+            vendor/**
             README.txt
             database.sql
             database_v2.sql

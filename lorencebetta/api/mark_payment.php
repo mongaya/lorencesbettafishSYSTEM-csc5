@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . "/db.php";
+require_once __DIR__ . "/auth.php";
+require_admin_session($conn);
 require_once "db.php";require_once "stock_reservations.php";ensure_order_flow_columns($conn);
 $data=json_input();$orderId=trim($data["orderId"]??"");if($orderId==="")respond(false,"Order ID is required.",[],400);
 $conn->begin_transaction();

@@ -8,6 +8,8 @@ function ensure_couriers($conn){
 ensure_couriers($conn);
 if(basename($_SERVER["SCRIPT_FILENAME"]??"")!==basename(__FILE__)) return;
 if($_SERVER["REQUEST_METHOD"]==="GET"){$r=$conn->query("SELECT id,name,requires_shipping_fee,courier_type,tracking_enabled,status FROM couriers ORDER BY status='active' DESC,name");$rows=[];while($x=$r->fetch_assoc()){$x["id"]=(int)$x["id"];$x["requires_shipping_fee"]=(bool)$x["requires_shipping_fee"];$x["tracking_enabled"]=(bool)$x["tracking_enabled"];$rows[]=$x;}respond(true,"",["couriers"=>$rows]);}
+require_once __DIR__ . "/auth.php";
+require_admin_session($conn);
 $d=json_input();$action=trim($d["action"]??"save");
 if($action==="disable"){$id=(int)($d["id"]??0);$s=$conn->prepare("UPDATE couriers SET status='disabled' WHERE id=?");$s->bind_param("i",$id);$s->execute();respond(true,"Courier disabled.");}
 $id=(int)($d["id"]??0);$name=trim($d["name"]??"");$fee=!empty($d["requires_shipping_fee"])?1:0;$type=($d["courier_type"]??"delivery")==="pickup"?"pickup":"delivery";$track=!empty($d["tracking_enabled"])?1:0;$status=($d["status"]??"active")==="disabled"?"disabled":"active";

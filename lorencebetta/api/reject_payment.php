@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . "/db.php";
+require_once __DIR__ . "/auth.php";
+require_admin_session($conn);
 require_once "db.php";require_once "stock_reservations.php";ensure_order_flow_columns($conn);
 $d=json_input();$orderId=trim($d["orderId"]??"");$reason=trim($d["reason"]??"");
 if($orderId===""||$reason==="")respond(false,"Order and correction reason are required.",[],400);

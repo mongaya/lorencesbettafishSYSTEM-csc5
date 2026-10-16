@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__.'/gmail_config.php';
-function smtp_read($fp){$data='';while($line=fgets($fp,515)!==false){$data.=$line;if(strlen($line)<4||$line[3]!=='-')break;}return $data;}
+function smtp_read($fp){$data='';while(($line=fgets($fp,515))!==false){$data.=$line;if(strlen($line)<4||$line[3]!=='-')break;}return $data;}
 function smtp_expect($fp,$code){$r=smtp_read($fp);if(strpos($r,(string)$code)!==0)throw new Exception('Gmail SMTP error: '.trim($r));}
 function send_gmail($to,$subject,$html){
  if(GMAIL_USERNAME==='YOUR_GMAIL@gmail.com'||GMAIL_APP_PASSWORD==='YOUR_16_CHARACTER_APP_PASSWORD')throw new Exception('Gmail SMTP is not configured yet. Edit api/gmail_config.php first.');

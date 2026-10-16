@@ -1,7 +1,10 @@
 <?php
+require_once __DIR__ . "/db.php";
+require_once __DIR__ . "/auth.php";
 require_once "db.php";require_once "stock_reservations.php";
 ensure_order_flow_columns($conn);release_expired_reservations($conn);
-$username=trim($_POST["username"]??"");$orderId=trim($_POST["orderId"]??"");$reference=trim($_POST["reference"]??"");$file=$_FILES["screenshot"]??null;
+$username=trim($_POST["username"]??"");
+require_customer_owner($conn,$username);$orderId=trim($_POST["orderId"]??"");$reference=trim($_POST["reference"]??"");$file=$_FILES["screenshot"]??null;
 if($username===""||$orderId===""||$reference==="")respond(false,"Reference number is required.",[],400);
 if(!$file||$file["error"]===UPLOAD_ERR_NO_FILE)respond(false,"Please upload your payment receipt.",[],400);
 if($file["error"]!==UPLOAD_ERR_OK||$file["size"]>5*1024*1024)respond(false,"Payment receipt upload failed or exceeds 5MB.",[],400);

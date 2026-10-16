@@ -1,0 +1,106 @@
+name: Pre-deployment checks
+
+on:
+  pull_request:
+    paths:
+      - "lorencebetta/**"
+      - ".github/workflows/checks.yml"
+  workflow_dispatch:
+
+jobs:
+  syntax-and-shipping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check PHP syntax
+        run: |
+          find lorencebetta/api -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Extract inline JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("lorencebetta/index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script(?:\s[^>]*)?>(.*?)</script\s*>", html, re.I | re.S)
+          if not scripts:
+              raise SystemExit("No inline JavaScript found")
+          Path("/tmp/lorence-inline.js").write_text("\n;\n".join(scripts), encoding="utf-8")
+          PY
+      - name: Check JavaScript syntax
+        run: node --check /tmp/lorence-inline.js
+      - name: Test checkout quantities and overselling guards
+        run: php lorencebetta/tests/test_checkout_quantities.php
+      - name: Test regional shipping rates
+        run: |
+          php -r '
+            require "lorencebetta/api/shipping_rates.php";
+            $cases = [
+              ["Quezon City, Metro Manila", 80],
+              ["Puerto Princesa, Palawan", 80],
+              ["Cebu City, Cebu", 170],
+              ["Cagayan de Oro, Misamis Oriental", 170],
+              ["Unknown address", null],
+              ["San Jose, Occidental Mindoro", 80],
+              ["Baguio, Benguet", 80],
+              ["Parañaque, Metro Manila", 80],
+              ["Iloilo City, Iloilo", 170],
+              ["Davao City, Davao del Sur", 170],
+              ["Quezon City, Cebu", null],
+            ];
+            foreach ($cases as [$address, $expected]) {
+              $actual = regional_shipping_fee($address);
+              if ($actual !== $expected && !($actual !== null && $expected !== null && (float)$actual === (float)$expected)) {
+                fwrite(STDERR, "Wrong shipping for $address: " . var_export($actual, true) . PHP_EOL);
+                exit(1);
+              }
+            }
+            echo "Shipping checks passed\n";
+          '
+
+      - name: Test authentication and fulfillment invariants
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          api=Path("lorencebetta/api")
+          login=(api/"login.php").read_text()
+          assert 'session_regenerate_id(true)' in login
+          assert '$_SESSION["user_id"]' in login and '$_SESSION["role"]' in login
+          assert "session_write_close()" in login
+          auth=(api/"auth.php").read_text()
+          assert 'function require_admin_session' in auth
+          assert 'function require_customer_owner' in auth
+          for name in ["place_order.php","submit_payment.php","receive_order.php"]:
+              assert "require_customer_owner($conn,$username)" in (api/name).read_text(), name
+          for name in ["mark_payment.php","reject_payment.php","update_order.php","add_product.php","update_product.php","delete_product.php","set_shipping.php"]:
+              assert 'require_admin_session($conn)' in (api/name).read_text(), name
+          courier=(api/"couriers.php").read_text()
+          assert 'require_admin_session($conn)' in courier
+          assert courier.index('if($_SERVER["REQUEST_METHOD"]==="GET")') < courier.index('require_admin_session($conn)')
+          settings=(api/"payment_settings.php").read_text()
+          assert 'require_admin_session($conn)' in settings
+          received=(api/"receive_order.php").read_text()
+          assert "o.status='Picked Up'" in received
+          flow=(api/"update_order.php").read_text()
+          assert '$status==="Out for Delivery"&&!$hasTracking' in flow
+          print("Authentication and fulfillment static checks passed")
+          PY
+
+      - name: Test Google OTP security invariants
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          auth=Path("lorencebetta/api/google_auth.php")
+          if not auth.exists():
+              print("Google auth integration is not in GitHub yet; refusing deployment readiness")
+              raise SystemExit(1)
+          s=auth.read_text()
+          required=["GOOGLE_CLIENT_ID", "hash_equals(GOOGLE_CLIENT_ID", "google_login_otps", "password_verify(", "session_regenerate_id(true)", "send_google_login_otp("]
+          for token in required:
+              assert token in s, f"Missing Google auth invariant: {token}"
+          mail=Path("lorencebetta/api/google_otp_mailer.php")
+          assert mail.exists(), "Google OTP mailer missing"
+          m=mail.read_text()
+          for token in ["FILTER_VALIDATE_EMAIL", "smtp_mail.php", "send_gmail(", "expires in 5 minutes"]:
+              assert token in m, f"Missing OTP mailer invariant: {token}"
+          print("Google OTP static security checks passed")
+          PY
