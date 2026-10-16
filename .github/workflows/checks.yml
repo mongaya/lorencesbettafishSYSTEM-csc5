@@ -28,6 +28,8 @@ jobs:
           PY
       - name: Check JavaScript syntax
         run: node --check /tmp/lorence-inline.js
+      - name: Test checkout quantities and overselling guards
+        run: php lorencebetta/tests/test_checkout_quantities.php
       - name: Test regional shipping rates
         run: |
           php -r '
