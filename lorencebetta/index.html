@@ -5823,24 +5823,23 @@ confirmAddressBeforeSaveV2=function(address,onConfirm){
 
 <script id="admin-final-organize-v6-script">
 function adminNextActionV6(o){
- if(!o)return "";
- if(o.status==="Pending Shipping Fee")return "";
- if(o.status==="Awaiting Payment"){
-   if(o.payment_status==="Payment Submitted")return "";
-   return `<div class="admin-next-v6"><h4>Waiting for Customer Payment</h4><p>Fulfillment is locked until the payment proof is reviewed and verified.</p></div>`;
- }
- if(o.status==="Delivered")return `<div class="admin-next-v6"><h4>Waiting for Customer</h4><p>The customer must confirm Order Received.</p></div>`;
- if(["Order Received","Picked Up","Cancelled"].includes(o.status))return `<div class="admin-next-v6"><h4>${escapeHTML(o.status)}</h4><p>No further order action is required.</p></div>`;
- const flow=flowForOrder(o),i=flow.indexOf(o.status),next=i>=0?flow[i+1]:null;
+ if(!o||o.status==="Cancelled")return "";
+ if(o.payment_status!=="Paid")return "";
+ const pickup=String(o.courier||"").trim().toLowerCase()==="pick up";
+ const flow=pickup?["Confirmed","Preparing","Ready for Pickup","Picked Up","Order Received"]:
+   o.courier==="Lalamove"?["Confirmed","Preparing","Ready for Delivery","Lalamove Booked","Out for Delivery","Delivered","Order Received"]:
+   ["Confirmed","Preparing","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received"];
+ if(o.status==="Delivered")return '<div class="admin-next-v6"><h4>Waiting for Customer</h4><p>The customer must confirm Order Received.</p></div>';
+ if(["Order Received","Picked Up"].includes(o.status))return '<div class="admin-next-v6"><h4>Order Completed</h4><p>No further order action is required.</p></div>';
+ const i=flow.indexOf(o.status),next=i>=0?flow[i+1]:null;
  if(!next)return "";
- if(o.courier==="Lalamove"&&next==="Lalamove Booked"&&!o.tracking_url)
-   return ""; // Keep tracking requirement without displaying the redundant notice.
- const labels={
-   "Preparing":"Start Preparing","Ready to Ship":"Mark as Ready to Ship","Ready for Pickup":"Mark as Ready for Pickup",
-   "Ready for Delivery":"Mark as Ready for Delivery","Lalamove Booked":"Mark Lalamove as Booked",
-   "Shipped":"Mark as Shipped","Out for Delivery":"Mark as Out for Delivery","Delivered":"Mark as Delivered","Picked Up":"Mark as Picked Up"
- };
- return `<div class="admin-next-v6"><h4>Next Step: ${escapeHTML(next)}</h4><p>Complete only this next valid step. The order cannot skip backward or ahead.</p><button class="primary-btn" onclick="confirmAdminStatusV6('${escapeHTML(o.id)}','${escapeHTML(next)}','${escapeHTML(labels[next]||("Mark as "+next))}')">${escapeHTML(labels[next]||("Mark as "+next))}</button></div>`;
+ if(o.courier==="Lalamove"&&next==="Lalamove Booked"&&!o.tracking_url&&!o.tracking_number)
+   return '<div class="admin-next-v6"><h4>Add Tracking First</h4><p>Save the Lalamove tracking link or number before marking the booking complete.</p></div>';
+ const labels={"Preparing":"Start Preparing","Ready to Ship":"Mark as Ready to Ship","Ready for Pickup":"Mark as Ready for Pickup",
+ "Ready for Delivery":"Mark as Ready for Delivery","Lalamove Booked":"Mark Lalamove as Booked",
+ "Shipped":"Mark as Shipped","Out for Delivery":"Mark as Out for Delivery","Delivered":"Mark as Delivered","Picked Up":"Mark as Picked Up"};
+ const label=labels[next]||("Mark as "+next);
+ return `<div class="admin-next-v6"><h4>Next Step: ${escapeHTML(next)}</h4><p>Complete this step to continue the order.</p><button class="primary-btn" onclick="confirmAdminStatusV6('${escapeHTML(o.id)}','${escapeHTML(next)}','${escapeHTML(label)}')">${escapeHTML(label)}</button></div>`;
 }
 async function confirmAdminStatusV6(id,status,label){
  if(!await styledConfirm(label,`Confirm that order ${id} is now ${status}.`,label))return;
