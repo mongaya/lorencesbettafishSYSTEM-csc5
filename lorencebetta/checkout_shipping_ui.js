@@ -21,7 +21,7 @@
     const courier=document.getElementById('checkoutCourierSection');
     if(courier)courier.hidden=mode!=='delivery';
     const note=document.getElementById('checkoutDeliveryNote');
-    if(note)note.textContent=mode==='pickup'?'Pick Up: no shipping fee.':'Courier: J&T Express';
+    if(note)note.textContent=mode==='pickup'?'':'Courier: J&T Express';
     let html='';
     getSelectedCartItems().forEach(i=>{
       const p=products.find(x=>String(x.id)===String(i.productId));
