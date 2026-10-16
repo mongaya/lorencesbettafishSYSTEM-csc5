@@ -6,7 +6,7 @@
   const valid=()=>!!$('checkoutPaymentReference')?.value.trim()&&!!$('checkoutPaymentScreenshot')?.files?.length;
   function refreshButton(){
     const btn=$('checkoutPlaceOrder');
-    if(btn)btn.disabled=sending||!quoteReady||!valid();
+    if(btn)btn.disabled=sending||!quoteReady||!valid()||$('checkoutPaymentDetails')?.dataset.ready!=='yes';
   }
   function paymentInfo(){
     const method=payment(), data=paymentSettings?.[method]||{};
