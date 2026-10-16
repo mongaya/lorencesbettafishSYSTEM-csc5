@@ -69,6 +69,15 @@ async function order(reference,receiptVariant=0){
   customer=await call('buyer','orders.php');
   found=customer.orders.find(o=>o.id===two.order_id);
   assert.equal(found.payment_status,'Payment Needs Correction');
+  // A different receipt must still be rejected if its reference belongs to another order.
+  const reusedReference=new FormData();
+  reusedReference.append('username','testbuyer');
+  reusedReference.append('orderId',two.order_id);
+  reusedReference.append('reference','TEST-APPROVE-001');
+  reusedReference.append('screenshot',new Blob([Buffer.concat([correctedPng,Buffer.from('new-image-old-reference')])],{type:'image/png'}),'other-proof.png');
+  let reusedReferenceError='';
+  try { await call('buyer','submit_payment.php',{form:reusedReference}); } catch(e) { reusedReferenceError=String(e.message); }
+  assert.ok(reusedReferenceError.includes('Payment Already Used!'),'Corrected proof cannot reuse another order transaction reference');
   const freshProof=new FormData();
   freshProof.append('username','testbuyer');
   freshProof.append('orderId',two.order_id);
