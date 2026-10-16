@@ -47,6 +47,6 @@ $stmt=$conn->prepare($sql);$stmt->bind_param("sisssdddssssssi",$orderCode,$user[
 $it=$conn->prepare("INSERT INTO order_items(order_id,product_id,product_name,price,quantity) VALUES(?,?,?,?,?)");
 foreach($validated as $v){$it->bind_param("iisdi",$orderId,$v["id"],$v["name"],$v["price"],$v["quantity"]);$it->execute();}
 log_order_status($conn,$orderId,"Payment Submitted");$conn->commit();
-respond(true,"Order placed. Please submit payment.",["order_id"=>$orderCode,"shipping"=>$shipping,"total"=>$total]);
+respond(true,"Payment submitted for admin verification.",["order_id"=>$orderCode,"shipping"=>$shipping,"total"=>$total]);
 }catch(Throwable $e){$conn->rollback();if(isset($diskPath)&&is_file($diskPath))unlink($diskPath);respond(false,$e->getMessage(),[],409);}
 ?>
