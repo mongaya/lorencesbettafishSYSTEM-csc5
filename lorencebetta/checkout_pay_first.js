@@ -6,7 +6,7 @@
   const valid=()=>!!$('checkoutPaymentReference')?.value.trim()&&!!$('checkoutPaymentScreenshot')?.files?.length;
   function refreshButton(){
     const btn=$('checkoutPlaceOrder');
-    if(btn)btn.disabled=sending||!quoteReady||!valid()||$('checkoutPaymentDetails')?.dataset.ready!=='yes';
+    if(btn)btn.disabled=sending; // Keep clickable to explain missing checkout requirements.
   }
   function paymentInfo(){
     const method=payment(), data=paymentSettings?.[method]||{};
@@ -51,8 +51,20 @@
   placeOrder=async function(){
     if(sending)return;
     const selected=getSelectedCartItems(),a=selectedAddress();
-    if(!selected.length||!a||!quoteReady||!Number.isFinite(quoteTotal)||!valid()||$('checkoutPaymentDetails')?.dataset.ready!=='yes'){
-      showToast('Complete the payment, reference number and receipt before placing the order.');return;
+    if(!selected.length){showToast('Please select a product before placing an order.');return;}
+    if(!a){showToast('Please select a delivery address before placing an order.');return;}
+    if(!quoteReady||!Number.isFinite(quoteTotal)){showToast('Please wait for the final order total before placing an order.');return;}
+    if($('checkoutPaymentDetails')?.dataset.ready!=='yes'){showToast('Payment account details are unavailable. Please contact the shop.');return;}
+    const missingReference=!$('checkoutPaymentReference')?.value.trim();
+    const missingScreenshot=!$('checkoutPaymentScreenshot')?.files?.length;
+    if(missingReference||missingScreenshot){
+      showToast(missingReference&&missingScreenshot
+        ? 'Please enter your payment transaction reference number and upload a payment screenshot.'
+        : missingReference
+        ? 'Please enter your payment transaction reference number.'
+        : 'Please upload a payment screenshot before placing your order.');
+      (missingReference?$('checkoutPaymentReference'):$('checkoutPaymentScreenshot'))?.focus();
+      return;
     }
     const file=$('checkoutPaymentScreenshot').files[0];
     if(file.size>5*1024*1024||!['image/jpeg','image/png','image/webp'].includes(file.type)){showToast('Use a JPG, PNG or WEBP receipt up to 5MB.');return;}
