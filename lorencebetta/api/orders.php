@@ -69,15 +69,15 @@ $orderStmt=$conn->prepare($sql);
 $viewerRole=$viewer["role"];$viewerId=(int)$viewer["id"];
 $orderStmt->bind_param("si",$viewerRole,$viewerId);
 $orderStmt->execute();
-$orderResult=$orderStmt->get_result();
+$orderRows=stmt_fetch_all_assoc_compat($orderStmt);$orderStmt->close();
 
-if (!$orderResult) {
+if (!is_array($orderRows)) {
     respond(false, "Unable to load orders.", [], 500);
 }
 
 $orders = [];
 
-while ($row = $orderResult->fetch_assoc()) {
+foreach ($orderRows as $row) {
     $orderId = (int)$row["id"];
 
     $stmt = $conn->prepare(
