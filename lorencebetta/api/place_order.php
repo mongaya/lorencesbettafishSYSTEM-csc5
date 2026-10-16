@@ -19,6 +19,9 @@ if(!move_uploaded_file($file["tmp_name"],$diskPath))respond(false,"Unable to sav
 $proofPath="/images/payments/".$filename;
 $u=$conn->prepare("SELECT id FROM users WHERE username=? AND role='customer' AND status='active' LIMIT 1");$u->bind_param("s",$username);$u->execute();$user=stmt_fetch_assoc_compat($u);if(!$user)respond(false,"Customer account not found.",[],404);
 $cq=$conn->prepare("SELECT requires_shipping_fee,courier_type FROM couriers WHERE name=? AND status='active' LIMIT 1");$cq->bind_param("s",$courier);$cq->execute();$courierRow=stmt_fetch_assoc_compat($cq);if(!$courierRow)respond(false,"Selected courier is not available.",[],409);$requiresFee=(int)$courierRow["requires_shipping_fee"]===1;
+$dup=$conn->prepare("SELECT id FROM orders WHERE payment_method=? AND payment_reference=? LIMIT 1");
+$dup->bind_param("ss",$payment,$reference);$dup->execute();$existing=stmt_fetch_assoc_compat($dup);$dup->close();
+if($existing){if(is_file($diskPath))unlink($diskPath);respond(false,"This transaction reference has already been submitted.",[],409);}
 $conn->begin_transaction();
 try{$subtotal=0;$validated=[];
 // Aggregate duplicate product lines to prevent overselling.
