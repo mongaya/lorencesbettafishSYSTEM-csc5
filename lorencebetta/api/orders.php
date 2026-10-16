@@ -2,6 +2,8 @@
 
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/stock_reservations.php";
+require_once __DIR__ . "/auth.php";
+$viewer=require_user_session($conn);
 ensure_order_flow_columns($conn);
 release_expired_reservations($conn);
 
@@ -59,10 +61,15 @@ $sql = "
         DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i:%s') AS order_date
     FROM orders o
     LEFT JOIN users u ON u.id = o.user_id
+    WHERE (? = 'admin' OR o.user_id = ?)
     ORDER BY o.id DESC
 ";
 
-$orderResult = $conn->query($sql);
+$orderStmt=$conn->prepare($sql);
+$viewerRole=$viewer["role"];$viewerId=(int)$viewer["id"];
+$orderStmt->bind_param("si",$viewerRole,$viewerId);
+$orderStmt->execute();
+$orderResult=$orderStmt->get_result();
 
 if (!$orderResult) {
     respond(false, "Unable to load orders.", [], 500);
