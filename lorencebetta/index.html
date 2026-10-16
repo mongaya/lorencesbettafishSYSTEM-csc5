@@ -10750,3 +10750,73 @@ viewOrder=function(orderId){
   // A single toast is displayed for invalid transitions rather than multiple conflicting prompts.
 })();
 </script>
+
+<!-- Pay-first order presentation: legacy order histories remain unchanged. -->
+<script id="pay-first-order-cleanup-20261016">
+(function(){
+  const previousFlow=smartOrderFlow;
+  const previousBucket=smartOrderBucket;
+  function isPayFirst(o){
+    return !!o && (o.payment_status==='Payment Submitted' ||
+      (o.shipping_confirmed && !!o.payment_reference &&
+       ['Pending','Confirmed','Preparing','Ready for Pickup','Ready to Ship','Shipped','Out for Delivery','Delivered','Order Received','Picked Up'].includes(o.status)));
+  }
+  smartOrderFlow=function(o){
+    if(!isPayFirst(o))return previousFlow(o);
+    const pickup=String(o.courier||'').toLowerCase()==='pick up';
+    return pickup?['Payment Submitted','Payment Verified','Preparing','Ready for Pickup','Completed']:
+      ['Payment Submitted','Payment Verified','Preparing','Ready to Ship','Shipped','Out for Delivery','Completed'];
+  };
+  smartOrderBucket=function(o){
+    if(o.status==='Cancelled')return 'Cancelled';
+    if(isPayFirst(o) && o.payment_status==='Payment Submitted')return 'To Pay';
+    return previousBucket(o);
+  };
+  const oldOrderHTML=orderHTML;
+  orderHTML=function(o){
+    if(!isPayFirst(o))return oldOrderHTML(o);
+    const pickup=String(o.courier||'').toLowerCase()==='pick up';
+    const paid=o.payment_status==='Paid';
+    const completed=['Delivered','Order Received','Picked Up'].includes(o.status);
+    const stage=!paid?'Payment Submitted':completed?'Completed':
+      ['Pending','Confirmed'].includes(o.status)?'Payment Verified':o.status;
+    const stages=smartOrderFlow(o),current=Math.max(0,stages.indexOf(stage));
+    const progress=stages.map((label,i)=>'<div class="progress-step '+(i<=current?'done':'')+'"><div class="progress-dot">'+(i<=current?'✓':i+1)+'</div>'+escapeHTML(label)+'</div>').join('');
+    const html=oldOrderHTML(o);
+    const doc=document.createElement('div');doc.innerHTML=html;
+    const card=doc.querySelector('.order-card');if(!card)return html;
+    const bar=card.querySelector('.progress');if(bar)bar.innerHTML=progress;
+    const badge=card.querySelector('.order-head .status');if(badge)badge.textContent=stage;
+    // A submitted receipt is not a request to pay again. Never show the legacy payment form.
+    card.querySelectorAll('.admin-shipping-box').forEach(panel=>panel.remove());
+    const payment=Array.from(card.querySelectorAll('.order-side-card')).find(x=>x.querySelector('h4')?.textContent.trim()==='Payment');
+    if(payment){
+      const label=!paid?'Payment Submitted — Waiting for Admin Verification':'Payment Verified';
+      payment.innerHTML='<h4>Payment</h4><p>'+escapeHTML(o.payment||'')+'</p><p class="payment-note">Status: <strong>'+escapeHTML(label)+'</strong></p>'+
+        (o.payment_screenshot?'<button class="action-btn view-btn" onclick="viewReceipt(\''+escapeHTML(o.id)+'\',false)">View Receipt</button>':'');
+    }
+    return doc.innerHTML;
+  };
+  // Remove obsolete admin-confirmed-shipping messages from the cart only.
+  function cleanCartNote(){
+    const cart=document.querySelector('#customerCart, #cartItems, #cartContent, .cart-panel');
+    if(!cart)return;
+    cart.querySelectorAll('*').forEach(el=>{
+      if(el.children.length===0 && /shipping fee will be confirmed by admin\.?/i.test(el.textContent||'')){
+        const parent=el.closest('.shipping-note,.cart-shipping-note,.notice,.alert,.info-box');
+        (parent&&cart.contains(parent)?parent:el).remove();
+      }
+    });
+  }
+  document.addEventListener('DOMContentLoaded',()=>{
+    const cartRoot=document.getElementById('customerApp')||document.body;
+    let queued=false;
+    const observer=new MutationObserver(()=>{
+      if(queued)return;queued=true;
+      queueMicrotask(()=>{queued=false;cleanCartNote()});
+    });
+    observer.observe(cartRoot,{childList:true,subtree:true});
+    cleanCartNote();
+  });
+})();
+</script>
