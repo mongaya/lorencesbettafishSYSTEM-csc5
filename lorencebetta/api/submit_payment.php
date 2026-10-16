@@ -34,6 +34,13 @@ $filename="payment_".date("Ymd_His")."_".bin2hex(random_bytes(4)).".".$allowed[$
 if(!move_uploaded_file($file["tmp_name"],$folder.DIRECTORY_SEPARATOR.$filename))respond(false,"Could not save the payment receipt.",[],500);
 $path="/images/payments/".$filename;
 
+// Prevent legacy payment resubmissions from reusing another order's reference.
+$duplicate=$conn->prepare("SELECT id FROM orders WHERE payment_reference=? AND order_code<>? LIMIT 1");
+if(!$duplicate){@unlink($folder.DIRECTORY_SEPARATOR.$filename);respond(false,"Unable to validate payment reference.",[],500);}
+$duplicate->bind_param("ss",$reference,$orderId);
+if(!$duplicate->execute()){$duplicate->close();@unlink($folder.DIRECTORY_SEPARATOR.$filename);respond(false,"Unable to validate payment reference.",[],500);}
+$usedReference=stmt_fetch_assoc_compat($duplicate);$duplicate->close();
+if($usedReference){@unlink($folder.DIRECTORY_SEPARATOR.$filename);respond(false,"Payment Already Used! This transaction reference belongs to another order. Check My Orders or contact the shop; do not pay again.",[],409);}
 $stmt=$conn->prepare("UPDATE orders o JOIN users u ON u.id=o.user_id
  SET o.payment_reference=?,o.payment_screenshot=?,o.payment_status='Payment Submitted',
      o.payment_rejection_reason=NULL,o.reservation_expires_at=NULL,o.updated_at=NOW()
