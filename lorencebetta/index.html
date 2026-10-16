@@ -5153,6 +5153,7 @@ renderAdminOrders=function(){
    let action="";
    if(o.status==="Pending Shipping Fee" && o.payment_status!=="Payment Submitted") action=`<strong>Set Shipping Fee</strong><div class="admin-manage-hint">Open Manage to continue</div>`;
    else if(o.payment_status==="Payment Submitted") action=`<strong>Verify Payment</strong><div class="admin-manage-hint">Payment proof submitted</div>`;
+   else if(o.payment_status==="Payment Needs Correction") action=`<strong>Payment Needs Correction</strong><div class="admin-manage-hint">Waiting for customer to resubmit</div>`;
    else if(o.status==="Awaiting Payment") action=`<strong>Waiting for Payment</strong><div class="admin-manage-hint">No admin action yet</div>`;
    else if(o.status==="Delivered") action=`<strong>Delivered</strong><div class="admin-manage-hint">Waiting for Order Received</div>`;
    else if(["Order Received","Picked Up","Cancelled"].includes(o.status)) action=`<strong>${escapeHTML(o.status)}</strong><div class="admin-manage-hint">No next status</div>`;
