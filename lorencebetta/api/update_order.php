@@ -13,6 +13,8 @@ $flows=[
  "J&T Express"=>["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received"]
 ];
 $flow=$flows[$o["courier"]]??null;if(!$flow)respond(false,"Unsupported courier.",[],400);
+// Payment-first orders become Confirmed immediately after verification.
+ // The existing courier-specific fulfillment flow continues from Confirmed.
 $current=array_search($o["status"],$flow,true);$next=array_search($status,$flow,true);
 if($current===false||$next===false||$next!==$current+1)respond(false,"Status must follow the order process one step at a time.",[],409);
 if($o["status"]==="Cancelled")respond(false,"Cancelled orders cannot be processed.",[],409);
