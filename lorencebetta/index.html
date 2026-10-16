@@ -9767,14 +9767,14 @@ renderCheckoutCouriers();
  buildNotifications=function(role){
    const items=oldBuild(role).filter(n=>role!=="admin"||!String(n.id).startsWith("new-order-"));
    if(role==="admin"){
-     (orders||[]).filter(o=>o.is_new).forEach(o=>items.unshift({id:"new-order-"+o.id,title:"New order received",body:String(o.id)+" from "+(o.username||o.customerName||"customer"),kind:"order",orderId:o.id}));
+     (orders||[]).filter(o=>o.is_new).forEach(o=>items.unshift({id:"new-order-"+o.id,title:"New order received",body:String(o.id)+" from "+(o.username||o.customerName||"customer"),kind:"order",orderId:o.id,createdAt:o.order_date||null}));
    }
    return items;
  };
  const oldUpdate=updateChatNotifications;
  updateChatNotifications=function(role,messages){
    const incoming=(messages||[]).filter(m=>role==="admin"?m.sender_role==="customer":m.sender_role==="admin");
-   chatNotificationState[role]=incoming.slice(-50).map(m=>({id:"chat-"+m.id,title:role==="admin"?"New customer message":"Message from Admin",body:(role==="admin"?m.username+": ":"")+m.message,kind:"chat",username:m.username}));
+   chatNotificationState[role]=incoming.slice(-50).map(m=>({id:"chat-"+m.id,title:role==="admin"?"New customer message":"Message from Admin",body:(role==="admin"?m.username+": ":"")+m.message,kind:"chat",username:m.username,createdAt:m.created_at||null}));
    renderNotifications(role);
  };
  const oldOpen=openNotification;
@@ -9863,6 +9863,59 @@ renderCheckoutCouriers();
  renderNotifications=function(role){originalRender(role);decorate(role);};
  const originalCache=renderNotificationsFromCache;
  renderNotificationsFromCache=function(role){originalCache(role);decorate(role);};
+})();
+</script>
+<style id="notification-time-v30-style">
+.notification-time-v30{display:block;margin-top:5px;font-size:11px;color:#647b86;font-weight:500}
+</style>
+<script id="notification-time-v30-script">
+(function(){
+ function stamp(raw){
+   if(!raw)return null;
+   const value=String(raw).trim();
+   const iso=value.includes("T")?value:value.replace(" ","T");
+   const parsed=new Date(iso);
+   return Number.isFinite(parsed.getTime())?parsed:null;
+ }
+ function timeLabel(date){
+   const seconds=Math.max(0,Math.floor((Date.now()-date.getTime())/1000));
+   if(seconds<60)return "Just now";
+   if(seconds<3600)return Math.floor(seconds/60)+" min ago";
+   if(seconds<86400)return Math.floor(seconds/3600)+" hr ago";
+   if(seconds<172800)return "Yesterday";
+   if(seconds<604800)return Math.floor(seconds/86400)+" days ago";
+   return date.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
+ }
+ const previousBuild=buildNotifications;
+ buildNotifications=function(role){
+   const items=previousBuild(role);
+   // Only timestamp records with an actual server-provided date.
+   if(role==="customer"){
+     for(const n of items){
+       if(n.kind==="chat")continue;
+       const o=(orders||[]).find(o=>String(n.id).startsWith("order-status-"+o.id+"-")||String(n.id).startsWith("payment-"+o.id+"-")||String(n.id).startsWith("shipping-"+o.id+"-"));
+       if(o)n.createdAt=o.order_date||null;
+     }
+   }
+   return items.map((n,i)=>({...n,_position:i,_time:stamp(n.createdAt)?.getTime()||0}))
+     .sort((a,b)=>b._time-a._time||b._position-a._position);
+ };
+ function decorateTime(role){
+   const list=document.getElementById(role+"NotificationList");if(!list)return;
+   const items=(notificationCache[role]||[]).slice(0,50);
+   [...list.querySelectorAll(".notification-item")].forEach((el,i)=>{
+     const date=stamp(items[i]?.createdAt);
+     if(!date)return;
+     const copy=el.querySelector(".notification-copy-v29")||el;
+     let node=copy.querySelector(".notification-time-v30");
+     if(!node){node=document.createElement("time");node.className="notification-time-v30";copy.appendChild(node);}
+     node.dateTime=date.toISOString();node.textContent=timeLabel(date);node.title=date.toLocaleString();
+   });
+ }
+ const previousRender=renderNotifications;
+ renderNotifications=function(role){previousRender(role);decorateTime(role);};
+ const previousCache=renderNotificationsFromCache;
+ renderNotificationsFromCache=function(role){previousCache(role);decorateTime(role);};
 })();
 </script>
 </body>
