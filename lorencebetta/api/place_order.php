@@ -38,7 +38,7 @@ $p=$conn->prepare("SELECT id,product_code,name,price,stock FROM products WHERE p
 $reserved=reserved_quantity($conn,(int)$product["id"]);$available=max(0,(int)$product["stock"]-$reserved);if($available<$qty)throw new Exception($product["name"]." is currently reserved or out of stock.");
 $subtotal+=(float)$product["price"]*$qty;$validated[]=["id"=>(int)$product["id"],"name"=>$product["name"],"price"=>(float)$product["price"],"quantity"=>$qty];}
 $orderCode="LF-".date("YmdHis")."-".strtoupper(bin2hex(random_bytes(2)));$shipping=$mode==="pickup"?0:regional_shipping_fee($address);if($shipping===null)throw new Exception("Please include a recognizable Philippine province or Metro Manila city in your complete address.");$total=$subtotal+$shipping;
-{$status="Awaiting Payment";$paymentStatus="Payment Submitted";$shipConfirmed=1;$expirySql="NULL";}
+{$status="Pending";$paymentStatus="Payment Submitted";$shipConfirmed=1;$expirySql="NULL";}
 $sql="INSERT INTO orders(order_code,user_id,customer_name,phone,address,subtotal,shipping,total,payment_method,payment_status,payment_reference,payment_screenshot,status,courier,shipping_confirmed_at,reservation_expires_at,stock_deducted,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,CASE WHEN ?=1 THEN NOW() ELSE NULL END,$expirySql,0,NOW(),NOW())";
 $stmt=$conn->prepare($sql);$stmt->bind_param("sisssdddssssssi",$orderCode,$user["id"],$customerName,$phone,$address,$subtotal,$shipping,$total,$payment,$paymentStatus,$reference,$proofPath,$status,$courier,$shipConfirmed);$stmt->execute();$orderId=$conn->insert_id;
 $it=$conn->prepare("INSERT INTO order_items(order_id,product_id,product_name,price,quantity) VALUES(?,?,?,?,?)");
