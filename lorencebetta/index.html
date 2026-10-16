@@ -3488,7 +3488,7 @@ function renderCart(){
  <div class="cart-details"><h4>${escapeHTML(p.name)}</h4><div class="cart-price">₱${Number(p.price).toFixed(2)}</div></div>
  <div class="qty"><button onclick="changeQuantity('${p.id}',-1)">−</button><b>${i.quantity}</b><button onclick="changeQuantity('${p.id}',1)">+</button></div>
  <strong>₱${total.toFixed(2)}</strong><button class="remove-btn" onclick="removeFromCart('${p.id}')">️</button></div>`}).join("");
- el.innerHTML=`<div class="cart-panel"><div style="padding:12px"><label><input type="checkbox" ${selected.length===cart.length?"checked":""} onchange="setAllCartSelected(this.checked)"> <strong>Select All</strong> (${selected.length}/${cart.length})</label></div>${rows}<div class="cart-summary"><div class="summary-row"><span>Selected Subtotal</span><strong>₱${subtotal.toFixed(2)}</strong></div><div class="shipping-pending"> Shipping fee will be confirmed by admin.</div><button class="primary-btn full-btn" onclick="openCheckout()" ${selected.length?"":"disabled"}>Proceed to Checkout (${selected.length}) →</button></div></div>`;
+ el.innerHTML=`<div class="cart-panel"><div style="padding:12px"><label><input type="checkbox" ${selected.length===cart.length?"checked":""} onchange="setAllCartSelected(this.checked)"> <strong>Select All</strong> (${selected.length}/${cart.length})</label></div>${rows}<div class="cart-summary"><div class="summary-row"><span>Selected Subtotal</span><strong>₱${subtotal.toFixed(2)}</strong></div><button class="primary-btn full-btn" onclick="openCheckout()" ${selected.length?"":"disabled"}>Proceed to Checkout (${selected.length}) →</button></div></div>`;
 }
 
 function selectedAddress(){return savedAddresses.find(a=>Number(a.id)===Number(selectedAddressId))||savedAddresses.find(a=>Number(a.is_default)===1)||savedAddresses[0]||null;}
@@ -3543,20 +3543,39 @@ function renderCustomerOrders() {
 }
 
 function orderHTML(order) {
-    const statuses = order.courier === "Pick Up"
-      ? (order.status==="Pending"?["Pending","Confirmed","Preparing","Ready for Pickup","Picked Up"]:["Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Picked Up"])
-      : (order.status==="Pending"?["Pending","Confirmed","Preparing","Shipped","Delivered","Order Received"]:["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Shipped","Delivered","Order Received"]);
-    const currentIndex=statuses.indexOf(order.status);
-    const progress=statuses.map((status,index)=>{const done=order.status!=="Cancelled"&&index<=currentIndex;return `<div class="progress-step ${done?'done':''}"><div class="progress-dot">${done?'✓':index+1}</div>${status==="Pending"?"Pending Verification":status}</div>`;}).join("");
+    // Pay-first orders have already submitted proof at checkout. Keep legacy
+    // shipping/payment steps only for orders that actually used that flow.
+    const payFirst = order.payment_status === "Payment Submitted" ||
+      (order.shipping_confirmed && !!order.payment_reference &&
+       ["Pending","Confirmed","Preparing","Ready for Pickup","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received","Picked Up"].includes(order.status));
+    const pickup = String(order.courier||"").toLowerCase() === "pick up";
+    const statuses = payFirst
+      ? (pickup ? ["Payment Submitted","Payment Verified","Preparing","Ready for Pickup","Completed"]
+                : ["Payment Submitted","Payment Verified","Preparing","Ready to Ship","Shipped","Out for Delivery","Completed"])
+      : (pickup ? ["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Picked Up"]
+                : ["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received"]);
+    const fulfilled = ["Delivered","Order Received","Picked Up"].includes(order.status);
+    const verified = order.payment_status === "Paid";
+    const stage = !payFirst ? order.status :
+      !verified ? "Payment Submitted" :
+      fulfilled ? "Completed" :
+      order.status === "Pending" || order.status === "Confirmed" ? "Payment Verified" : order.status;
+    const currentIndex = statuses.indexOf(stage);
+    const progress = order.status === "Cancelled"
+      ? '<div class="payment-note">Order cancelled. See the cancellation reason below.</div>'
+      : statuses.map((status,index)=>{
+          const done = index <= currentIndex;
+          return `<div class="progress-step ${done?'done':''}"><div class="progress-dot">${done?'✓':index+1}</div>${status}</div>`;
+        }).join("");
     const items=(order.items||[]).map(item=>{
       const product=products.find(p=>Number(p.db_id)===Number(item.productId));
       const reviewReady=["Delivered","Order Received","Picked Up"].includes(order.status) && product;
       const reviewed=product?alreadyReviewed(product):false;
       return `<div class="order-item-row">${item.image?`<img src="${escapeHTML(item.image)}" alt="${escapeHTML(item.name)}">`:`<div></div>`}<div><div class="order-item-name">${escapeHTML(item.name)}</div><div class="order-item-sub">Qty ${Number(item.quantity)} · ₱${Number(item.price).toFixed(2)}</div></div><div>${reviewReady?`<button class="action-btn view-btn" onclick="openProductDetail('${escapeHTML(product.id)}')">${reviewed?"View Rating":"Rate Product"}</button>`:""}</div></div>`;
     }).join("");
-    const paymentAction=order.status!=="Cancelled"&&["GCash","MariBank","AUB"].includes(order.payment)&&order.shipping_confirmed&&!["Paid","Payment Submitted"].includes(order.payment_status)?paymentActionHTML(order):"";
+    const paymentAction=order.status!=="Cancelled"&&["GCash","MariBank","AUB"].includes(order.payment)&&order.shipping_confirmed&&!order.payment_reference&&!["Paid","Payment Submitted"].includes(order.payment_status)?paymentActionHTML(order):"";
     return `<div class="order-card">
-      <div class="order-head"><div><div class="order-id">${escapeHTML(order.id)}</div><small>${escapeHTML(order.date)}</small></div><span class="status ${escapeHTML(order.status)}">${escapeHTML(order.status==="Pending"?"Pending Verification":order.status)}</span></div>
+      <div class="order-head"><div><div class="order-id">${escapeHTML(order.id)}</div><small>${escapeHTML(order.date)}</small></div><span class="status ${escapeHTML(order.status)}">${escapeHTML(order.status==="Pending"?"Payment Submitted":order.status)}</span></div>
       <div class="order-body-grid">
         <div class="order-main-column">
           <div class="order-items-list">${items}</div>
@@ -3566,7 +3585,7 @@ function orderHTML(order) {
         <aside class="order-side-column">
           <div class="order-side-card"><h4>Order Summary</h4><div class="summary-row"><span>Subtotal</span><strong>₱${Number(order.subtotal||0).toFixed(2)}</strong></div><div class="summary-row"><span>Shipping</span><strong>${order.shipping_confirmed?'₱'+Number(order.shipping).toFixed(2):'Pending'}</strong></div><div class="summary-row"><span>Total</span><strong>${order.shipping_confirmed?'₱'+Number(order.total).toFixed(2):'Pending final total'}</strong></div></div>
           <div class="order-side-card"><h4>Delivery</h4><p><strong>${escapeHTML(order.courier||"Not specified")}</strong></p>${String(order.courier||"").trim().toLowerCase()==="lalamove"&&order.payment_status==="Paid"&&order.status!=="Cancelled"?`<div class="lalamove-customer-tracking-v20"><strong>Lalamove Tracking</strong>${order.tracking_number?`<p>Booking / Tracking No.: <strong>${escapeHTML(order.tracking_number)}</strong></p>`:""}${order.tracking_url&&/^https?:\/\//i.test(order.tracking_url)?`<a class="primary-btn" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:9px" href="${escapeHTML(order.tracking_url)}" target="_blank" rel="noopener noreferrer">Track Delivery ↗</a>`:""}${!order.tracking_url&&!order.tracking_number?`<p class="payment-note">Tracking details will appear here after the admin books your Lalamove delivery.</p>`:""}</div>`:""}<button class="action-btn view-btn" style="margin-top:10px" onclick="showCustomerPage('chat');loadCustomerChat()">Chat with Admin</button></div>
-          <div class="order-side-card"><h4>Payment</h4><p>${escapeHTML(order.payment)}</p><p class="payment-note">Status: <strong>${escapeHTML(order.payment_status||"Waiting for shipping fee")}</strong></p>${order.payment_status==="Paid"?`<button class="action-btn view-btn" onclick="viewReceipt('${escapeHTML(order.id)}',false)">View Receipt</button>`:""}</div>
+          <div class="order-side-card"><h4>Payment</h4><p>${escapeHTML(order.payment)}</p><p class="payment-note">Status: <strong>${escapeHTML(order.payment_status==="Payment Submitted"?"Payment Submitted — Waiting for Admin Verification":order.payment_status==="Paid"?"Payment Verified":order.payment_status||"Waiting for shipping fee")}</strong></p>${["Paid","Payment Submitted"].includes(order.payment_status)&&order.payment_screenshot?`<button class="action-btn view-btn" onclick="viewReceipt('${escapeHTML(order.id)}',false)">View Receipt</button>`:""}</div>
           ${order.status==="Delivered"?`<div class="order-side-card receive-card"><h4>Package delivered?</h4><p class="payment-note">Confirm only after you have received and checked your order.</p><button class="primary-btn" onclick="confirmOrderReceived('${escapeHTML(order.id)}')">Order Received</button></div>`:""}
           ${order.status==="Cancelled"?`<div class="order-side-card"><h4>Cancellation Note</h4><p class="payment-note">${escapeHTML(order.payment_rejection_reason||"Order cancelled. Please contact the shop for details.")}</p></div>`:""}
           <div class="order-side-card"><h4>Delivery Address</h4><p class="payment-note">${escapeHTML(order.address)}</p></div>
