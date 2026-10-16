@@ -27,7 +27,7 @@ $rows=stmt_fetch_all_assoc_compat($settings);$settings->close();
 $config=[];foreach($rows as $row)$config[$row["setting_key"]]=$row["setting_value"];
 foreach($keys as $key){if(trim((string)($config[$key]??""))===""){unlink($diskPath);respond(false,"Selected payment account is not configured.",[],409);}}
 // Serialize reference checks by wallet/bank and reference, including concurrent checkouts.
-$lockName="payment_ref_".hash("sha256",$payment.":".$reference);
+$lockName="payment_ref_".substr(hash("sha256",$payment.":".$reference),0,48);
 $lockStmt=$conn->prepare("SELECT GET_LOCK(?,10) AS acquired");
 $lockStmt->bind_param("s",$lockName);$lockStmt->execute();$lockResult=stmt_fetch_assoc_compat($lockStmt);$lockStmt->close();
 if((int)($lockResult["acquired"]??0)!==1){unlink($diskPath);respond(false,"Payment reference is being processed. Please retry.",[],409);}
