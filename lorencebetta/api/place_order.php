@@ -26,6 +26,18 @@ $settings->bind_param("sss",$keys[0],$keys[1],$keys[2]);$settings->execute();
 $rows=stmt_fetch_all_assoc_compat($settings);$settings->close();
 $config=[];foreach($rows as $row)$config[$row["setting_key"]]=$row["setting_value"];
 foreach($keys as $key){if(trim((string)($config[$key]??""))===""){unlink($diskPath);respond(false,"Selected payment account is not configured.",[],409);}}
+// Serialize reference reuse checks across checkout and payment corrections.
+$sharedPaymentLock="payment_global_".substr(hash("sha256",$reference),0,48);
+$sharedLockStmt=$conn->prepare("SELECT GET_LOCK(?,10) AS acquired");
+if(!$sharedLockStmt)respond(false,"Unable to validate payment reference.",[],500);
+$sharedLockStmt->bind_param("s",$sharedPaymentLock);
+if(!$sharedLockStmt->execute()){$sharedLockStmt->close();respond(false,"Unable to validate payment reference.",[],500);}
+$sharedLockResult=stmt_fetch_assoc_compat($sharedLockStmt);$sharedLockStmt->close();
+if((int)($sharedLockResult["acquired"]??0)!==1)respond(false,"Payment reference is being processed. Please retry.",[],409);
+register_shutdown_function(static function()use($conn,$sharedPaymentLock){
+    $release=$conn->prepare("SELECT RELEASE_LOCK(?)");
+    if($release){$release->bind_param("s",$sharedPaymentLock);$release->execute();$release->close();}
+});
 // Serialize reference checks by wallet/bank and reference, including concurrent checkouts.
 $lockName="payment_ref_".substr(hash("sha256",$payment.":".$reference),0,48);
 $lockStmt=$conn->prepare("SELECT GET_LOCK(?,10) AS acquired");
