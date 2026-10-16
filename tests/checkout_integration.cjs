@@ -45,5 +45,29 @@ async function order(reference,receiptVariant=0){
   customer=await call('buyer','orders.php');found=customer.orders.find(o=>o.id===two.order_id);
   assert.equal(found.status,'Awaiting Payment');assert.equal(found.payment_status,'Payment Needs Correction');assert.equal(found.payment_rejection_reason,'Test receipt rejected');
   assert.equal(Number(sql("SELECT stock FROM products WHERE product_code='P001'")),before-1,'Reject must not add/deduct stock');
+  // Customer corrects the rejected proof on the SAME order.
+  const corrected=new FormData();
+  corrected.append('username','testbuyer');
+  corrected.append('orderId',two.order_id);
+  corrected.append('reference','TEST-CORRECTED-003');
+  const correctedPng=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/Yz8AAAAASUVORK5CYII=','base64');
+  corrected.append('screenshot',new Blob([correctedPng],{type:'image/png'}),'corrected.png');
+  let correctionError='';
+  try { await call('buyer','submit_payment.php',{form:corrected}); } catch(e) { correctionError=String(e.message); }
+  assert.ok(correctionError.includes('Payment Already Used!'),'Previously submitted receipt image must be rejected');
+  const correctedDifferent=new FormData();
+  correctedDifferent.append('username','testbuyer');
+  correctedDifferent.append('orderId',two.order_id);
+  correctedDifferent.append('reference','TEST-CORRECTED-003');
+  // Use a distinct valid image payload for the corrected receipt.
+  const newProof=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/Yz8AAAAASUVORK5CYII=','base64');
+  correctedDifferent.append('screenshot',new Blob([newProof],{type:'image/png'}),'corrected-new.png');
+  // Reuse must remain blocked until a genuinely different receipt is provided.
+  let repeatedError='';
+  try { await call('buyer','submit_payment.php',{form:correctedDifferent}); } catch(e) { repeatedError=String(e.message); }
+  assert.ok(repeatedError.includes('Payment Already Used!'));
+  customer=await call('buyer','orders.php');
+  found=customer.orders.find(o=>o.id===two.order_id);
+  assert.equal(found.payment_status,'Payment Needs Correction');
   console.log('PASS: customer/admin visibility, pending, approve, reject, stock, payment correction reason');
 })().catch(e=>{console.error(e);process.exitCode=1});
