@@ -131,7 +131,7 @@ foreach ($orderRows as $row) {
         "courier" => $row["courier"],
         "tracking_url" => $row["tracking_url"],
         "tracking_number" => $row["tracking_number"],
-        "is_new" => ($row["status"] === "Pending Shipping Fee"),
+        "is_new" => ($row["status"] === "Pending Shipping Fee" || ($row["status"] === "Pending" && $row["payment_status"] === "Payment Submitted")),
         "items" => $items,
         "subtotal" => (float)$row["subtotal"],
         "shipping" => (float)$row["shipping"],
