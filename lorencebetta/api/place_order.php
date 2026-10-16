@@ -9,7 +9,19 @@ $u=$conn->prepare("SELECT id FROM users WHERE username=? AND role='customer' AND
 $cq=$conn->prepare("SELECT requires_shipping_fee,courier_type FROM couriers WHERE name=? AND status='active' LIMIT 1");$cq->bind_param("s",$courier);$cq->execute();$courierRow=stmt_fetch_assoc_compat($cq);if(!$courierRow)respond(false,"Selected courier is not available.",[],409);$requiresFee=(int)$courierRow["requires_shipping_fee"]===1;
 $conn->begin_transaction();
 try{$subtotal=0;$validated=[];
-foreach($items as $item){$code=trim((string)($item["productId"]??""));$qty=(int)($item["quantity"]??0);if($code===""||$qty<=0)throw new Exception("Invalid order item.");
+// Aggregate duplicate product lines to prevent overselling.
+$requested=[];
+foreach($items as $item){
+    if(!is_array($item))throw new Exception("Invalid order item.");
+    $code=trim((string)($item["productId"]??""));
+    $rawQty=$item["quantity"]??null;
+    if($code==="" || !is_scalar($rawQty) || !preg_match('/^[1-9][0-9]*$/',(string)$rawQty))throw new Exception("Invalid order item.");
+    $qty=(int)$rawQty;
+    if($qty<=0 || $qty>100000 || ($requested[$code]??0)>100000-$qty)throw new Exception("Invalid order quantity.");
+    $requested[$code]=($requested[$code]??0)+$qty;
+}
+ksort($requested,SORT_STRING);
+foreach($requested as $code=>$qty){
 $p=$conn->prepare("SELECT id,product_code,name,price,stock FROM products WHERE product_code=? AND status<>'deleted' FOR UPDATE");$p->bind_param("s",$code);$p->execute();$product=stmt_fetch_assoc_compat($p);if(!$product)throw new Exception("A selected product no longer exists.");
 $reserved=reserved_quantity($conn,(int)$product["id"]);$available=max(0,(int)$product["stock"]-$reserved);if($available<$qty)throw new Exception($product["name"]." is currently reserved or out of stock.");
 $subtotal+=(float)$product["price"]*$qty;$validated[]=["id"=>(int)$product["id"],"name"=>$product["name"],"price"=>(float)$product["price"],"quantity"=>$qty];}
