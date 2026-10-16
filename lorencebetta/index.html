@@ -5348,7 +5348,7 @@ renderAdminOrders=function(){
  const host=document.getElementById("adminOrdersTable");if(!host)return;
  const wrap=host.closest(".table-wrap")||host.parentElement;
  const filtered=(orders||[]).filter(adminOrderMatchesV2);
- const statuses=["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Ready for Delivery","Ready to Ship","Lalamove Booked","Shipped","Out for Delivery","Delivered","Picked Up","Order Received","Cancelled"];
+ const statuses=["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Ready to Ship","Shipped","Out for Delivery","Delivered","Picked Up","Order Received","Cancelled"];
  const groups={};
  filtered.forEach(o=>{const k=adminCustomerKey(o);(groups[k]||(groups[k]=[])).push(o)});
  const controls=`<div class="admin-order-search-v2"><input value="${escapeHTML(adminOrderSearchV2)}" oninput="setAdminOrderSearchV2(this.value)" placeholder="Search customer, username, order no., courier..."><select onchange="setAdminOrderStatusV2(this.value)"><option value="all">All Statuses</option><option value="new" ${adminOrderStatusV2==="new"?"selected":""}>New Orders (${(orders||[]).filter(o=>o.is_new).length})</option><option value="payment-review" ${adminOrderStatusV2==="payment-review"?"selected":""}>Payment Submitted (Review)</option><option value="payment-correction" ${adminOrderStatusV2==="payment-correction"?"selected":""}>Payment Needs Correction</option><option value="waiting-payment" ${adminOrderStatusV2==="waiting-payment"?"selected":""}>Waiting for Payment</option>${statuses.map(s=>`<option value="${escapeHTML(s)}" ${adminOrderStatusV2===s?'selected':''}>${escapeHTML(s)}</option>`).join("")}</select></div>`;
