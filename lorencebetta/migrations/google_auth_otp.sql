@@ -1,21 +1,11 @@
--- Google sign-in / OTP database migration for the existing production database.
--- Run once in phpMyAdmin after confirming that users.google_sub does not already exist.
--- Back up the production database before running this migration.
--- Do not run database_v2.sql or upgrade.sql against production as a replacement.
-
-ALTER TABLE users
-  ADD COLUMN google_sub VARCHAR(255) NULL,
-  ADD UNIQUE KEY uq_users_google_sub (google_sub);
-
-CREATE TABLE IF NOT EXISTS google_login_otps (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  google_sub VARCHAR(255) NOT NULL,
-  email VARCHAR(150) NOT NULL,
-  code_hash VARCHAR(255) NOT NULL,
-  attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
-  expires_at DATETIME NOT NULL,
-  consumed_at DATETIME NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_google_otp_sub (google_sub),
-  INDEX idx_google_otp_expiry (expires_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- IMPORTANT: HISTORICAL BACKUP ALREADY HAS GOOGLE AUTH SCHEMA.
+-- The user's uploaded SQL export includes users.google_sub, its unique index,
+-- and google_login_otps. DO NOT run an ALTER TABLE migration blindly.
+-- Read-only checks to run in production phpMyAdmin (SQL tab):
+SHOW COLUMNS FROM users LIKE 'google_sub';
+SHOW INDEX FROM users WHERE Key_name = 'uq_users_google_sub';
+SHOW TABLES LIKE 'google_login_otps';
+SHOW COLUMNS FROM google_login_otps;
+-- If these return the expected fields, NO MIGRATION IS NEEDED.
+-- If any are missing, inspect the actual live schema and take a fresh DB
+-- backup before applying a tailored migration. Do not import the old export.
