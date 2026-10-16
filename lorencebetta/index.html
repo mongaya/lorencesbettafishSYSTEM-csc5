@@ -2056,7 +2056,7 @@ body:not(.dark-mode) .hero-kicker{
             <button class="nav-btn" onclick="showAdminPage('payments',this)">
                 <span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span> Payment Method Settings
             </button>
-            <button class="nav-btn" onclick="showAdminPage('couriers',this)">
+            <button class="nav-btn" style="display:none" aria-hidden="true" tabindex="-1" onclick="showAdminPage('couriers',this)">
                 <span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M3 6h11v10H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></span> Manage Couriers
             </button>
 
@@ -2265,7 +2265,7 @@ body:not(.dark-mode) .hero-kicker{
 <div class="page-title"><h2> Payment Method Settings</h2><p>Manage account details and QR codes.</p></div>
 <div id="paymentSettingsCards"></div>
 </section>
-<section id="admin-couriers" class="page">
+<section id="admin-couriers" class="page" style="display:none" aria-hidden="true">
 <div class="page-title"><h2>Manage Couriers</h2><p>Add delivery or pickup options shown automatically at customer checkout.</p></div>
 <div class="card">
 <div class="admin-grid">
@@ -6377,7 +6377,7 @@ function enhanceDashboardV9(){
     <div class="dash-widget-v9"><h3>Quick Actions</h3><div class="quick-actions-v9">
       <button class="quick-v9" onclick="showAdminPage('orders',document.querySelector('[onclick*=\\'orders\\']'))">View Orders</button>
       <button class="quick-v9" onclick="showAdminPage('products',document.querySelector('[onclick*=\\'products\\']'))">Manage Products</button>
-      <button class="quick-v9" onclick="showAdminPage('couriers',document.querySelector('[onclick*=\\'couriers\\']'))">Manage Couriers</button>
+      
       <button class="quick-v9" onclick="printPOSReportV6()">Print POS Report</button>
     </div></div>
    </div>`);
