@@ -116,5 +116,19 @@ async function order(reference,receiptVariant=0){
   customer=await call('buyer','orders.php');
   found=customer.orders.find(o=>o.id===raceCreated.order_id);
   assert.equal(found.payment_status,'Payment Submitted');
+  // Two different checkout orders racing on one transaction reference.
+  const crossOrderForm=(suffix)=>{
+    const form=new FormData();
+    const fields={username:'testbuyer',customerName:'Test Customer',phone:'09123456789',address:'Quezon City, Metro Manila',payment:'GCash',deliveryMode:'delivery',paymentReference:'TEST-CROSS-ORDER-008',items:JSON.stringify([{productId:'P001',quantity:1}])};
+    for(const [k,v] of Object.entries(fields))form.append(k,v);
+    form.append('screenshot',new Blob([Buffer.concat([correctedPng,Buffer.from('cross-order-'+suffix)])],{type:'image/png'}),'cross-'+suffix+'.png');
+    return form;
+  };
+  const crossResults=await Promise.allSettled([
+    call('buyer','place_order.php',{form:crossOrderForm('first')}),
+    call('buyer','place_order.php',{form:crossOrderForm('second')})
+  ]);
+  assert.equal(crossResults.filter(x=>x.status==='fulfilled').length,1,'One reference must create only one order under concurrency');
+  assert.equal(Number(sql("SELECT COUNT(*) FROM orders WHERE payment_reference='TEST-CROSS-ORDER-008'")),1,'No duplicate transaction reference may be persisted');
   console.log('PASS: customer/admin visibility, pending, approve, reject, stock, payment correction reason');
 })().catch(e=>{console.error(e);process.exitCode=1});
