@@ -1843,10 +1843,13 @@ body:not(.dark-mode) .hero-kicker{
 </div>
 </div>
 <div class="card">
-<h3> Delivery Method / Courier</h3>
-                            <div id="checkoutCourierOptions"><label class="payment-option"><input type="radio" name="deliveryMode" value="delivery" checked onchange="renderCheckout()"> J&T Express (Delivery)</label><label class="payment-option"><input type="radio" name="deliveryMode" value="pickup" onchange="renderCheckout()"> Pick Up (Free shipping)</label></div>
-                            <div class="payment-note">Delivery: Luzon ₱80; Visayas/Mindanao ₱170. Pick Up: free shipping. Final shipping fee is calculated by the server.</div>
-                        </div>
+<h3> Delivery Method</h3>
+<div id="checkoutCourierOptions"><label class="payment-option"><input type="radio" name="deliveryMode" value="delivery" checked onchange="renderCheckout()"> Delivery</label><label class="payment-option"><input type="radio" name="deliveryMode" value="pickup" onchange="renderCheckout()"> Pick Up</label></div>
+<div id="checkoutDeliveryNote" class="payment-note"></div>
+<div id="checkoutCourierSection" class="card" style="margin-top:14px">
+<h3>Courier</h3><div class="payment-option">J&T Express</div>
+</div>
+</div>
 
                         <div class="card">
 <h3> Payment Method</h3>
@@ -1864,6 +1867,7 @@ body:not(.dark-mode) .hero-kicker{
 
                         <button
                             class="primary-btn full-btn"
+                            id="checkoutPlaceOrder"
                             onclick="placeOrder()"
                         >
                             ️ Place Order
@@ -9676,6 +9680,7 @@ renderCheckout=function(){
 };
 renderCheckoutCouriers();
 </script>
+<script src="checkout_shipping_ui.js"></script>
 </body>
 </html>
 
