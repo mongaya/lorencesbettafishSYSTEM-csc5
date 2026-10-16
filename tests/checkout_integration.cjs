@@ -12,11 +12,11 @@ async function call(role,path,{json,form}={}){
   return data;
 }
 function sql(q){return execFileSync('mysql',['-h','127.0.0.1','-uroot','-proot','-N','-e',q,'lorence_betta_fish'],{encoding:'utf8'}).trim()}
-async function order(reference){
+async function order(reference,receiptVariant=0){
   const form=new FormData();
   const fields={username:'testbuyer',customerName:'Test Customer',phone:'09123456789',address:'Quezon City, Metro Manila',payment:'GCash',deliveryMode:'delivery',paymentReference:reference,items:JSON.stringify([{productId:'P001',quantity:1}])};
   for(const [k,v] of Object.entries(fields))form.append(k,v);
-  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/Yz8AAAAASUVORK5CYII=','base64');
+  const png=Buffer.from(receiptVariant===0?'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/Yz8AAAAASUVORK5CYII=':'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR42mP8z8AARMAgYGBgAAAaDgQBBxXPRwAAAABJRU5ErkJggg==','base64');
   form.append('screenshot',new Blob([png],{type:'image/png'}),'proof.png');
   return call('buyer','place_order.php',{form});
 }
@@ -40,10 +40,10 @@ async function order(reference){
   try{await order('TEST-APPROVE-001')}catch(e){duplicateError=String(e.message)}
   assert.ok(duplicateError.includes(one.order_id),'Duplicate error must identify original order');
   assert.equal(Number(sql("SELECT COUNT(*) FROM orders WHERE payment_reference='TEST-APPROVE-001'")),countBefore,'Duplicate must not create another order');
-  const two=await order('TEST-REJECT-002');
+  const two=await order('TEST-REJECT-002',1);
   await call('admin','reject_payment.php',{json:{orderId:two.order_id,reason:'Test receipt rejected'}});
   customer=await call('buyer','orders.php');found=customer.orders.find(o=>o.id===two.order_id);
-  assert.equal(found.status,'Cancelled');assert.equal(found.payment_rejection_reason,'Test receipt rejected');
+  assert.equal(found.status,'Awaiting Payment');assert.equal(found.payment_status,'Payment Needs Correction');assert.equal(found.payment_rejection_reason,'Test receipt rejected');
   assert.equal(Number(sql("SELECT stock FROM products WHERE product_code='P001'")),before-1,'Reject must not add/deduct stock');
-  console.log('PASS: customer/admin visibility, pending, approve, reject, stock, cancellation reason');
+  console.log('PASS: customer/admin visibility, pending, approve, reject, stock, payment correction reason');
 })().catch(e=>{console.error(e);process.exitCode=1});
