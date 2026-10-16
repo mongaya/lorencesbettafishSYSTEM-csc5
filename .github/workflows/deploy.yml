@@ -42,13 +42,15 @@ jobs:
           if not frontend.is_file() or frontend.stat().st_size < 400000:
               raise SystemExit("DEPLOY BLOCKED: full integrated frontend not committed (expected >=400KB).")
           forbidden=[
-              root/"api/db.php",
               root/"api/gmail_config.php",
               root/"mail_secure/google_mail_config.php",
           ]
           present=[str(p) for p in forbidden if p.exists()]
           if present:
               raise SystemExit("DEPLOY BLOCKED: private configuration present: "+", ".join(present))
+          workflow=Path(".github/workflows/deploy.yml").read_text()
+          if "            api/db.php" not in workflow or "            api/gmail_config.php" not in workflow:
+              raise SystemExit("DEPLOY BLOCKED: private-file FTP exclusions missing.")
           print("Frontend completeness and private-config checks passed.")
           PY
 
