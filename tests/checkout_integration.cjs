@@ -34,6 +34,12 @@ async function order(reference){
   customer=await call('buyer','orders.php');found=customer.orders.find(o=>o.id===one.order_id);
   assert.equal(found.status,'Confirmed');assert.equal(found.payment_status,'Paid');
   assert.equal(Number(sql("SELECT stock FROM products WHERE product_code='P001'")),before-1);
+  // Duplicate reference must identify the existing order to its owner, never create another order.
+  const countBefore=Number(sql("SELECT COUNT(*) FROM orders WHERE payment_reference='TEST-APPROVE-001'"));
+  let duplicateError='';
+  try{await order('TEST-APPROVE-001')}catch(e){duplicateError=String(e.message)}
+  assert.ok(duplicateError.includes(one.order_id),'Duplicate error must identify original order');
+  assert.equal(Number(sql("SELECT COUNT(*) FROM orders WHERE payment_reference='TEST-APPROVE-001'")),countBefore,'Duplicate must not create another order');
   const two=await order('TEST-REJECT-002');
   await call('admin','reject_payment.php',{json:{orderId:two.order_id,reason:'Test receipt rejected'}});
   customer=await call('buyer','orders.php');found=customer.orders.find(o=>o.id===two.order_id);
