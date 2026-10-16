@@ -37,6 +37,17 @@
     ['checkoutPaymentReference','checkoutPaymentScreenshot'].forEach(id=>$(id)?.addEventListener('input',refreshButton));
     paymentInfo();refreshButton();
   });
+  const oldCustomerOrders=renderCustomerOrders;
+  renderCustomerOrders=function(){
+    oldCustomerOrders.apply(this,arguments);
+    const list=document.getElementById('customerOrders');
+    if(!list||!currentUser)return;
+    const rejected=(orders||[]).filter(o=>o.username===currentUser.username&&o.status==='Cancelled'&&o.payment_rejection_reason);
+    if(!rejected.length)return;
+    const notes=document.createElement('div');notes.className='card';
+    notes.innerHTML='<h3>Cancelled payment notices</h3>'+rejected.map(o=>'<p><strong>'+escapeHTML(o.id)+'</strong>: '+escapeHTML(o.payment_rejection_reason)+'</p>').join('');
+    list.prepend(notes);
+  };
   placeOrder=async function(){
     if(sending)return;
     const selected=getSelectedCartItems(),a=selectedAddress();
