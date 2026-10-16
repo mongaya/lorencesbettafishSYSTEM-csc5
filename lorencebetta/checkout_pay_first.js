@@ -22,6 +22,8 @@
   renderCheckout=function(){
     quoteReady=false;quoteTotal=null;quoteVersion++;previous.apply(this,arguments);
     paymentInfo();refreshButton();
+    // Pay-first shipping is quoted at checkout; hide legacy admin-confirmation notices.
+    const note=$('checkoutDeliveryNote');if(note)note.hidden=true;
   };
   const originalRequest=window.apiRequest;
   const observer=new MutationObserver(()=>{
@@ -113,7 +115,12 @@
         showToast('Order '+newCode+' saved; order list refresh failed.','warning');
       }
       renderProducts();renderHomeProducts();renderStock();renderAdminDashboard();
-    }catch(e){showToast(e.message);}
+    }catch(e){
+      const msg=String(e.message||'Unable to submit order.');
+      if(/payment reference belongs to your existing order|transaction reference has already been submitted/i.test(msg)){
+        showToast('Payment Already Used! This transaction reference was submitted for an existing order. Do not pay again. Check My Orders or contact the shop.');
+      }else showToast(msg);
+    }
     finally{sending=false;refreshButton();}
   };
 })();
