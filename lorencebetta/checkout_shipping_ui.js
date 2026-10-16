@@ -32,7 +32,7 @@
     const button=document.getElementById('checkoutPlaceOrder');
     if(button)button.disabled=mode==='delivery';
     if(mode==='pickup'){
-      el.innerHTML=html+'<div class="summary-row"><span>Shipping</span><strong>FREE</strong></div><div class="summary-total">Final total: '+money(subtotal)+'</div>';
+      el.innerHTML=html+'<div class="summary-total">Final total: '+money(subtotal)+'</div>';
       if(button)button.disabled=false;
       return;
     }
