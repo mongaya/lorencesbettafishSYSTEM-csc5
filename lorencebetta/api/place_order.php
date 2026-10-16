@@ -16,7 +16,7 @@ if(!is_dir($folder)&&!mkdir($folder,0755,true))respond(false,"Receipt storage un
 $filename="proof_".bin2hex(random_bytes(16)).".".$allowed[$mime];
 $diskPath=$folder."/".$filename;
 if(!move_uploaded_file($file["tmp_name"],$diskPath))respond(false,"Unable to save payment proof.",[],500);
-$proofPath="/images/payments/".$filename;
+$proofPath="images/payments/".$filename;
 $u=$conn->prepare("SELECT id FROM users WHERE username=? AND role='customer' AND status='active' LIMIT 1");$u->bind_param("s",$username);$u->execute();$user=stmt_fetch_assoc_compat($u);if(!$user){unlink($diskPath);respond(false,"Customer account not found.",[],404);}
 $cq=$conn->prepare("SELECT requires_shipping_fee,courier_type FROM couriers WHERE name=? AND status='active' LIMIT 1");$cq->bind_param("s",$courier);$cq->execute();$courierRow=stmt_fetch_assoc_compat($cq);if(!$courierRow){unlink($diskPath);respond(false,"Selected courier is not available.",[],409);}$requiresFee=(int)$courierRow["requires_shipping_fee"]===1;
 $prefix=strtolower($payment)."_";
