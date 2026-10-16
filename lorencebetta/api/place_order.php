@@ -43,8 +43,8 @@ $lockName="payment_ref_".substr(hash("sha256",$payment.":".$reference),0,48);
 $lockStmt=$conn->prepare("SELECT GET_LOCK(?,10) AS acquired");
 $lockStmt->bind_param("s",$lockName);$lockStmt->execute();$lockResult=stmt_fetch_assoc_compat($lockStmt);$lockStmt->close();
 if((int)($lockResult["acquired"]??0)!==1){unlink($diskPath);respond(false,"Payment reference is being processed. Please retry.",[],409);}
-$dup=$conn->prepare("SELECT o.id,o.order_code,o.user_id,o.status,o.payment_status FROM orders o WHERE o.payment_method=? AND o.payment_reference=? LIMIT 1");
-$dup->bind_param("ss",$payment,$reference);$dup->execute();$existing=stmt_fetch_assoc_compat($dup);$dup->close();
+$dup=$conn->prepare("SELECT o.id,o.order_code,o.user_id,o.status,o.payment_status FROM orders o WHERE o.payment_reference=? LIMIT 1");
+$dup->bind_param("s",$reference);$dup->execute();$existing=stmt_fetch_assoc_compat($dup);$dup->close();
 if($existing){
     $release=$conn->prepare("SELECT RELEASE_LOCK(?)");$release->bind_param("s",$lockName);$release->execute();$release->close();unlink($diskPath);
     if((int)$existing["user_id"]===(int)$user["id"]){
