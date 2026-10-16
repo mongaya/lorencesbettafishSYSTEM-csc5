@@ -74,25 +74,45 @@
     data.append('screenshot',file);
     sending=true;refreshButton();
     try{
+      // Only a successful committed API response may clear purchased cart lines.
       const placed=await apiRequest('place_order.php',{method:'POST',body:data});
-      const newCode=String(placed.order_id||'');
+      const newCode=String(placed.order_id||'').trim();
+      if(!newCode)throw new Error('The server did not return an order ID. Please contact the shop before retrying payment.');
       const ids=new Set(selected.map(i=>String(i.productId)));
       saveCart(getCart().filter(i=>!ids.has(String(i.productId))));
       updateCartCount();
-      showToast('Order '+newCode+' submitted. Pending admin verification.','success');
+      customerOrderFilter='Pending';
+      // Keep the confirmation visible, even when the orders API cannot refresh.
+      sessionStorage.setItem('lorence_last_order_confirmation',newCode);
       try {
         await Promise.all([loadProducts(),loadOrders()]);
-        if(newCode && !(orders||[]).some(o=>String(o.id)===newCode)){
-          showToast('Order '+newCode+' was saved but is missing from the orders list. Contact the shop with this order ID.','warning');
-          console.error('Newly created order missing from orders.php response',newCode);
+        const found=(orders||[]).some(o=>String(o.id)===newCode);
+        if(!found)console.error('Order committed but not present in orders.php:',newCode);
+        showCustomerPage('orders');
+        renderCustomerOrders();
+        const list=$('customerOrders');
+        if(list){
+          const confirmation=document.createElement('div');
+          confirmation.className='card';
+          confirmation.style.border='2px solid #2d9b74';
+          confirmation.innerHTML='<h3>Order submitted: '+escapeHTML(newCode)+'</h3><p>Payment awaiting admin verification.</p>'+
+            (found?'':'<p><strong>Order not visible in the list yet.</strong> Please save this Order ID and contact the shop. Do not pay again.</p>');
+          list.prepend(confirmation);
         }
+        showToast('Order '+newCode+' submitted. Pending verification.','success');
       }catch(refreshError){
-        console.error('Order was saved, but refreshing the orders list failed',refreshError);
-        showToast('Order '+newCode+' saved, but orders could not refresh: '+refreshError.message,'warning');
+        console.error('Order saved but order list failed to refresh:',refreshError);
+        showCustomerPage('orders');
+        const list=$('customerOrders');
+        if(list){
+          const confirmation=document.createElement('div');
+          confirmation.className='card';
+          confirmation.innerHTML='<h3>Order submitted: '+escapeHTML(newCode)+'</h3><p>Unable to refresh orders: '+escapeHTML(refreshError.message||'Unknown error')+'. Do not pay again. Contact the shop with this Order ID.</p>';
+          list.prepend(confirmation);
+        }
+        showToast('Order '+newCode+' saved; order list refresh failed.','warning');
       }
-      customerOrderFilter='Pending';
-      showCustomerPage('orders');
-      renderCustomerOrders();renderProducts();renderHomeProducts();renderStock();renderAdminDashboard();
+      renderProducts();renderHomeProducts();renderStock();renderAdminDashboard();
     }catch(e){showToast(e.message);}
     finally{sending=false;refreshButton();}
   };
