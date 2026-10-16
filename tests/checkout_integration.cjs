@@ -69,5 +69,24 @@ async function order(reference,receiptVariant=0){
   customer=await call('buyer','orders.php');
   found=customer.orders.find(o=>o.id===two.order_id);
   assert.equal(found.payment_status,'Payment Needs Correction');
+  const freshProof=new FormData();
+  freshProof.append('username','testbuyer');
+  freshProof.append('orderId',two.order_id);
+  freshProof.append('reference','TEST-CORRECTED-004');
+  // A different valid PNG file, distinct from the two original submitted receipts.
+  const freshPng=Buffer.concat([correctedPng,Buffer.from('unique-correction-proof')]);
+  freshProof.append('screenshot',new Blob([freshPng],{type:'image/png'}),'fresh-proof.png');
+  await call('buyer','submit_payment.php',{form:freshProof});
+  customer=await call('buyer','orders.php');
+  found=customer.orders.find(o=>o.id===two.order_id);
+  assert.equal(found.payment_status,'Payment Submitted');
+  assert.equal(found.payment_rejection_reason,null);
+  assert.equal(found.payment_reference,'TEST-CORRECTED-004');
+  await call('admin','mark_payment.php',{json:{orderId:two.order_id}});
+  customer=await call('buyer','orders.php');
+  found=customer.orders.find(o=>o.id===two.order_id);
+  assert.equal(found.payment_status,'Paid');
+  assert.equal(found.status,'Confirmed');
+  assert.equal(Number(sql("SELECT stock FROM products WHERE product_code='P001'")),before-2,'Corrected order stock deducted exactly once');
   console.log('PASS: customer/admin visibility, pending, approve, reject, stock, payment correction reason');
 })().catch(e=>{console.error(e);process.exitCode=1});
