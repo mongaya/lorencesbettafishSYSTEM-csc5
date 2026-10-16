@@ -41,6 +41,25 @@ $duplicate->bind_param("ss",$reference,$orderId);
 if(!$duplicate->execute()){$duplicate->close();@unlink($folder.DIRECTORY_SEPARATOR.$filename);respond(false,"Unable to validate payment reference.",[],500);}
 $usedReference=stmt_fetch_assoc_compat($duplicate);$duplicate->close();
 if($usedReference){@unlink($folder.DIRECTORY_SEPARATOR.$filename);respond(false,"Payment Already Used! This transaction reference belongs to another order. Check My Orders or contact the shop; do not pay again.",[],409);}
+// Reject exact duplicate receipt files before replacing an existing payment proof.
+$incomingHash=hash_file("sha256",$folder.DIRECTORY_SEPARATOR.$filename);
+$receiptCheck=$conn->prepare("SELECT payment_screenshot FROM orders WHERE payment_screenshot IS NOT NULL AND payment_screenshot<>''");
+if(!$receiptCheck || !$receiptCheck->execute()){
+    if($receiptCheck)$receiptCheck->close();
+    @unlink($folder.DIRECTORY_SEPARATOR.$filename);
+    respond(false,"Unable to validate payment receipt.",[],500);
+}
+$receiptCheck->bind_result($priorReceipt);
+$receiptUsed=false;
+while($receiptCheck->fetch()){
+    $priorFile=dirname(__DIR__)."/".ltrim((string)$priorReceipt,"/");
+    if(is_file($priorFile) && hash_file("sha256",$priorFile)===$incomingHash){$receiptUsed=true;break;}
+}
+$receiptCheck->close();
+if($receiptUsed){
+    @unlink($folder.DIRECTORY_SEPARATOR.$filename);
+    respond(false,"Payment Already Used! This receipt image has already been submitted. Please contact the shop if you need help.",[],409);
+}
 $stmt=$conn->prepare("UPDATE orders o JOIN users u ON u.id=o.user_id
  SET o.payment_reference=?,o.payment_screenshot=?,o.payment_status='Payment Submitted',
      o.payment_rejection_reason=NULL,o.reservation_expires_at=NULL,o.updated_at=NOW()
