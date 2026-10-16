@@ -81,7 +81,7 @@
       const ids=new Set(selected.map(i=>String(i.productId)));
       saveCart(getCart().filter(i=>!ids.has(String(i.productId))));
       updateCartCount();
-      customerOrderFilter='Pending';
+      customerOrderFilter='Payment Submitted';
       // Keep the confirmation visible, even when the orders API cannot refresh.
       sessionStorage.setItem('lorence_last_order_confirmation',newCode);
       try {
@@ -113,7 +113,7 @@
         showToast('Order '+newCode+' saved; order list refresh failed.','warning');
       }
       renderProducts();renderHomeProducts();renderStock();renderAdminDashboard();
-    }catch(e){showToast(e.message);}
+    }catch(e){const message=String(e.message||'Checkout failed.');const duplicate=/payment reference belongs|transaction reference has already been submitted/i.test(message);showToast(duplicate?'Payment Already Used! This transaction reference has already been used for an order. The previous receipt cannot be reused for another order. Check My Orders; do not pay again.':message);}
     finally{sending=false;refreshButton();}
   };
 })();
