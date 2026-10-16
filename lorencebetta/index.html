@@ -5339,7 +5339,7 @@ function adminCustomerUsername(o){return o.username||o.customerUsername||""}
 function adminOrderMatchesV2(o){
  const q=adminOrderSearchV2.toLowerCase().trim();
  const hay=[o.id,o.order_code,o.customerName,o.customer_name,o.username,o.customerUsername,o.courier,o.status,o.payment_status].filter(Boolean).join(" ").toLowerCase();
- return (!q||hay.includes(q))&&(adminOrderStatusV2==="all"||(adminOrderStatusV2==="new"&&o.is_new)||(adminOrderStatusV2==="payment-review"&&o.payment_status==="Payment Submitted")||(adminOrderStatusV2==="payment-correction"&&o.payment_status==="Payment Needs Correction")||(adminOrderStatusV2==="waiting-payment"&&o.status==="Awaiting Payment"&&o.payment_status!=="Payment Needs Correction"&&o.payment_status!=="Payment Submitted")||o.status===adminOrderStatusV2)
+ return (!q||hay.includes(q))&&(adminOrderStatusV2==="all"||(adminOrderStatusV2==="new"&&o.is_new)||(adminOrderStatusV2==="attention"&&(o.payment_status==="Payment Submitted"||o.status==="Pending Shipping Fee")||(adminOrderStatusV2==="payment-review"&&o.payment_status==="Payment Submitted"))||(adminOrderStatusV2==="payment-correction"&&o.payment_status==="Payment Needs Correction")||(adminOrderStatusV2==="waiting-payment"&&o.status==="Awaiting Payment"&&o.payment_status!=="Payment Needs Correction"&&o.payment_status!=="Payment Submitted")||o.status===adminOrderStatusV2)
 }
 function setAdminOrderSearchV2(v){adminOrderSearchV2=v;renderAdminOrders()}
 function setAdminOrderStatusV2(v){adminOrderStatusV2=v;renderAdminOrders()}
@@ -5351,7 +5351,7 @@ renderAdminOrders=function(){
  const statuses=["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Ready to Ship","Shipped","Out for Delivery","Delivered","Picked Up","Order Received","Cancelled"];
  const groups={};
  filtered.forEach(o=>{const k=adminCustomerKey(o);(groups[k]||(groups[k]=[])).push(o)});
- const controls=`<div class="admin-order-search-v2"><input value="${escapeHTML(adminOrderSearchV2)}" oninput="setAdminOrderSearchV2(this.value)" placeholder="Search customer, username, order no., courier..."><select onchange="setAdminOrderStatusV2(this.value)"><option value="all">All Statuses</option><option value="new" ${adminOrderStatusV2==="new"?"selected":""}>New Orders (${(orders||[]).filter(o=>o.is_new).length})</option><option value="payment-review" ${adminOrderStatusV2==="payment-review"?"selected":""}>Payment Submitted (Review)</option><option value="payment-correction" ${adminOrderStatusV2==="payment-correction"?"selected":""}>Payment Needs Correction</option><option value="waiting-payment" ${adminOrderStatusV2==="waiting-payment"?"selected":""}>Waiting for Payment</option>${statuses.map(s=>`<option value="${escapeHTML(s)}" ${adminOrderStatusV2===s?'selected':''}>${escapeHTML(s)}</option>`).join("")}</select></div>`;
+ const controls=`<div class="admin-order-search-v2"><input value="${escapeHTML(adminOrderSearchV2)}" oninput="setAdminOrderSearchV2(this.value)" placeholder="Search customer, username, order no., courier..."><select onchange="setAdminOrderStatusV2(this.value)"><option value="all">All Statuses</option><option value="attention" ${adminOrderStatusV2==="attention"?"selected":""}>Needs Attention (${(orders||[]).filter(o=>o.payment_status==="Payment Submitted"||o.status==="Pending Shipping Fee").length})</option><option value="new" ${adminOrderStatusV2==="new"?"selected":""}>New Orders (${(orders||[]).filter(o=>o.is_new).length})</option><option value="payment-review" ${adminOrderStatusV2==="payment-review"?"selected":""}>Payment Submitted (Review)</option><option value="payment-correction" ${adminOrderStatusV2==="payment-correction"?"selected":""}>Payment Needs Correction</option><option value="waiting-payment" ${adminOrderStatusV2==="waiting-payment"?"selected":""}>Waiting for Payment</option>${statuses.map(s=>`<option value="${escapeHTML(s)}" ${adminOrderStatusV2===s?'selected':''}>${escapeHTML(s)}</option>`).join("")}</select></div>`;
  const body=Object.values(groups).map(list=>{
    list.sort((a,b)=>String(b.date||b.created_at||"").localeCompare(String(a.date||a.created_at||"")));
    const first=list[0], user=adminCustomerUsername(first);
@@ -9103,7 +9103,7 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
    const paidOrders=scoped.filter(o=>paid(o)&&notCancelled(o));
    const sales=paidOrders.reduce((s,o)=>s+Number(o.subtotal||0),0);
    const shipping=paidOrders.reduce((s,o)=>s+Number(o.shipping||0),0);
-   const attention=scoped.filter(o=>["Pending Shipping Fee","Awaiting Payment","Payment Submitted","Ready to Ship","Ready for Pickup","Ready for Delivery"].includes(o.status)||o.payment_status==="Payment Submitted");
+   const attention=scoped.filter(o=>o.status==="Pending Shipping Fee"||o.payment_status==="Payment Submitted");
    document.getElementById("proSalesV27").textContent=money(sales);
    document.getElementById("proShippingV27").textContent=money(shipping);
    document.getElementById("proPaidV27").textContent=paidOrders.length;
@@ -9113,16 +9113,16 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
    const att=[
     ["Payment proofs to verify",count(o=>o.payment_status==="Payment Submitted")],
     ["Shipping fees to confirm",count(o=>o.status==="Pending Shipping Fee")],
-    ["Orders ready for shipment",count(o=>["Ready to Ship","Ready for Delivery"].includes(o.status))],
+    ["Orders ready for shipment",count(o=>o.status==="Ready to Ship")],
     ["Orders ready for pickup",count(o=>o.status==="Ready for Pickup")]
    ];
    document.getElementById("proAttentionV27").innerHTML=att.map((x,i)=>`<div class="pro-attention-item-v27" onclick="showAdminPage('orders')"><div class="pro-attention-dot-v27">${i+1}</div><div><b>${x[1]}</b><span>${x[0]}</span></div><strong>›</strong></div>`).join("");
 
-   const sts=[["Awaiting Payment","Awaiting Payment"],["Preparing","Preparing"],["Ready to Ship","Ready to Ship"],["Out for Delivery","Out for Delivery"],["Completed",["Order Received","Picked Up","Delivered"]],["Cancelled","Cancelled"]];
-   document.getElementById("proStatusV27").innerHTML=sts.map(([label,val])=>`<div class="pro-status-item-v27"><b>${count(o=>Array.isArray(val)?val.includes(o.status):o.status===val)}</b><span>${label}</span></div>`).join("");
+   const sts=[["New Orders",null],["Payment Review",null],["Confirmed","Confirmed"],["Preparing","Preparing"],["Ready to Ship","Ready to Ship"],["Shipped","Shipped"],["Out for Delivery","Out for Delivery"],["Delivered","Delivered"],["Ready for Pickup","Ready for Pickup"],["Completed",["Order Received","Picked Up"]],["Cancelled","Cancelled"]];
+   document.getElementById("proStatusV27").innerHTML=sts.map(([label,val])=>`<div class="pro-status-item-v27"><b>${label==="New Orders"?count(o=>o.is_new):label==="Payment Review"?count(o=>o.payment_status==="Payment Submitted"):count(o=>Array.isArray(val)?val.includes(o.status):o.status===val)}</b><span>${label}</span></div>`).join("");
 
-   const recent=[...all].sort((a,b)=>new Date(b.date||b.created_at||0)-new Date(a.date||a.created_at||0)).slice(0,6);
-   document.getElementById("proRecentV27").innerHTML=recent.length?recent.map(o=>`<tr><td>${esc(o.id||o.order_code||"")}</td><td>${esc(o.customer_name||o.name||o.username||"")}</td><td>${esc(o.courier||"—")}</td><td>${money(o.total)}</td><td>${esc(o.payment_method||"—")}</td><td><span class="pro-status-pill-v27">${esc(o.status||"—")}</span></td><td>${esc(o.date||o.created_at||"—")}</td><td><button class="pro-view-v27" onclick="viewOrder('${esc(o.id||o.order_code||"")}')">View</button></td></tr>`).join(""):`<tr><td colspan="8">No orders yet.</td></tr>`;
+   const recent=[...all].sort((a,b)=>Number(!!b.is_new)-Number(!!a.is_new)||new Date(b.created_at||b.date||0)-new Date(a.created_at||a.date||0)).slice(0,6);
+   document.getElementById("proRecentV27").innerHTML=recent.length?recent.map(o=>`<tr><td>${esc(o.id||o.order_code||"")}${o.is_new?' <span style="color:#d63b55;font-weight:800">NEW</span>':""}</td><td>${esc(o.customer_name||o.name||o.username||"")}</td><td>${esc(o.courier||"—")}</td><td>${money(o.total)}</td><td>${esc(o.payment_method||"—")}</td><td><span class="pro-status-pill-v27">${esc(o.status||"—")}</span></td><td>${esc(o.date||o.created_at||"—")}</td><td><button class="pro-view-v27" onclick="viewOrder('${esc(o.id||o.order_code||"")}')">View</button></td></tr>`).join(""):`<tr><td colspan="8">No orders yet.</td></tr>`;
    drawChartV27(scoped,days);
  }
 
