@@ -52,16 +52,22 @@ if((int)($receiptLockResult["acquired"]??0)!==1){
     unlink($diskPath);respond(false,"Payment receipt is being processed. Please retry.",[],409);
 }
 $receiptQuery=$conn->prepare("SELECT order_code,payment_screenshot FROM orders WHERE payment_screenshot IS NOT NULL AND payment_screenshot<>''");
-$receiptQuery->execute();$receiptRows=stmt_fetch_all_assoc_compat($receiptQuery);$receiptQuery->close();
-foreach($receiptRows as $receiptRow){
-    $storedPath=dirname(__DIR__)."/".ltrim((string)$receiptRow["payment_screenshot"],"/");
-    if(is_file($storedPath) && hash_file("sha256",$storedPath)===$incomingReceiptHash){
-        foreach([$receiptLockName,$lockName] as $heldLock){
-            $release=$conn->prepare("SELECT RELEASE_LOCK(?)");$release->bind_param("s",$heldLock);$release->execute();$release->close();
-        }
-        unlink($diskPath);
-        respond(false,"Payment Already Used! This receipt image was already submitted for another order. Check My Orders or contact the shop; do not pay again.",[],409);
-    }
+if(!$receiptQuery || !$receiptQuery->execute()){
+    if($receiptQuery)$receiptQuery->close();
+    foreach([$receiptLockName,$lockName] as $heldLock){$release=$conn->prepare("SELECT RELEASE_LOCK(?)");$release->bind_param("s",$heldLock);$release->execute();$release->close();}
+    unlink($diskPath);respond(false,"Unable to verify receipt uniqueness. Please retry.",[],500);
+}
+$duplicateReceipt=false;
+$receiptQuery->bind_result($existingReceiptOrder,$existingReceiptPath);
+while($receiptQuery->fetch()){
+    $storedPath=dirname(__DIR__)."/".ltrim((string)$existingReceiptPath,"/");
+    if(is_file($storedPath) && hash_file("sha256",$storedPath)===$incomingReceiptHash){$duplicateReceipt=true;break;}
+}
+$receiptQuery->close();
+if($duplicateReceipt){
+    foreach([$receiptLockName,$lockName] as $heldLock){$release=$conn->prepare("SELECT RELEASE_LOCK(?)");$release->bind_param("s",$heldLock);$release->execute();$release->close();}
+    unlink($diskPath);
+    respond(false,"Payment Already Used! This receipt image was already submitted for another order. Check My Orders or contact the shop; do not pay again.",[],409);
 }
 $conn->begin_transaction();
 try{$subtotal=0;$validated=[];
