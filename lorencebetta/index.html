@@ -4038,6 +4038,11 @@ function renderAdminOrders() {
         return;
     }
 
+    const fulfillmentFlow = order => order.courier === "Pick Up"
+        ? ["Confirmed","Preparing","Ready for Pickup","Picked Up","Order Received"]
+        : order.courier === "Lalamove"
+        ? ["Confirmed","Preparing","Ready for Delivery","Lalamove Booked","Out for Delivery","Delivered","Order Received"]
+        : ["Confirmed","Preparing","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received"];
     tbody.innerHTML = orders.map(order => `
         <tr>
             <td><strong>${escapeHTML(order.id)}</strong></td>
@@ -4049,8 +4054,9 @@ function renderAdminOrders() {
             <td>${escapeHTML(order.payment)}</td>
             <td>${escapeHTML(order.payment_status || "Waiting for shipping fee")}</td>
             <td>
-                <select onchange="updateOrderStatus('${escapeHTML(order.id)}',this.value)">
-                    ${["Pending","Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Shipped","Delivered","Picked Up","Cancelled"].map(st => `<option ${st === order.status ? "selected" : ""}>${st}</option>`).join("")}
+                <select onchange="updateOrderStatus('${escapeHTML(order.id)}',this.value)" ${order.payment_status!=="Paid"||order.status==="Cancelled"?"disabled":""}>
+                    <option selected value="${escapeHTML(order.status)}">${escapeHTML(order.status==="Pending"?"Pending Verification":order.status)}</option>
+                    ${order.payment_status==="Paid"&&order.status!=="Cancelled"?fulfillmentFlow(order).filter((st,i,flow)=>i>0&&flow[i-1]===order.status).map(st=>`<option value="${escapeHTML(st)}">${escapeHTML(st)}</option>`).join(""):""}
                 </select>
             </td>
             <td>
