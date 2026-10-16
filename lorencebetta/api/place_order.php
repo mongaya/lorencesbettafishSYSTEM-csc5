@@ -31,9 +31,15 @@ $lockName="payment_ref_".substr(hash("sha256",$payment.":".$reference),0,48);
 $lockStmt=$conn->prepare("SELECT GET_LOCK(?,10) AS acquired");
 $lockStmt->bind_param("s",$lockName);$lockStmt->execute();$lockResult=stmt_fetch_assoc_compat($lockStmt);$lockStmt->close();
 if((int)($lockResult["acquired"]??0)!==1){unlink($diskPath);respond(false,"Payment reference is being processed. Please retry.",[],409);}
-$dup=$conn->prepare("SELECT id FROM orders WHERE payment_method=? AND payment_reference=? LIMIT 1");
+$dup=$conn->prepare("SELECT o.id,o.order_code,o.user_id,o.status,o.payment_status FROM orders o WHERE o.payment_method=? AND o.payment_reference=? LIMIT 1");
 $dup->bind_param("ss",$payment,$reference);$dup->execute();$existing=stmt_fetch_assoc_compat($dup);$dup->close();
-if($existing){$release=$conn->prepare("SELECT RELEASE_LOCK(?)");$release->bind_param("s",$lockName);$release->execute();$release->close();unlink($diskPath);respond(false,"This transaction reference has already been submitted.",[],409);}
+if($existing){
+    $release=$conn->prepare("SELECT RELEASE_LOCK(?)");$release->bind_param("s",$lockName);$release->execute();$release->close();unlink($diskPath);
+    if((int)$existing["user_id"]===(int)$user["id"]){
+        respond(false,"This payment reference belongs to your existing order ".$existing["order_code"]." (".$existing["status"]."). Check My Orders; do not pay again.",["existing_order_id"=>$existing["order_code"],"existing_order_status"=>$existing["status"]],409);
+    }
+    respond(false,"This transaction reference has already been submitted. Please contact the shop for assistance; do not pay again.",[],409);
+}
 $conn->begin_transaction();
 try{$subtotal=0;$validated=[];
 // Aggregate duplicate product lines to prevent overselling.
