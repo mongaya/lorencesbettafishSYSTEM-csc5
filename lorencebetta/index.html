@@ -1856,7 +1856,7 @@ body:not(.dark-mode) .hero-kicker{
 <label class="payment-option"><input type="radio" name="payment" value="GCash" checked>  GCash</label>
 <label class="payment-option"><input type="radio" name="payment" value="MariBank">  MariBank</label>
 <label class="payment-option"><input type="radio" name="payment" value="AUB">  AUB</label>
-<div class="payment-note">Payment can be submitted after placing your order. Complete payment within the reservation window shown in your order.</div>
+<div id="checkoutPaymentDetails" class="payment-note">Payment account details will appear here.</div><div class="form-group"><label>Transaction reference number</label><input id="checkoutPaymentReference" placeholder="Enter payment reference" maxlength="120"></div><div class="form-group"><label>Payment screenshot</label><input id="checkoutPaymentScreenshot" type="file" accept="image/png,image/jpeg,image/webp"></div>
 </div>
 </div>
 <div class="card"><h3> Order Summary</h3>
@@ -2704,7 +2704,7 @@ async function loadCategories() {
 
 async function loadPaymentSettings() {
     const data = await apiRequest("payment_settings.php");
-    paymentSettings = data.settings || paymentSettings;
+    paymentSettings = data.methods || paymentSettings;
 }
 
 async function loadProductReviews() {
@@ -3544,19 +3544,19 @@ function renderCustomerOrders() {
 
 function orderHTML(order) {
     const statuses = order.courier === "Pick Up"
-      ? ["Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Picked Up"]
-      : ["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Shipped","Delivered","Order Received"];
+      ? (order.status==="Pending"?["Pending","Confirmed","Preparing","Ready for Pickup","Picked Up"]:["Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Picked Up"])
+      : (order.status==="Pending"?["Pending","Confirmed","Preparing","Shipped","Delivered","Order Received"]:["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Shipped","Delivered","Order Received"]);
     const currentIndex=statuses.indexOf(order.status);
-    const progress=statuses.map((status,index)=>{const done=order.status!=="Cancelled"&&index<=currentIndex;return `<div class="progress-step ${done?'done':''}"><div class="progress-dot">${done?'✓':index+1}</div>${status}</div>`;}).join("");
+    const progress=statuses.map((status,index)=>{const done=order.status!=="Cancelled"&&index<=currentIndex;return `<div class="progress-step ${done?'done':''}"><div class="progress-dot">${done?'✓':index+1}</div>${status==="Pending"?"Pending Verification":status}</div>`;}).join("");
     const items=(order.items||[]).map(item=>{
       const product=products.find(p=>Number(p.db_id)===Number(item.productId));
       const reviewReady=["Delivered","Order Received","Picked Up"].includes(order.status) && product;
       const reviewed=product?alreadyReviewed(product):false;
       return `<div class="order-item-row">${item.image?`<img src="${escapeHTML(item.image)}" alt="${escapeHTML(item.name)}">`:`<div></div>`}<div><div class="order-item-name">${escapeHTML(item.name)}</div><div class="order-item-sub">Qty ${Number(item.quantity)} · ₱${Number(item.price).toFixed(2)}</div></div><div>${reviewReady?`<button class="action-btn view-btn" onclick="openProductDetail('${escapeHTML(product.id)}')">${reviewed?"View Rating":"Rate Product"}</button>`:""}</div></div>`;
     }).join("");
-    const paymentAction=order.status!=="Cancelled"&&["GCash","MariBank","AUB"].includes(order.payment)&&order.shipping_confirmed&&order.payment_status!=="Paid"?paymentActionHTML(order):"";
+    const paymentAction=order.status!=="Cancelled"&&["GCash","MariBank","AUB"].includes(order.payment)&&order.shipping_confirmed&&!["Paid","Payment Submitted"].includes(order.payment_status)?paymentActionHTML(order):"";
     return `<div class="order-card">
-      <div class="order-head"><div><div class="order-id">${escapeHTML(order.id)}</div><small>${escapeHTML(order.date)}</small></div><span class="status ${escapeHTML(order.status)}">${escapeHTML(order.status)}</span></div>
+      <div class="order-head"><div><div class="order-id">${escapeHTML(order.id)}</div><small>${escapeHTML(order.date)}</small></div><span class="status ${escapeHTML(order.status)}">${escapeHTML(order.status==="Pending"?"Pending Verification":order.status)}</span></div>
       <div class="order-body-grid">
         <div class="order-main-column">
           <div class="order-items-list">${items}</div>
@@ -3586,9 +3586,9 @@ async function submitPayment(id){const ref=document.getElementById("payref-"+id)
 async function markPaymentPaid(id){if(!confirm("Mark this payment as verified and paid?"))return;try{await apiRequest("mark_payment.php",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId:id})});await loadOrders();renderAdminOrders();renderAdminDashboard();viewOrder(id);showToast("Payment marked as paid.");}catch(e){showToast(e.message);}}
 function renderPaymentSettings(){
  const el=document.getElementById("paymentSettingsCards");if(!el)return;
- el.innerHTML=["GCash","MariBank","AUB"].map(m=>{const x=paymentSettings[m]||{},p=m.toLowerCase();return `<div class="card" style="margin-bottom:18px"><h3>${m==="GCash"?"":""} ${escapeHTML(m)}</h3><div class="form-group"><label>Account Name</label><input id="${p}AccountName" value="${escapeHTML(x.account_name||"")}"></div><div class="form-group"><label>Account Number</label><input id="${p}AccountNumber" value="${escapeHTML(x.account_number||"")}"></div><div class="form-group"><label>QR Code</label><input id="${p}Qr" type="file" accept="image/jpeg,image/png,image/webp"></div>${x.qr_image?`<div class="gcash-box"><img class="gcash-qr" src="${escapeHTML(x.qr_image)}"></div>`:""}<button class="primary-btn" onclick="savePaymentSettings('${m}')">Save ${m} Settings</button></div>`}).join("");
+ el.innerHTML=["GCash","MariBank","AUB"].map(m=>{const x=paymentSettings[m]||{},p=m.toLowerCase();return `<div class="card" style="margin-bottom:18px"><h3>${m==="GCash"?"":""} ${escapeHTML(m)}</h3><div class="form-group"><label>Account Name</label><input id="${p}AccountName" value="${escapeHTML((x.account_name||x.merchant_name)||"")}"></div><div class="form-group"><label>Account Number</label><input id="${p}AccountNumber" value="${escapeHTML((x.account_number||x.gcash_number)||"")}"></div><div class="form-group"><label>QR Code</label><input id="${p}Qr" type="file" accept="image/jpeg,image/png,image/webp"></div>${x.qr_image?`<div class="gcash-box"><img class="gcash-qr" src="${escapeHTML(x.qr_image)}"></div>`:""}<button class="primary-btn" onclick="savePaymentSettings('${m}')">Save ${m} Settings</button></div>`}).join("");
 }
-async function savePaymentSettings(m){const p=m.toLowerCase(),name=document.getElementById(p+"AccountName").value.trim(),num=document.getElementById(p+"AccountNumber").value.trim(),file=document.getElementById(p+"Qr").files[0];if(!name||!num)return showToast("Enter account name and account number.");const f=new FormData();f.append("method",m);f.append("account_name",name);f.append("account_number",num);if(file)f.append("qr_image",file);try{const d=await apiRequest("payment_settings.php",{method:"POST",body:f});paymentSettings=d.settings||paymentSettings;renderPaymentSettings();showToast(m+" settings saved.");}catch(e){showToast(e.message);}}
+async function savePaymentSettings(m){const p=m.toLowerCase(),name=document.getElementById(p+"AccountName").value.trim(),num=document.getElementById(p+"AccountNumber").value.trim(),file=document.getElementById(p+"Qr").files[0];if(!name||!num)return showToast("Enter account name and account number.");const f=new FormData();f.append("method",m);f.append(m==="GCash"?"merchant_name":"account_name",name);f.append(m==="GCash"?"gcash_number":"account_number",num);if(file)f.append("qr_image",file);try{const d=await apiRequest("payment_settings.php",{method:"POST",body:f});paymentSettings=d.methods||paymentSettings;renderPaymentSettings();showToast(m+" settings saved.");}catch(e){showToast(e.message);}}
 
 /* =========================================================
    PROFILE
@@ -9681,6 +9681,8 @@ renderCheckout=function(){
 renderCheckoutCouriers();
 </script>
 <script src="checkout_shipping_ui.js"></script>
+<script src="checkout_pay_first.js"></script>
+<script src="admin_pay_first.js"></script>
 </body>
 </html>
 

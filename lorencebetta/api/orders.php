@@ -2,6 +2,8 @@
 
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/stock_reservations.php";
+require_once __DIR__ . "/auth.php";
+$viewer=require_user_session($conn);
 ensure_order_flow_columns($conn);
 release_expired_reservations($conn);
 
@@ -59,18 +61,23 @@ $sql = "
         DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i:%s') AS order_date
     FROM orders o
     LEFT JOIN users u ON u.id = o.user_id
+    WHERE (? = 'admin' OR o.user_id = ?)
     ORDER BY o.id DESC
 ";
 
-$orderResult = $conn->query($sql);
+$orderStmt=$conn->prepare($sql);
+$viewerRole=$viewer["role"];$viewerId=(int)$viewer["id"];
+$orderStmt->bind_param("si",$viewerRole,$viewerId);
+$orderStmt->execute();
+$orderRows=stmt_fetch_all_assoc_compat($orderStmt);$orderStmt->close();
 
-if (!$orderResult) {
+if (!is_array($orderRows)) {
     respond(false, "Unable to load orders.", [], 500);
 }
 
 $orders = [];
 
-while ($row = $orderResult->fetch_assoc()) {
+foreach ($orderRows as $row) {
     $orderId = (int)$row["id"];
 
     $stmt = $conn->prepare(
@@ -124,7 +131,7 @@ while ($row = $orderResult->fetch_assoc()) {
         "courier" => $row["courier"],
         "tracking_url" => $row["tracking_url"],
         "tracking_number" => $row["tracking_number"],
-        "is_new" => ($row["status"] === "Pending Shipping Fee"),
+        "is_new" => ($row["status"] === "Pending Shipping Fee" || ($row["status"] === "Pending" && $row["payment_status"] === "Payment Submitted")),
         "items" => $items,
         "subtotal" => (float)$row["subtotal"],
         "shipping" => (float)$row["shipping"],
