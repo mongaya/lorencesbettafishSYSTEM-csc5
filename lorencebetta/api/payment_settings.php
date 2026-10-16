@@ -77,5 +77,5 @@ if ($file && $file["error"] !== UPLOAD_ERR_NO_FILE) {
 
 $stmt = $conn->prepare("INSERT INTO shop_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
 foreach ($values as $key => $value) { $stmt->bind_param("ss", $key, $value); $stmt->execute(); }
-respond(true, "GCash settings saved.", ["settings" => read_gcash_settings($conn)]);
+respond(true, "GCash settings saved.", ["settings" => read_gcash_settings($conn),"methods"=>all_payment_settings($conn)]);
 ?>
