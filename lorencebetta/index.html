@@ -3544,8 +3544,8 @@ function renderCustomerOrders() {
 
 function orderHTML(order) {
     const statuses = order.courier === "Pick Up"
-      ? ["Pending","Confirmed","Preparing","Ready for Pickup","Picked Up"]
-      : ["Pending","Confirmed","Preparing","Shipped","Delivered","Order Received"];
+      ? (order.status==="Pending"?["Pending","Confirmed","Preparing","Ready for Pickup","Picked Up"]:["Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Picked Up"])
+      : (order.status==="Pending"?["Pending","Confirmed","Preparing","Shipped","Delivered","Order Received"]:["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Shipped","Delivered","Order Received"]);
     const currentIndex=statuses.indexOf(order.status);
     const progress=statuses.map((status,index)=>{const done=order.status!=="Cancelled"&&index<=currentIndex;return `<div class="progress-step ${done?'done':''}"><div class="progress-dot">${done?'✓':index+1}</div>${status==="Pending"?"Pending Verification":status}</div>`;}).join("");
     const items=(order.items||[]).map(item=>{
