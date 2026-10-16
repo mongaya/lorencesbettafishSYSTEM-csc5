@@ -4934,71 +4934,7 @@ function printReceipt(orderId){
 </style>
 
 
-<style id="accurate-notifications-v28-style">
-#adminSidebar .orders-alert-v28{display:inline-flex;margin-left:8px;background:#d83d52;color:white;border-radius:99px;padding:2px 7px;font-size:11px;font-weight:800}
-#adminApp .new-order-toast-v28{position:fixed;right:20px;bottom:24px;z-index:9999;background:#10394a;color:white;border:1px solid #4fb8da;border-radius:12px;padding:15px 18px;box-shadow:0 10px 35px #0003;cursor:pointer;max-width:320px}
-</style>
-<script id="accurate-notifications-v28">
-(function(){
- const oldBuild=buildNotifications;
- buildNotifications=function(role){
-   const items=oldBuild(role).filter(n=>role!=="admin"||!String(n.id).startsWith("new-order-"));
-   if(role==="admin"){
-     (orders||[]).filter(o=>o.is_new).forEach(o=>items.unshift({id:"new-order-"+o.id,title:"New order received",body:String(o.id)+" from "+(o.username||o.customerName||"customer"),kind:"order",orderId:o.id}));
-   }
-   return items;
- };
- const oldUpdate=updateChatNotifications;
- updateChatNotifications=function(role,messages){
-   const incoming=(messages||[]).filter(m=>role==="admin"?m.sender_role==="customer":m.sender_role==="admin");
-   chatNotificationState[role]=incoming.slice(-50).map(m=>({id:"chat-"+m.id,title:role==="admin"?"New customer message":"Message from Admin",body:(role==="admin"?m.username+": ":"")+m.message,kind:"chat",username:m.username}));
-   renderNotifications(role);
- };
- const oldOpen=openNotification;
- openNotification=function(role,id){
-   const n=(notificationCache[role]||[]).find(x=>x.id===id);
-   if(n?.kind==="chat"){
-     const read=getReadNotifications(role);if(!read.includes(id)){read.push(id);saveReadNotifications(role,read);}
-     document.getElementById(role+"NotificationPanel")?.classList.add("hidden");
-     if(role==="admin"){showAdminPage("chat");if(n.username)selectAdminChat(n.username);}
-     else showCustomerPage("chat");
-     renderNotifications(role);
-     return;
-   }
-   oldOpen(role,id);
-   if(role==="admin"&&n?.orderId)viewOrder(n.orderId);
- };
- let seeded=false,known=new Set();
- function refreshOrderAlerts(){
-   if(currentUser?.type!=="admin")return;
-   const fresh=(orders||[]).filter(o=>o.is_new);
-   const ids=new Set(fresh.map(o=>String(o.id)));
-   const nav=[...document.querySelectorAll("#adminSidebar .nav-btn")].find(b=>/orders/i.test(b.textContent));
-   if(nav){
-     let badge=nav.querySelector(".orders-alert-v28");
-     if(fresh.length){if(!badge){badge=document.createElement("span");badge.className="orders-alert-v28";nav.appendChild(badge);}badge.textContent=fresh.length>99?"99+":String(fresh.length);}
-     else badge?.remove();
-   }
-   if(seeded){
-     const added=fresh.find(o=>!known.has(String(o.id)));
-     if(added&&!document.querySelector(".new-order-toast-v28")){
-       const toast=document.createElement("div");toast.className="new-order-toast-v28";toast.textContent="New order received: "+String(added.id)+" — Click to review";
-       toast.onclick=()=>{toast.remove();showAdminPage("orders");viewOrder(added.id);};
-       document.getElementById("adminApp")?.appendChild(toast);
-       setTimeout(()=>toast.remove(),9000);
-     }
-   }
-   known=ids;seeded=true;
-   renderNotifications("admin");
- }
- const previousLoad=loadOrders;
- loadOrders=async function(...args){const result=await previousLoad(...args);refreshOrderAlerts();return result;};
- const oldSeen=viewOrder;
- viewOrder=function(...args){const result=oldSeen(...args);refreshOrderAlerts();return result;};
- setInterval(async()=>{if(currentUser?.type!=="admin"||document.hidden)return;try{await loadOrders();}catch(e){console.warn("Order notification refresh failed",e);}},20000);
- document.addEventListener("DOMContentLoaded",()=>setTimeout(refreshOrderAlerts,600));
-})();
-</script>
+
 </body></html>`);w.document.close();w.focus();w.print();
 }
 const _renderCustomerOrdersSafety=renderCustomerOrders;
@@ -9821,6 +9757,71 @@ renderCheckoutCouriers();
 <script src="checkout_shipping_ui.js?v=20261016-checkout-test"></script>
 <script src="checkout_pay_first.js?v=20261016-checkout-test"></script>
 <script src="admin_pay_first.js"></script>
+<style id="accurate-notifications-v28-style">
+#adminSidebar .orders-alert-v28{display:inline-flex;margin-left:8px;background:#d83d52;color:white;border-radius:99px;padding:2px 7px;font-size:11px;font-weight:800}
+#adminApp .new-order-toast-v28{position:fixed;right:20px;bottom:24px;z-index:9999;background:#10394a;color:white;border:1px solid #4fb8da;border-radius:12px;padding:15px 18px;box-shadow:0 10px 35px #0003;cursor:pointer;max-width:320px}
+</style>
+<script id="accurate-notifications-v28">
+(function(){
+ const oldBuild=buildNotifications;
+ buildNotifications=function(role){
+   const items=oldBuild(role).filter(n=>role!=="admin"||!String(n.id).startsWith("new-order-"));
+   if(role==="admin"){
+     (orders||[]).filter(o=>o.is_new).forEach(o=>items.unshift({id:"new-order-"+o.id,title:"New order received",body:String(o.id)+" from "+(o.username||o.customerName||"customer"),kind:"order",orderId:o.id}));
+   }
+   return items;
+ };
+ const oldUpdate=updateChatNotifications;
+ updateChatNotifications=function(role,messages){
+   const incoming=(messages||[]).filter(m=>role==="admin"?m.sender_role==="customer":m.sender_role==="admin");
+   chatNotificationState[role]=incoming.slice(-50).map(m=>({id:"chat-"+m.id,title:role==="admin"?"New customer message":"Message from Admin",body:(role==="admin"?m.username+": ":"")+m.message,kind:"chat",username:m.username}));
+   renderNotifications(role);
+ };
+ const oldOpen=openNotification;
+ openNotification=function(role,id){
+   const n=(notificationCache[role]||[]).find(x=>x.id===id);
+   if(n?.kind==="chat"){
+     const read=getReadNotifications(role);if(!read.includes(id)){read.push(id);saveReadNotifications(role,read);}
+     document.getElementById(role+"NotificationPanel")?.classList.add("hidden");
+     if(role==="admin"){showAdminPage("chat");if(n.username)selectAdminChat(n.username);}
+     else showCustomerPage("chat");
+     renderNotifications(role);
+     return;
+   }
+   oldOpen(role,id);
+   if(role==="admin"&&n?.orderId)viewOrder(n.orderId);
+ };
+ let seeded=false,known=new Set();
+ function refreshOrderAlerts(){
+   if(currentUser?.type!=="admin")return;
+   const fresh=(orders||[]).filter(o=>o.is_new);
+   const ids=new Set(fresh.map(o=>String(o.id)));
+   const nav=[...document.querySelectorAll("#adminSidebar .nav-btn")].find(b=>/orders/i.test(b.textContent));
+   if(nav){
+     let badge=nav.querySelector(".orders-alert-v28");
+     if(fresh.length){if(!badge){badge=document.createElement("span");badge.className="orders-alert-v28";nav.appendChild(badge);}badge.textContent=fresh.length>99?"99+":String(fresh.length);}
+     else badge?.remove();
+   }
+   if(seeded){
+     const added=fresh.find(o=>!known.has(String(o.id)));
+     if(added&&!document.querySelector(".new-order-toast-v28")){
+       const toast=document.createElement("div");toast.className="new-order-toast-v28";toast.textContent="New order received: "+String(added.id)+" — Click to review";
+       toast.onclick=()=>{toast.remove();showAdminPage("orders");viewOrder(added.id);};
+       document.getElementById("adminApp")?.appendChild(toast);
+       setTimeout(()=>toast.remove(),9000);
+     }
+   }
+   known=ids;seeded=true;
+   renderNotifications("admin");
+ }
+ const previousLoad=loadOrders;
+ loadOrders=async function(...args){const result=await previousLoad(...args);refreshOrderAlerts();return result;};
+ const oldSeen=viewOrder;
+ viewOrder=function(...args){const result=oldSeen(...args);refreshOrderAlerts();return result;};
+ setInterval(async()=>{if(currentUser?.type!=="admin"||document.hidden)return;try{await loadOrders();}catch(e){console.warn("Order notification refresh failed",e);}},20000);
+ document.addEventListener("DOMContentLoaded",()=>setTimeout(refreshOrderAlerts,600));
+})();
+</script>
 </body>
 </html>
 
