@@ -36,9 +36,9 @@ $dup->bind_param("ss",$payment,$reference);$dup->execute();$existing=stmt_fetch_
 if($existing){
     $release=$conn->prepare("SELECT RELEASE_LOCK(?)");$release->bind_param("s",$lockName);$release->execute();$release->close();unlink($diskPath);
     if((int)$existing["user_id"]===(int)$user["id"]){
-        respond(false,"This payment reference belongs to your existing order ".$existing["order_code"]." (".$existing["status"]."). Check My Orders; do not pay again.",["existing_order_id"=>$existing["order_code"],"existing_order_status"=>$existing["status"]],409);
+        respond(false,"Payment Already Used! This transaction reference has already been submitted for order ".$existing["order_code"]." (".$existing["status"]."). Check My Orders; do not pay again.",["existing_order_id"=>$existing["order_code"],"existing_order_status"=>$existing["status"]],409);
     }
-    respond(false,"This transaction reference has already been submitted. Please contact the shop for assistance; do not pay again.",[],409);
+    respond(false,"Payment Already Used! This transaction reference has already been submitted for another order. Please contact the shop; do not pay again.",[],409);
 }
 $conn->begin_transaction();
 try{$subtotal=0;$validated=[];
