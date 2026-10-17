@@ -1799,13 +1799,17 @@ body:not(.dark-mode) .hero-kicker{
                     <input id="searchInput" class="search-box" placeholder=" Search Betta fish..." oninput="renderProducts()">
                 </div>
 
-                <div id="shopAdvancedFilters" class="shop-filters-v23">
-<label>Appearance <select id="shopAppearanceFilter" multiple size="4" aria-label="Choose one or more appearances" onchange="renderProducts()"><option>Solid Color</option><option>Multicolor</option><option>Marble</option><option>Koi</option><option>Galaxy</option><option>Metallic</option></select></label>
-<label>Price <select id="shopPriceFilter" onchange="renderProducts()"><option value="">Any price</option><option value="0-500">₱0–₱500</option><option value="500-1000">₱500–₱1,000</option><option value="1000+">₱1,000+</option></select></label>
+                <div class="shop-filter-panel-v24">
+<div class="shop-filter-heading-v24"><strong>Find your Betta</strong><span>Appearance means the fish's color or pattern (e.g. Koi, Galaxy, Marble).</span></div>
+<div id="shopAdvancedFilters" class="shop-filters-v23">
+<div class="shop-appearance-wrap-v24"><label for="shopAppearanceToggle">Appearance</label><details id="shopAppearanceDetails" class="shop-appearance-v24"><summary id="shopAppearanceToggle">All appearances</summary><div class="shop-appearance-options-v24">
+<label><input type="checkbox" value="Solid Color" onchange="renderProducts();updateAppearanceFilterLabel()"> Solid Color</label><label><input type="checkbox" value="Multicolor" onchange="renderProducts();updateAppearanceFilterLabel()"> Multicolor</label><label><input type="checkbox" value="Marble" onchange="renderProducts();updateAppearanceFilterLabel()"> Marble</label><label><input type="checkbox" value="Koi" onchange="renderProducts();updateAppearanceFilterLabel()"> Koi</label><label><input type="checkbox" value="Galaxy" onchange="renderProducts();updateAppearanceFilterLabel()"> Galaxy</label><label><input type="checkbox" value="Metallic" onchange="renderProducts();updateAppearanceFilterLabel()"> Metallic</label>
+</div></details></div>
+<label>Price Range <select id="shopPriceFilter" onchange="renderProducts()"><option value="">Any price</option><option value="0-500">₱0–₱500</option><option value="500-1000">₱500–₱1,000</option><option value="1000+">₱1,000+</option></select></label>
 <label>Availability <select id="shopAvailabilityFilter" onchange="renderProducts()"><option value="available">Available</option><option value="all">All products</option><option value="soldout">Sold out</option></select></label>
-<label>Sort <select id="shopSortFilter" onchange="renderProducts()"><option value="default">Default</option><option value="low">Price: Low to High</option><option value="high">Price: High to Low</option><option value="az">Name A–Z</option></select></label>
-<button type="button" onclick="clearShopFilters()">Clear Filters</button>
-</div>
+<label>Sort By <select id="shopSortFilter" onchange="renderProducts()"><option value="default">Default</option><option value="low">Price: Low to High</option><option value="high">Price: High to Low</option><option value="az">Name A–Z</option></select></label>
+<button type="button" class="shop-clear-v24" onclick="clearShopFilters()">Clear Filters</button>
+</div></div>
 <div id="fishCategories" class="categories" aria-label="Betta fish categories"></div>
 
                 <div id="productGrid" class="products-grid"></div>
@@ -3278,6 +3282,7 @@ function productHTML(product) {
             </div>
             <div class="product-info">
                 <h3>${escapeHTML(product.name)}</h3>
+                <div class="shop-product-meta-v24"><span>${escapeHTML(product.category||"Betta Fish")}</span><span>${escapeHTML(product.appearance||"Appearance not specified")}</span></div>
                 ${ratingSummaryHTML(product)}
                 <div><span class="price">₱${Number(product.price).toLocaleString(undefined,{minimumFractionDigits:2})}</span></div>
                 <div class="product-bottom">
@@ -3345,8 +3350,15 @@ async function submitProductReview(productId,productCode){
     try{await apiRequest("product_reviews.php",{method:"POST",body:f});await loadProductReviews();renderProducts();renderGuestProducts();openProductDetail(productCode);showToast("Product rating submitted.");}catch(e){showToast(e.message,"warning");}
 }
 
+function updateAppearanceFilterLabel(){
+ const selected=[...document.querySelectorAll("#shopAppearanceDetails input:checked")].map(e=>e.value);
+ const summary=document.getElementById("shopAppearanceToggle");
+ if(summary)summary.textContent=selected.length===0?"All appearances":selected.length===1?selected[0]:selected.length+" appearances selected";
+}
 function clearShopFilters(){
- for(const id of ["shopAppearanceFilter","shopPriceFilter","shopSortFilter"]){const el=document.getElementById(id);if(el){if(el.multiple)[...el.options].forEach(o=>o.selected=false);else el.value="";}}
+ document.querySelectorAll("#shopAppearanceDetails input[type=checkbox]").forEach(el=>el.checked=false);
+ updateAppearanceFilterLabel();
+ for(const id of ["shopPriceFilter","shopSortFilter"]){const el=document.getElementById(id);if(el){if(el.multiple)[...el.options].forEach(o=>o.selected=false);else el.value="";}}
  const availability=document.getElementById("shopAvailabilityFilter");if(availability)availability.value="available";
  const search=document.getElementById("searchInput");if(search)search.value="";
  selectedFishCategory="all";
@@ -3356,7 +3368,7 @@ function renderProducts(){
  const container=document.getElementById("productGrid");if(!container)return;
  renderFishCategories();
  const search=(document.getElementById("searchInput")?.value||"").trim().toLowerCase();
- const appearance=[...(document.getElementById("shopAppearanceFilter")?.selectedOptions||[])].map(o=>o.value);
+ const appearance=[...document.querySelectorAll("#shopAppearanceDetails input:checked")].map(o=>o.value);
  const price=document.getElementById("shopPriceFilter")?.value||"";
  const availability=document.getElementById("shopAvailabilityFilter")?.value||"available";
  const sort=document.getElementById("shopSortFilter")?.value||"default";
@@ -9971,12 +9983,28 @@ renderCheckoutCouriers();
 })();
 </script>
 <style id="shop-filters-v23-style">
-.shop-filters-v23{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:14px 0}
-.shop-filters-v23 label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700;min-width:145px;flex:1}
-.shop-filters-v23 select,.shop-filters-v23 button{border:1px solid #ccdce3;border-radius:9px;padding:10px;background:#fff;color:#183b4b;font-size:13px}
-.shop-filters-v23 button{cursor:pointer;font-weight:700}
-.shop-filters-v23 select[multiple]{min-height:112px}
-@media(max-width:600px){.shop-filters-v23 label{min-width:calc(50% - 8px)}}
+.shop-filter-panel-v24{background:#f7fbfd;border:1px solid #cde3ee;border-radius:16px;padding:16px;margin:16px 0 20px}
+.shop-filter-heading-v24{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;margin-bottom:14px;color:#123f55}
+.shop-filter-heading-v24 span{font-size:12px;color:#59798a}
+.shop-filters-v23{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) auto;gap:12px;align-items:end}
+.shop-filters-v23>label,.shop-appearance-wrap-v24{display:flex;flex-direction:column;gap:7px;min-width:0;font-size:12px;font-weight:700;color:#164257}
+.shop-filters-v23 select,.shop-appearance-v24 summary,.shop-clear-v24{box-sizing:border-box;width:100%;height:43px;border:1px solid #bfd9e5;border-radius:10px;padding:10px 12px;background:#fff;color:#183b4b;font-size:13px;font-weight:500}
+.shop-appearance-v24{position:relative}
+.shop-appearance-v24 summary{cursor:pointer;list-style:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:24px}
+.shop-appearance-v24 summary::-webkit-details-marker{display:none}
+.shop-appearance-v24 summary:after{content:"⌄";position:absolute;right:12px}
+.shop-appearance-options-v24{position:absolute;top:calc(100% + 5px);left:0;z-index:20;min-width:100%;box-sizing:border-box;background:#fff;border:1px solid #bfd9e5;border-radius:10px;box-shadow:0 8px 20px #0c3b5420;padding:8px;max-height:230px;overflow:auto}
+.shop-appearance-options-v24 label{display:flex;align-items:center;gap:8px;padding:8px;font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+.shop-appearance-options-v24 input{accent-color:#0b90bd}
+.shop-clear-v24{cursor:pointer;font-weight:700;white-space:nowrap}
+.shop-product-meta-v24{display:flex;flex-wrap:wrap;gap:5px;margin:5px 0 8px}
+.shop-product-meta-v24 span{font-size:11px;border-radius:20px;background:#e4f3f9;color:#17526a;padding:4px 8px}
+@media(max-width:900px){.shop-filters-v23{grid-template-columns:repeat(2,minmax(0,1fr))}.shop-clear-v24{grid-column:1/-1}}
+@media(max-width:480px){.shop-filter-panel-v24{padding:12px}.shop-filters-v23{gap:9px}.shop-filter-heading-v24 span{line-height:1.5}}
+body.dark-mode .shop-filter-panel-v24{background:#103246;border-color:#28556a}
+body.dark-mode .shop-filter-heading-v24,body.dark-mode .shop-filters-v23>label,body.dark-mode .shop-appearance-wrap-v24{color:#e5f5fc}
+body.dark-mode .shop-filter-heading-v24 span{color:#b9d7e3}
+body.dark-mode .shop-filters-v23 select,body.dark-mode .shop-appearance-v24 summary,body.dark-mode .shop-appearance-options-v24,body.dark-mode .shop-clear-v24{background:#163e52;color:#f1f9fd;border-color:#37677c}
 </style>
 </body>
 </html>
