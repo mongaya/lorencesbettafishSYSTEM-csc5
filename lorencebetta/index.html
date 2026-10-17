@@ -1976,6 +1976,18 @@ body:not(.dark-mode) .hero-kicker{
                 </div>
                 <div class="chat-panel">
                     <div id="customerChatMessages" class="chat-messages"></div>
+                    <div id="customerChatQuickStartV27" class="customer-chat-quick-v27 hidden" aria-label="Quick chat topics">
+ <div class="quick-chat-heading-v27"><strong>How can we help you?</strong><small>Choose a topic to prepare your first message. You can edit it before sending.</small></div>
+ <div class="quick-chat-grid-v27">
+ <button type="button" onclick="prepareCustomerQuickChatV27('fish')">🐟 <span>Fish Inquiry</span></button>
+ <button type="button" onclick="prepareCustomerQuickChatV27('orders')">📦 <span>My Orders</span></button>
+ <button type="button" onclick="prepareCustomerQuickChatV27('payment')">💳 <span>Payment Concern</span></button>
+ <button type="button" onclick="prepareCustomerQuickChatV27('shipping')">🚚 <span>Shipping & Delivery</span></button>
+ <button type="button" onclick="prepareCustomerQuickChatV27('price')">🏷️ <span>Prices & Availability</span></button>
+ <button type="button" onclick="prepareCustomerQuickChatV27('other')">💬 <span>Other Concern</span></button>
+ </div>
+ </div>
+                    
                     <div class="chat-compose">
                         <input id="customerChatInput" placeholder="Type your message..." maxlength="1000" onkeydown="if(event.key==='Enter') sendCustomerMessage()">
                         <button class="primary-btn" onclick="sendCustomerMessage()">Send</button>
@@ -3103,6 +3115,8 @@ async function loadCustomerChat(){
         const data=await apiRequest("messages.php?username="+encodeURIComponent(currentUser.username));
         const messages=data.messages||[];
         renderChatMessages(document.getElementById("customerChatMessages"),messages,currentUser.username);
+        const quick=document.getElementById("customerChatQuickStartV27");
+        if(quick)quick.classList.toggle("hidden",messages.some(m=>m.sender_role==="customer"));
         updateChatNotifications("customer",messages);
     }catch(err){console.error(err);}
 }
@@ -3111,6 +3125,19 @@ function renderChatMessages(container,messages,customerUsername){
     if(!messages.length){container.innerHTML='<div style="text-align:center;color:#78909a;margin:auto">No messages yet. Say hello to the admin! </div>';return;}
     container.innerHTML=messages.map(m=>`<div class="chat-bubble ${m.sender_role==='admin'?'admin':'customer'}">${escapeHTML(m.message)}<span class="chat-time">${escapeHTML(m.created_at)}</span></div>`).join("");
     container.scrollTop=container.scrollHeight;
+}
+function prepareCustomerQuickChatV27(topic){
+ const templates={
+ fish:"Hi Admin! I have a question about a Betta fish.",
+ orders:"Hi Admin! I'd like to ask about my order.",
+ payment:"Hi Admin! I need help with my payment.",
+ shipping:"Hi Admin! I'd like to ask about shipping and delivery.",
+ price:"Hi Admin! I'd like to ask about fish prices and availability.",
+ other:"Hi Admin! I need assistance."
+ };
+ const input=document.getElementById("customerChatInput");
+ if(!input||!Object.prototype.hasOwnProperty.call(templates,topic))return;
+ input.value=templates[topic];input.focus();input.setSelectionRange(input.value.length,input.value.length);
 }
 async function sendCustomerMessage(){
     const input=document.getElementById("customerChatInput"); const message=input.value.trim();
@@ -11109,4 +11136,20 @@ viewOrder=function(orderId){
 @media(max-width:360px){#productModal .product-colors-v25{grid-template-columns:1fr}}
 body.dark-mode #productModal .product-colors-v25 label{background:#163e52;border-color:#37677c;color:#f1f9fd}
 body.dark-mode #productModal .product-colors-v25 label:has(input:checked){background:#1b5369;border-color:#62b8d6}
+</style>
+
+<style id="customer-chat-quick-style-v27">
+#customerChatQuickStartV27{padding:18px 20px 20px;background:#f3fafd;border:1px solid #d8eaf2;border-radius:16px;margin:12px 0}
+#customerChatQuickStartV27 .quick-chat-heading-v27{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+#customerChatQuickStartV27 .quick-chat-heading-v27 strong{font-size:17px;color:#164a60}
+#customerChatQuickStartV27 .quick-chat-heading-v27 small{color:#647e8b;line-height:1.5}
+#customerChatQuickStartV27 .quick-chat-grid-v27{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#customerChatQuickStartV27 .quick-chat-grid-v27 button{display:flex;align-items:center;gap:12px;text-align:left;padding:14px;border:1px solid #cfe3ec;border-radius:12px;background:white;color:#18485d;font-weight:600;font-size:14px;min-height:54px;transition:background .2s,border-color .2s}
+#customerChatQuickStartV27 .quick-chat-grid-v27 button:hover,#customerChatQuickStartV27 .quick-chat-grid-v27 button:focus-visible{background:#e7f6fc;border-color:#66b5d0}
+@media(max-width:500px){#customerChatQuickStartV27{padding:14px}#customerChatQuickStartV27 .quick-chat-grid-v27{grid-template-columns:1fr}#customerChatQuickStartV27 .quick-chat-grid-v27 button{min-height:48px}}
+body.dark-mode #customerChatQuickStartV27{background:#123548;border-color:#2b596d}
+body.dark-mode #customerChatQuickStartV27 .quick-chat-heading-v27 strong{color:#e8f7fc}
+body.dark-mode #customerChatQuickStartV27 .quick-chat-heading-v27 small{color:#a5c8d6}
+body.dark-mode #customerChatQuickStartV27 .quick-chat-grid-v27 button{background:#194357;border-color:#37677c;color:#e8f7fc}
+body.dark-mode #customerChatQuickStartV27 .quick-chat-grid-v27 button:hover{background:#235b70}
 </style>
