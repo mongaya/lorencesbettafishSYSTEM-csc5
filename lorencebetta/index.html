@@ -9932,6 +9932,34 @@ renderCheckoutCouriers();
  },60000);
 })();
 </script>
+<script id="chat-clock-v32">
+(function(){
+ const originalApi=apiRequest;
+ apiRequest=async function(endpoint,options){
+   const data=await originalApi(endpoint,options);
+   if(typeof endpoint==="string" && endpoint.startsWith("messages.php") && Array.isArray(data?.messages)){
+     data.messages.forEach(m=>{
+       const age=Number(m.age_seconds);
+       if(m.age_seconds==null || !Number.isFinite(age) || age<0)return;
+       const date=new Date(Date.now()-age*1000);
+       m.created_at=date.toLocaleString("en-PH",{timeZone:"Asia/Manila",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:true});
+       m.created_at_iso=date.toISOString();
+     });
+   }
+   return data;
+ };
+ const previousUpdate=updateChatNotifications;
+ updateChatNotifications=function(role,messages){
+   previousUpdate(role,messages);
+   const byId=new Map((messages||[]).map(m=>[String(m.id),m]));
+   (chatNotificationState[role]||[]).forEach(n=>{
+     const m=byId.get(String(n.id).replace("chat-",""));
+     if(m?.created_at_iso)n.createdAt=m.created_at_iso;
+   });
+   renderNotifications(role);
+ };
+})();
+</script>
 </body>
 </html>
 
