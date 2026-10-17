@@ -1796,10 +1796,10 @@ body:not(.dark-mode) .hero-kicker{
                 </div>
 
                 <div class="search-area">
-                    <input id="searchInput" class="search-box" placeholder=" Search Betta fish..." oninput="renderProducts()">
+                    <input id="searchInput" class="search-box" placeholder=" Search Betta fish..." onfocus="showShopSearchFilters()" onclick="showShopSearchFilters()" oninput="renderProducts()" aria-controls="shopFilterPanel" aria-expanded="false">
                 </div>
 
-                <div class="shop-filter-panel-v24">
+                <div class="shop-filter-panel-v24" id="shopFilterPanel" hidden>
 <div class="shop-filter-heading-v24"><strong>Find your Betta</strong><span>Appearance means the fish's color or pattern (e.g. Koi, Galaxy, Marble).</span></div>
 <div id="shopAdvancedFilters" class="shop-filters-v23">
 <div class="shop-appearance-wrap-v24"><label for="shopAppearanceToggle">Appearance</label><details id="shopAppearanceDetails" class="shop-appearance-v24"><summary id="shopAppearanceToggle">All appearances</summary><div class="shop-appearance-options-v24">
@@ -3350,6 +3350,26 @@ async function submitProductReview(productId,productCode){
     try{await apiRequest("product_reviews.php",{method:"POST",body:f});await loadProductReviews();renderProducts();renderGuestProducts();openProductDetail(productCode);showToast("Product rating submitted.");}catch(e){showToast(e.message,"warning");}
 }
 
+function showShopSearchFilters(){
+ const panel=document.getElementById("shopFilterPanel");
+ if(panel)panel.hidden=false;
+ const search=document.getElementById("searchInput");
+ if(search)search.setAttribute("aria-expanded","true");
+}
+function hideShopSearchFilters(){
+ const panel=document.getElementById("shopFilterPanel");
+ if(panel)panel.hidden=true;
+ const search=document.getElementById("searchInput");
+ if(search)search.setAttribute("aria-expanded","false");
+ const appearance=document.getElementById("shopAppearanceDetails");
+ if(appearance)appearance.open=false;
+}
+document.addEventListener("pointerdown",function(e){
+ const panel=document.getElementById("shopFilterPanel");
+ const search=document.getElementById("searchInput");
+ if(!panel||panel.hidden||!search)return;
+ if(!panel.contains(e.target)&&e.target!==search)hideShopSearchFilters();
+});
 function updateAppearanceFilterLabel(){
  const selected=[...document.querySelectorAll("#shopAppearanceDetails input:checked")].map(e=>e.value);
  const summary=document.getElementById("shopAppearanceToggle");
@@ -9983,6 +10003,7 @@ renderCheckoutCouriers();
 })();
 </script>
 <style id="shop-filters-v23-style">
+.shop-filter-panel-v24[hidden]{display:none!important}
 .shop-filter-panel-v24{background:#f7fbfd;border:1px solid #cde3ee;border-radius:16px;padding:16px;margin:16px 0 20px}
 .shop-filter-heading-v24{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;margin-bottom:14px;color:#123f55}
 .shop-filter-heading-v24 span{font-size:12px;color:#59798a}
