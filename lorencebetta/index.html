@@ -1975,15 +1975,14 @@ body:not(.dark-mode) .hero-kicker{
                     <p>Ask questions about fish, orders, delivery, or payment.</p>
                 </div>
                 <div class="chat-panel">
-                    <div id="customerChatMessages" class="chat-messages"></div><div id="quickPanelV27" class="quick-panel-v27" hidden><div class="quick-heading-v27"><strong>What can we help you with?</strong><button type="button" id="quickCloseV27" onclick="toggleQuickV27(false)" aria-label="Close quick replies">✕</button></div><div class="quick-grid-v27"><button type="button" onclick="selectQuickV27(0)"><span>🐟</span><span>Fish Inquiry</span></button><button type="button" onclick="selectQuickV27(1)"><span>📦</span><span>My Orders</span></button><button type="button" onclick="selectQuickV27(2)"><span>💳</span><span>Payment Concern</span></button><button type="button" onclick="selectQuickV27(3)"><span>🚚</span><span>Shipping & Delivery</span></button><button type="button" onclick="selectQuickV27(4)"><span>🏷️</span><span>Price & Availability</span></button><button type="button" onclick="selectQuickV27(5)"><span>💬</span><span>Other Concern</span></button></div></div><button type="button" id="quickToggleV27" class="quick-toggle-v27" hidden onclick="toggleQuickV27()" aria-expanded="false">☰ Quick Replies</button>
-                    <div class="customer-quick-v27" id="customerQuickV27" hidden>
-                      <button type="button" id="customerQuickToggleV27" class="customer-quick-toggle-v27" onclick="toggleCustomerQuickReplies()" aria-expanded="false">💬 Quick Replies <span aria-hidden="true">▾</span></button>
-                      <div id="customerQuickPanelV27" class="customer-quick-panel-v27" hidden><strong>How can we help you?</strong><p>Choose a topic to prepare a message.</p><div class="customer-quick-grid-v27"><button type="button" class="quick-reply-card-v27" data-message="Hi Admin! I have a question about a Betta fish." onclick="chooseCustomerQuickReply(this)"><span aria-hidden="true">🐟</span><span>Fish Inquiry</span></button>
-<button type="button" class="quick-reply-card-v27" data-message="Hi Admin! I would like to ask about my order." onclick="chooseCustomerQuickReply(this)"><span aria-hidden="true">📦</span><span>My Orders</span></button>
-<button type="button" class="quick-reply-card-v27" data-message="Hi Admin! I need help with my payment." onclick="chooseCustomerQuickReply(this)"><span aria-hidden="true">💳</span><span>Payment Concern</span></button>
-<button type="button" class="quick-reply-card-v27" data-message="Hi Admin! I would like to ask about shipping and delivery." onclick="chooseCustomerQuickReply(this)"><span aria-hidden="true">🚚</span><span>Shipping & Delivery</span></button>
-<button type="button" class="quick-reply-card-v27" data-message="Hi Admin! Is this Betta fish still available?" onclick="chooseCustomerQuickReply(this)"><span aria-hidden="true">🏷️</span><span>Price & Availability</span></button>
-<button type="button" class="quick-reply-card-v27" data-message="Hi Admin! I need assistance." onclick="chooseCustomerQuickReply(this)"><span aria-hidden="true">💬</span><span>Other Concern</span></button></div></div>
+                    <div id="customerChatMessages" class="chat-messages"></div><div class="customer-quick-v27" id="customerQuickV27" hidden>
+                      <button type="button" id="customerQuickToggleV27" class="customer-quick-toggle-v27" onclick="toggleCustomerQuickReplies()" aria-expanded="false"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v12H8l-4 3zM8 9h8M8 13h5"/></svg> Quick Replies <span aria-hidden="true">▾</span></button>
+                      <div id="customerQuickPanelV27" class="customer-quick-panel-v27" hidden><strong>How can we help you?</strong><p>Choose a topic to send a message to admin.</p><div class="customer-quick-grid-v27"><button type="button" class="quick-reply-card-v27" data-message="Hi Admin! I have a question about a Betta fish." onclick="chooseCustomerQuickReply(this)"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12c4-4 8-4 12 0-4 4-8 4-12 0M17 8l4-3v14l-4-3"/></svg></span><span>Fish Inquiry</span></button>
+<button type="button" class="quick-reply-card-v27" data-message="Hi Admin! I would like to ask about my order." onclick="chooseCustomerQuickReply(this)"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7 12 3l9 4v10l-9 4-9-4zM3 7l9 5 9-5M12 12v9"/></svg></span><span>My Orders</span></button>
+<button type="button" class="quick-reply-card-v27" data-message="Hi Admin! I need help with my payment." onclick="chooseCustomerQuickReply(this)"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg></span><span>Payment Concern</span></button>
+<button type="button" class="quick-reply-card-v27" data-message="Hi Admin! I would like to ask about shipping and delivery." onclick="chooseCustomerQuickReply(this)"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v10H3zM14 11h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></span><span>Shipping & Delivery</span></button>
+<button type="button" class="quick-reply-card-v27" data-message="Hi Admin! Is this Betta fish still available?" onclick="chooseCustomerQuickReply(this)"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h10l8 8-9 9-9-9z"/><circle cx="8" cy="9" r="1"/></svg></span><span>Price & Availability</span></button>
+<button type="button" class="quick-reply-card-v27" data-message="Hi Admin! I need assistance." onclick="chooseCustomerQuickReply(this)"><span aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v12H8l-4 3zM8 9h8M8 13h5"/></svg></span><span>Other Concern</span></button></div></div>
                     </div>
                     <div class="chat-compose">
                         <input id="customerChatInput" placeholder="Type your message..." maxlength="1000" onkeydown="if(event.key==='Enter') sendCustomerMessage()">
@@ -5001,6 +5000,20 @@ function printReceipt(orderId){
 
 
 
+
+<style id="customer-chat-consolidated-v33">
+/* One quick-reply panel: large before the first message, compact and accessible afterwards. */
+#customerApp #customerQuickV27{padding:12px 18px 8px}
+#customerApp #customerQuickV27 .customer-quick-panel-v27{max-width:720px;width:100%;margin:8px auto 12px;padding:18px;border-radius:16px}
+#customerApp #customerQuickV27 .customer-quick-grid-v27{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#customerApp #customerQuickV27 .quick-reply-card-v27{min-height:68px;flex-direction:row;justify-content:flex-start;text-align:left;padding:12px 16px;font-size:14px;gap:12px}
+#customerApp #customerQuickV27 .quick-reply-card-v27 svg{flex-shrink:0;width:22px;height:22px}
+#customerApp #customerQuickV27:not(.customer-quick-first-v27) .customer-quick-panel-v27{max-width:560px;margin:8px 0}
+#customerApp #customer-chat .chat-compose{padding:14px 18px;gap:12px}
+#customerApp #customer-chat .chat-compose input{min-width:0;font-size:15px}
+@media(max-width:560px){#customerApp #customerQuickV27{padding:10px}#customerApp #customerQuickV27 .customer-quick-panel-v27{padding:12px}#customerApp #customerQuickV27 .customer-quick-grid-v27{grid-template-columns:1fr;gap:8px}#customerApp #customerQuickV27 .quick-reply-card-v27{min-height:54px;padding:10px 12px}}
+body.dark-mode #customerApp #customerQuickV27 .customer-quick-panel-v27{background:#12374a;border-color:#37677c;color:#eaf7fb}
+</style>
 </body></html>`);w.document.close();w.focus();w.print();
 }
 const _renderCustomerOrdersSafety=renderCustomerOrders;
@@ -11134,14 +11147,14 @@ body.dark-mode #productModal .product-colors-v25 label:has(input:checked){backgr
    root.classList.toggle("customer-quick-first-v27",firstChat);
    t.hidden=firstChat;
    if(firstChat)p.hidden=false;
-   else if(!root.dataset.initialized)p.hidden=true;
+   else p.hidden=true;
    root.dataset.initialized="1";
    t.setAttribute("aria-expanded",String(!p.hidden));
  };
  window.toggleCustomerQuickReplies=function(){const p=panel(),t=toggle();if(!p||!t)return;p.hidden=!p.hidden;t.setAttribute("aria-expanded",String(!p.hidden));};
  window.chooseCustomerQuickReply=function(button){
    const input=document.getElementById("customerChatInput");if(!input)return;
-   input.value=button.dataset.message||"";input.focus();
+   const message=button.dataset.message||"";if(!message)return;window.sendQuickCustomerMessageV31(message);
    const root=section(),p=panel(),t=toggle();
    if(root&&!root.classList.contains("customer-quick-first-v27")&&p&&t){p.hidden=true;t.setAttribute("aria-expanded","false");}
  };
@@ -11184,6 +11197,35 @@ const messages=["Hi Admin! I have a question about a Betta fish.","Hi Admin! I w
 let hasChat=false,expanded=false;
 window.syncQuickV27=function(count){hasChat=count>0;if(!hasChat)expanded=true;const panel=document.getElementById("quickPanelV27"),toggle=document.getElementById("quickToggleV27"),close=document.getElementById("quickCloseV27");if(panel)panel.hidden=hasChat&&!expanded;if(toggle){toggle.hidden=!hasChat;toggle.setAttribute("aria-expanded",String(expanded));}if(close)close.hidden=!hasChat;};
 window.toggleQuickV27=function(force){expanded=typeof force==="boolean"?force:!expanded;window.syncQuickV27(hasChat?1:0);};
-window.selectQuickV27=function(i){const input=document.getElementById("customerChatInput");if(!input||!messages[i])return;input.value=messages[i];input.focus();window.toggleQuickV27(false);};
+window.selectQuickV27=function(i){const input=document.getElementById("customerChatInput");if(!input||!messages[i])return;window.sendQuickCustomerMessageV31(messages[i]);window.toggleQuickV27(false);};
 })();
 </script>
+
+<script id="customer-quick-send-v31">
+(function(){
+ let busy=false;
+ window.sendQuickCustomerMessageV31=async function(message){
+   if(busy||!message||!currentUser||currentUser.type!=="customer")return;
+   const input=document.getElementById("customerChatInput");
+   if(!input)return;
+   if(input.value.trim()&&!window.confirm("Send this quick reply? Your unsent draft will be kept."))return;
+   busy=true;
+   const oldValue=input.value;
+   try{
+     await apiRequest("messages.php",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:currentUser.username,senderRole:"customer",message})});
+     await loadCustomerChat();
+     input.value=oldValue;
+     const panel=document.getElementById("customerQuickPanelV27");
+     const toggle=document.getElementById("customerQuickToggleV27");
+     if(panel&&toggle){panel.hidden=true;toggle.setAttribute("aria-expanded","false");}
+   }catch(err){showToast(err.message||"Could not send quick reply.");}
+   finally{busy=false;}
+ };
+})();
+</script>
+<style id="customer-quick-icons-v31">
+#customerQuickV27 .quick-reply-card-v27 svg,#quickPanelV27 .quick-grid-v27 svg{display:block;margin:auto;color:#087ea4}
+#customerQuickV27 .customer-quick-toggle-v27,#quickToggleV27{align-items:center;gap:8px}
+#customerQuickV27 .customer-quick-toggle-v27 svg,#quickToggleV27 svg{width:17px;height:17px}
+#customerQuickV27 .quick-reply-card-v27 span:first-child{font-size:initial}
+</style>
