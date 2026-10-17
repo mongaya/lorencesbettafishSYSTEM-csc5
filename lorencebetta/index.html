@@ -4739,7 +4739,7 @@ logout=function(){if(!confirm("Are you sure you want to log out?"))return;curren
 checkLogin=async function(){if(!currentUser){document.getElementById("publicStore")?.classList.remove("hidden");document.getElementById("authScreen")?.classList.add("hidden");await initPublicStorefront();return;}try{await loadAllData();if(currentUser.type==="admin")await openAdmin();else await openCustomer();}catch(e){localStorage.removeItem("lorence_currentUser");currentUser=null;document.getElementById("publicStore")?.classList.remove("hidden");document.getElementById("authScreen")?.classList.add("hidden");await initPublicStorefront();}};
 const _showToastUpgrade=showToast;showToast=function(message,type="info"){const toast=document.getElementById("toast");if(!toast)return;toast.className="toast";if(type==="success")toast.classList.add("success");else if(type==="error")toast.classList.add("error-toast");else if(type==="warning")toast.classList.add("warning");toast.textContent=message;toast.classList.add("show");clearTimeout(window.__toastTimer);window.__toastTimer=setTimeout(()=>toast.classList.remove("show"),3200);};
 // Chat bubbles include avatars. Customer image comes from the user profile; admin uses the shop logo.
-renderChatMessages=function(container,messages,customerUsername){if(!container)return;if(!messages.length){container.innerHTML='<div style="text-align:center;color:#78909a;margin:auto">No messages yet. Start a conversation with the shop.</div>';return;}const u=users.find(x=>x.username===customerUsername);const customerPic=u?.profile_image||messages.find(m=>m.profile_image)?.profile_image||"images/logo.png";container.innerHTML=messages.map(m=>{const mine=(currentUser?.type==="customer"&&m.sender_role==="customer")||(currentUser?.type==="admin"&&m.sender_role==="admin");const pic=m.sender_role==="admin"?"images/logo.png":(m.profile_image||customerPic);return `<div class="chat-message-row ${mine?'mine':''}"><img class="chat-avatar" src="${escapeHTML(pic)}" alt=""><div class="chat-bubble ${m.sender_role==='admin'?'admin':'customer'}">${escapeHTML(m.message)}<span class="chat-time">${escapeHTML(m.created_at)}</span></div></div>`}).join("");container.scrollTop=container.scrollHeight;};
+renderChatMessages=function(container,messages,customerUsername){if(!container)return;if(!messages.length){container.innerHTML='<div style="text-align:center;color:#78909a;margin:auto">No messages yet. Start a conversation with the shop.</div>';return;}const u=users.find(x=>x.username===customerUsername);const customerPic=u?.profile_image||messages.find(m=>m.profile_image)?.profile_image||"images/logo.png";container.innerHTML=messages.map(m=>{const mine=(currentUser?.type==="customer"&&m.sender_role==="customer")||(currentUser?.type==="admin"&&m.sender_role==="admin");const pic=m.sender_role==="admin"?"images/logo.png":(m.profile_image||customerPic);return `<div class="chat-message-row ${mine?'mine':''}"><img class="chat-avatar" src="${escapeHTML(pic)}" alt=""><div class="chat-bubble ${m.sender_role==='admin'?'admin':'customer'}">${escapeHTML(m.message)}${container.id==="customerChatMessages"?"":`<span class="chat-time">${escapeHTML(m.created_at)}</span>`}</div></div>`}).join("");container.scrollTop=container.scrollHeight;};
 
 
 
@@ -5015,26 +5015,6 @@ function printReceipt(orderId){
 body.dark-mode #customerApp #customerQuickV27 .customer-quick-panel-v27{background:#12374a;border-color:#37677c;color:#eaf7fb}
 </style>
 
-<style id="customer-chat-messenger-v34">
-/* Readable Messenger-inspired customer conversation. */
-#customerApp #customer-chat .chat-panel{overflow:hidden;border-radius:22px;background:#f7fbfd}
-#customerApp #customerChatMessages{background:#f7fbfd!important;padding:22px 20px;gap:12px}
-#customerApp #customerChatMessages .chat-message-row{gap:9px;align-items:flex-end}
-#customerApp #customerChatMessages .chat-bubble{max-width:min(76%,600px);border-radius:22px!important;padding:12px 17px!important;font-size:15px;line-height:1.5;overflow-wrap:anywhere;box-shadow:none!important}
-#customerApp #customerChatMessages .chat-message-row.mine .chat-bubble{background:#087fa7!important;color:#fff!important;border:0!important;border-bottom-right-radius:7px!important}
-#customerApp #customerChatMessages .chat-message-row:not(.mine) .chat-bubble{background:#fff!important;color:#173d4c!important;border:1px solid #d4e5ec!important;border-bottom-left-radius:7px!important}
-#customerApp #customerChatMessages .chat-time{display:none!important}
-#customerApp #customer-chat .chat-compose{background:#fff!important;border-top:1px solid #dcebf0!important;padding:12px 16px!important;align-items:center;gap:10px!important}
-#customerApp #customer-chat .chat-compose input{height:50px;border:1px solid #c9dfe8!important;background:#f3f8fb!important;border-radius:999px!important;padding:12px 20px!important;color:#173d4c!important;outline:none;font-size:15px!important}
-#customerApp #customer-chat .chat-compose input:focus{border-color:#087fa7!important;box-shadow:0 0 0 3px rgba(8,127,167,.12)}
-#customerApp #customer-chat .chat-compose input::placeholder{color:#688595!important}
-#customerApp #customer-chat .chat-compose button{border-radius:999px!important;min-width:82px;height:48px;padding:0 20px}
-body.dark-mode #customerApp #customer-chat .chat-panel,body.dark-mode #customerApp #customerChatMessages{background:#102d3b!important}
-body.dark-mode #customerApp #customerChatMessages .chat-message-row:not(.mine) .chat-bubble{background:#1d4557!important;color:#edf9ff!important;border-color:#376578!important}
-body.dark-mode #customerApp #customer-chat .chat-compose{background:#153748!important;border-color:#31576a!important}
-body.dark-mode #customerApp #customer-chat .chat-compose input{background:#214657!important;color:#fff!important;border-color:#436b7e!important}
-@media(max-width:560px){#customerApp #customerChatMessages{padding:14px 10px}#customerApp #customerChatMessages .chat-bubble{max-width:85%;font-size:14px}#customerApp #customer-chat .chat-compose{padding:10px!important}#customerApp #customer-chat .chat-compose input{height:46px}#customerApp #customer-chat .chat-compose button{height:44px;min-width:68px;padding:0 12px}}
-</style>
 </body></html>`);w.document.close();w.focus();w.print();
 }
 const _renderCustomerOrdersSafety=renderCustomerOrders;
@@ -11249,4 +11229,26 @@ window.selectQuickV27=function(i){const input=document.getElementById("customerC
 #customerQuickV27 .customer-quick-toggle-v27,#quickToggleV27{align-items:center;gap:8px}
 #customerQuickV27 .customer-quick-toggle-v27 svg,#quickToggleV27 svg{width:17px;height:17px}
 #customerQuickV27 .quick-reply-card-v27 span:first-child{font-size:initial}
+</style>
+
+
+<style id="customer-chat-messenger-v34">
+/* Readable Messenger-inspired customer conversation. */
+#customerApp #customer-chat .chat-panel{overflow:hidden;border-radius:22px;background:#f7fbfd}
+#customerApp #customerChatMessages{background:#f7fbfd!important;padding:22px 20px;gap:12px}
+#customerApp #customerChatMessages .chat-message-row{gap:9px;align-items:flex-end}
+#customerApp #customerChatMessages .chat-bubble{max-width:min(76%,600px);border-radius:22px!important;padding:12px 17px!important;font-size:15px;line-height:1.5;overflow-wrap:anywhere;box-shadow:none!important}
+#customerApp #customerChatMessages .chat-message-row.mine .chat-bubble{background:#087fa7!important;color:#fff!important;border:0!important;border-bottom-right-radius:7px!important}
+#customerApp #customerChatMessages .chat-message-row:not(.mine) .chat-bubble{background:#fff!important;color:#173d4c!important;border:1px solid #d4e5ec!important;border-bottom-left-radius:7px!important}
+#customerApp #customerChatMessages .chat-time{display:none!important}
+#customerApp #customer-chat .chat-compose{background:#fff!important;border-top:1px solid #dcebf0!important;padding:12px 16px!important;align-items:center;gap:10px!important}
+#customerApp #customer-chat .chat-compose input{height:50px;border:1px solid #c9dfe8!important;background:#f3f8fb!important;border-radius:999px!important;padding:12px 20px!important;color:#173d4c!important;outline:none;font-size:15px!important}
+#customerApp #customer-chat .chat-compose input:focus{border-color:#087fa7!important;box-shadow:0 0 0 3px rgba(8,127,167,.12)}
+#customerApp #customer-chat .chat-compose input::placeholder{color:#688595!important}
+#customerApp #customer-chat .chat-compose button{border-radius:999px!important;min-width:82px;height:48px;padding:0 20px}
+body.dark-mode #customerApp #customer-chat .chat-panel,body.dark-mode #customerApp #customerChatMessages{background:#102d3b!important}
+body.dark-mode #customerApp #customerChatMessages .chat-message-row:not(.mine) .chat-bubble{background:#1d4557!important;color:#edf9ff!important;border-color:#376578!important}
+body.dark-mode #customerApp #customer-chat .chat-compose{background:#153748!important;border-color:#31576a!important}
+body.dark-mode #customerApp #customer-chat .chat-compose input{background:#214657!important;color:#fff!important;border-color:#436b7e!important}
+@media(max-width:560px){#customerApp #customerChatMessages{padding:14px 10px}#customerApp #customerChatMessages .chat-bubble{max-width:85%;font-size:14px}#customerApp #customer-chat .chat-compose{padding:10px!important}#customerApp #customer-chat .chat-compose input{height:46px}#customerApp #customer-chat .chat-compose button{height:44px;min-width:68px;padding:0 12px}}
 </style>
