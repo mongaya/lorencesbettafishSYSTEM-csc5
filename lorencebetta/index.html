@@ -1805,7 +1805,8 @@ body:not(.dark-mode) .hero-kicker{
 <div class="shop-appearance-wrap-v24"><label for="shopAppearanceToggle">Appearance</label><details id="shopAppearanceDetails" class="shop-appearance-v24"><summary id="shopAppearanceToggle">All appearances</summary><div class="shop-appearance-options-v24">
 <label><input type="checkbox" value="Solid Color" onchange="renderProducts();updateAppearanceFilterLabel()"> Solid Color</label><label><input type="checkbox" value="Multicolor" onchange="renderProducts();updateAppearanceFilterLabel()"> Multicolor</label><label><input type="checkbox" value="Marble" onchange="renderProducts();updateAppearanceFilterLabel()"> Marble</label><label><input type="checkbox" value="Koi" onchange="renderProducts();updateAppearanceFilterLabel()"> Koi</label><label><input type="checkbox" value="Galaxy" onchange="renderProducts();updateAppearanceFilterLabel()"> Galaxy</label><label><input type="checkbox" value="Metallic" onchange="renderProducts();updateAppearanceFilterLabel()"> Metallic</label>
 </div></details></div>
-<label>Price Range <select id="shopPriceFilter" onchange="renderProducts()"><option value="">Any price</option><option value="0-500">₱0–₱500</option><option value="500-1000">₱500–₱1,000</option><option value="1000+">₱1,000+</option></select></label>
+<div class="shop-appearance-wrap-v24"><label for="shopColorToggle">Color</label><details id="shopColorDetails" class="shop-appearance-v24"><summary id="shopColorToggle">All colors</summary><div class="shop-appearance-options-v24"><label><input type="checkbox" value="Red" onchange="renderProducts();updateColorFilterLabel()"> Red</label><label><input type="checkbox" value="Blue" onchange="renderProducts();updateColorFilterLabel()"> Blue</label><label><input type="checkbox" value="White" onchange="renderProducts();updateColorFilterLabel()"> White</label><label><input type="checkbox" value="Black" onchange="renderProducts();updateColorFilterLabel()"> Black</label><label><input type="checkbox" value="Yellow" onchange="renderProducts();updateColorFilterLabel()"> Yellow</label><label><input type="checkbox" value="Orange" onchange="renderProducts();updateColorFilterLabel()"> Orange</label><label><input type="checkbox" value="Purple" onchange="renderProducts();updateColorFilterLabel()"> Purple</label><label><input type="checkbox" value="Green" onchange="renderProducts();updateColorFilterLabel()"> Green</label><label><input type="checkbox" value="Pink" onchange="renderProducts();updateColorFilterLabel()"> Pink</label><label><input type="checkbox" value="Gold" onchange="renderProducts();updateColorFilterLabel()"> Gold</label><label><input type="checkbox" value="Silver" onchange="renderProducts();updateColorFilterLabel()"> Silver</label><label><input type="checkbox" value="Multicolor" onchange="renderProducts();updateColorFilterLabel()"> Multicolor</label></div></details></div>
+<label>Price Range <select id="shopPriceFilter" onchange="renderProducts()"><option value="">Any price</option><option value="0-50">₱0–₱50</option><option value="50-150">₱50–₱150</option><option value="150-250">₱150–₱250</option><option value="250-500">₱250–₱500</option><option value="500-1000">₱500–₱1,000</option><option value="1000+">₱1,000+</option></select></label>
 <label>Availability <select id="shopAvailabilityFilter" onchange="renderProducts()"><option value="available">Available</option><option value="all">All products</option><option value="soldout">Sold out</option></select></label>
 <label>Sort By <select id="shopSortFilter" onchange="renderProducts()"><option value="default">Default</option><option value="low">Price: Low to High</option><option value="high">Price: High to Low</option><option value="az">Name A–Z</option></select></label>
 <button type="button" class="shop-clear-v24" onclick="clearShopFilters()">Clear Filters</button>
@@ -2424,6 +2425,7 @@ body:not(.dark-mode) .hero-kicker{
             <select id="productCategory" required></select>
             <small style="color:#71818a">Manage this list from Admin → Products.</small>
         </div>
+        <div class="form-group"><label>Colors (select all that apply)</label><div id="productColorsV25" class="product-colors-v25"><label><input type="checkbox" value="Red"> Red</label><label><input type="checkbox" value="Blue"> Blue</label><label><input type="checkbox" value="White"> White</label><label><input type="checkbox" value="Black"> Black</label><label><input type="checkbox" value="Yellow"> Yellow</label><label><input type="checkbox" value="Orange"> Orange</label><label><input type="checkbox" value="Purple"> Purple</label><label><input type="checkbox" value="Green"> Green</label><label><input type="checkbox" value="Pink"> Pink</label><label><input type="checkbox" value="Gold"> Gold</label><label><input type="checkbox" value="Silver"> Silver</label><label><input type="checkbox" value="Multicolor"> Multicolor</label></div><small>Select the colors visible on this fish.</small></div>
         <div class="form-group"><label>Appearance</label><select id="productAppearance"><option value="">Not specified</option><option>Solid Color</option><option>Multicolor</option><option>Marble</option><option>Koi</option><option>Galaxy</option><option>Metallic</option></select></div>
         <div class="form-group">
             <label>Price</label>
@@ -3282,7 +3284,7 @@ function productHTML(product) {
             </div>
             <div class="product-info">
                 <h3>${escapeHTML(product.name)}</h3>
-                <div class="shop-product-meta-v24"><span>${escapeHTML(product.category||"Betta Fish")}</span><span>${escapeHTML(product.appearance||"Appearance not specified")}</span></div>
+                <div class="shop-product-meta-v24"><span>${escapeHTML(product.category||"Betta Fish")}</span><span>${escapeHTML(product.appearance||"Appearance not specified")}</span>${Array.isArray(product.colors)&&product.colors.length?`<span>${escapeHTML(product.colors.join(", "))}</span>`:""}</div>
                 ${ratingSummaryHTML(product)}
                 <div><span class="price">₱${Number(product.price).toLocaleString(undefined,{minimumFractionDigits:2})}</span></div>
                 <div class="product-bottom">
@@ -3363,6 +3365,7 @@ function hideShopSearchFilters(){
  if(search)search.setAttribute("aria-expanded","false");
  const appearance=document.getElementById("shopAppearanceDetails");
  if(appearance)appearance.open=false;
+ const color=document.getElementById("shopColorDetails");if(color)color.open=false;
 }
 document.addEventListener("pointerdown",function(e){
  const panel=document.getElementById("shopFilterPanel");
@@ -3370,13 +3373,19 @@ document.addEventListener("pointerdown",function(e){
  if(!panel||panel.hidden||!search)return;
  if(!panel.contains(e.target)&&e.target!==search)hideShopSearchFilters();
 });
+function updateColorFilterLabel(){
+ const selected=[...document.querySelectorAll("#shopColorDetails input:checked")].map(e=>e.value);
+ const summary=document.getElementById("shopColorToggle");
+ if(summary)summary.textContent=selected.length===0?"All colors":selected.length===1?selected[0]:selected.length+" colors selected";
+}
 function updateAppearanceFilterLabel(){
  const selected=[...document.querySelectorAll("#shopAppearanceDetails input:checked")].map(e=>e.value);
  const summary=document.getElementById("shopAppearanceToggle");
  if(summary)summary.textContent=selected.length===0?"All appearances":selected.length===1?selected[0]:selected.length+" appearances selected";
 }
 function clearShopFilters(){
- document.querySelectorAll("#shopAppearanceDetails input[type=checkbox]").forEach(el=>el.checked=false);
+ document.querySelectorAll("#shopAppearanceDetails input[type=checkbox],#shopColorDetails input[type=checkbox]").forEach(el=>el.checked=false);
+ updateColorFilterLabel();
  updateAppearanceFilterLabel();
  for(const id of ["shopPriceFilter","shopSortFilter"]){const el=document.getElementById(id);if(el){if(el.multiple)[...el.options].forEach(o=>o.selected=false);else el.value="";}}
  const availability=document.getElementById("shopAvailabilityFilter");if(availability)availability.value="available";
@@ -3389,6 +3398,7 @@ function renderProducts(){
  renderFishCategories();
  const search=(document.getElementById("searchInput")?.value||"").trim().toLowerCase();
  const appearance=[...document.querySelectorAll("#shopAppearanceDetails input:checked")].map(o=>o.value);
+ const colorSelections=[...document.querySelectorAll("#shopColorDetails input:checked")].map(el=>el.value);
  const price=document.getElementById("shopPriceFilter")?.value||"";
  const availability=document.getElementById("shopAvailabilityFilter")?.value||"available";
  const sort=document.getElementById("shopSortFilter")?.value||"default";
@@ -3399,7 +3409,8 @@ function renderProducts(){
    &&(!search||String(p.name||"").toLowerCase().includes(search))
    &&(selectedFishCategory==="all"||p.category===selectedFishCategory)
    &&(!appearance.length||appearance.includes(p.appearance))
-   &&(!price||(price==="0-500"?cost<=500:price==="500-1000"?cost>500&&cost<=1000:cost>1000));
+   &&(!colorSelections.length||colorSelections.some(color=>Array.isArray(p.colors)&&p.colors.includes(color)))
+   &&(!price||(price==="0-50"?cost>=0&&cost<=50:price==="50-150"?cost>50&&cost<=150:price==="150-250"?cost>150&&cost<=250:price==="250-500"?cost>250&&cost<=500:price==="500-1000"?cost>500&&cost<=1000:cost>1000));
  });
  if(sort==="low")filtered.sort((a,b)=>Number(a.price)-Number(b.price));
  if(sort==="high")filtered.sort((a,b)=>Number(b.price)-Number(a.price));
@@ -4335,6 +4346,7 @@ function openProductModal(product = null) {
     document.getElementById("productImage").value = "";
     populateProductCategorySelect(product?.category || "");
     document.getElementById("productAppearance").value = product?.appearance || "";
+    document.querySelectorAll("#productColorsV25 input").forEach(el=>el.checked=Array.isArray(product?.colors)&&product.colors.includes(el.value));
 
     if (product) {
         document.getElementById("productModalTitle").textContent =
@@ -4433,6 +4445,7 @@ async function saveProduct() {
     formData.append("name", name);
     formData.append("category", category);
     formData.append("appearance", document.getElementById("productAppearance").value);
+    formData.append("colors",JSON.stringify([...document.querySelectorAll("#productColorsV25 input:checked")].map(el=>el.value)));
     formData.append("price", price);
     formData.append("stock", stock);
     formData.append("description", description);
@@ -10007,7 +10020,7 @@ renderCheckoutCouriers();
 .shop-filter-panel-v24{background:#f7fbfd;border:1px solid #cde3ee;border-radius:16px;padding:16px;margin:16px 0 20px}
 .shop-filter-heading-v24{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;margin-bottom:14px;color:#123f55}
 .shop-filter-heading-v24 span{font-size:12px;color:#59798a}
-.shop-filters-v23{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) auto;gap:12px;align-items:end}
+.shop-filters-v23{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) auto;gap:12px;align-items:end}
 .shop-filters-v23>label,.shop-appearance-wrap-v24{display:flex;flex-direction:column;gap:7px;min-width:0;font-size:12px;font-weight:700;color:#164257}
 .shop-filters-v23 select,.shop-appearance-v24 summary,.shop-clear-v24{box-sizing:border-box;width:100%;height:43px;border:1px solid #bfd9e5;border-radius:10px;padding:10px 12px;background:#fff;color:#183b4b;font-size:13px;font-weight:500}
 .shop-appearance-v24{position:relative}
@@ -10026,6 +10039,7 @@ body.dark-mode .shop-filter-panel-v24{background:#103246;border-color:#28556a}
 body.dark-mode .shop-filter-heading-v24,body.dark-mode .shop-filters-v23>label,body.dark-mode .shop-appearance-wrap-v24{color:#e5f5fc}
 body.dark-mode .shop-filter-heading-v24 span{color:#b9d7e3}
 body.dark-mode .shop-filters-v23 select,body.dark-mode .shop-appearance-v24 summary,body.dark-mode .shop-appearance-options-v24,body.dark-mode .shop-clear-v24{background:#163e52;color:#f1f9fd;border-color:#37677c}
+ .product-colors-v25{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0 12px}.product-colors-v25 label{font-size:13px;display:flex;align-items:center;gap:6px}@media(max-width:500px){.product-colors-v25{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </body>
 </html>
