@@ -1976,6 +1976,7 @@ body:not(.dark-mode) .hero-kicker{
                 </div>
                 <div class="chat-panel">
                     <div id="customerChatMessages" class="chat-messages"></div>
+                    <div id="customerChatQuickStartV27" class="customer-chat-quickstart-v27 hidden"><p>Hi! How can we help you today?</p><span>Choose a topic to start your conversation:</span><div class="customer-chat-quick-grid-v27"><button type="button" onclick="selectCustomerChatTopicV27(&quot;Hi Admin! I have a question about a Betta fish.&quot;)">Fish Inquiry</button><button type="button" onclick="selectCustomerChatTopicV27(&quot;Hi Admin! I'd like to ask about my order.&quot;)">My Orders</button><button type="button" onclick="selectCustomerChatTopicV27(&quot;Hi Admin! I need help with my payment.&quot;)">Payment Concern</button><button type="button" onclick="selectCustomerChatTopicV27(&quot;Hi Admin! I'd like to ask about shipping and delivery.&quot;)">Shipping & Delivery</button><button type="button" onclick="selectCustomerChatTopicV27(&quot;Hi Admin! Is this fish still available?&quot;)">Prices & Availability</button><button type="button" onclick="selectCustomerChatTopicV27(&quot;Hi Admin! I need assistance.&quot;)">Other Concern</button></div><small>You can edit the suggested message before sending.</small></div>
                     <div class="chat-compose">
                         <input id="customerChatInput" placeholder="Type your message..." maxlength="1000" onkeydown="if(event.key==='Enter') sendCustomerMessage()">
                         <button class="primary-btn" onclick="sendCustomerMessage()">Send</button>
@@ -3103,6 +3104,7 @@ async function loadCustomerChat(){
         const data=await apiRequest("messages.php?username="+encodeURIComponent(currentUser.username));
         const messages=data.messages||[];
         renderChatMessages(document.getElementById("customerChatMessages"),messages,currentUser.username);
+        document.getElementById("customerChatQuickStartV27")?.classList.toggle("hidden",messages.some(m=>m.sender_role==="customer"));
         updateChatNotifications("customer",messages);
     }catch(err){console.error(err);}
 }
@@ -3115,7 +3117,7 @@ function renderChatMessages(container,messages,customerUsername){
 async function sendCustomerMessage(){
     const input=document.getElementById("customerChatInput"); const message=input.value.trim();
     if(!message || !currentUser) return;
-    try{await apiRequest("messages.php",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:currentUser.username,senderRole:"customer",message})});input.value="";await loadCustomerChat();}
+    try{await apiRequest("messages.php",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:currentUser.username,senderRole:"customer",message})});input.value="";document.getElementById("customerChatQuickStartV27")?.classList.add("hidden");await loadCustomerChat();}
     catch(err){showToast(err.message);}
 }
 async function loadAdminChats(){
@@ -11110,3 +11112,25 @@ viewOrder=function(orderId){
 body.dark-mode #productModal .product-colors-v25 label{background:#163e52;border-color:#37677c;color:#f1f9fd}
 body.dark-mode #productModal .product-colors-v25 label:has(input:checked){background:#1b5369;border-color:#62b8d6}
 </style>
+
+<style id="customer-chat-quickstart-style-v27">
+#customerChatQuickStartV27{margin:14px 16px;padding:20px;border:1px solid #d6e9f1;border-radius:16px;background:#f5fbfe;color:#123e53}
+#customerChatQuickStartV27 p{font-weight:700;font-size:17px;margin:0 0 8px}
+#customerChatQuickStartV27 span{display:block;color:#587485;font-size:13px;margin-bottom:14px}
+#customerChatQuickStartV27 small{display:block;margin-top:12px;color:#587485}
+.customer-chat-quick-grid-v27{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.customer-chat-quick-grid-v27 button{padding:13px 12px;border-radius:11px;border:1px solid #b9dbe9;background:white;color:#07536f;font-weight:600;text-align:left;cursor:pointer}
+.customer-chat-quick-grid-v27 button:hover,.customer-chat-quick-grid-v27 button:focus-visible{background:#dff4fc;border-color:#087ea4}
+body.dark-mode #customerChatQuickStartV27{background:#102f41;border-color:#37677c;color:#e9f7fc}
+body.dark-mode .customer-chat-quick-grid-v27 button{background:#163e52;color:#e9f7fc;border-color:#37677c}
+@media(max-width:420px){.customer-chat-quick-grid-v27{grid-template-columns:1fr}#customerChatQuickStartV27{padding:15px;margin:10px}}
+</style>
+<script>
+function selectCustomerChatTopicV27(message){
+ const input=document.getElementById("customerChatInput");
+ if(!input)return;
+ input.value=message;
+ input.focus();
+ input.setSelectionRange(input.value.length,input.value.length);
+}
+</script>
