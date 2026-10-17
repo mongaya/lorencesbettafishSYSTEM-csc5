@@ -1800,7 +1800,7 @@ body:not(.dark-mode) .hero-kicker{
                 </div>
 
                 <div id="shopAdvancedFilters" class="shop-filters-v23">
-<label>Appearance <select id="shopAppearanceFilter" onchange="renderProducts()"><option value="">All appearances</option><option>Solid Color</option><option>Multicolor</option><option>Marble</option><option>Koi</option><option>Galaxy</option><option>Metallic</option></select></label>
+<label>Appearance <select id="shopAppearanceFilter" multiple size="4" aria-label="Choose one or more appearances" onchange="renderProducts()"><option>Solid Color</option><option>Multicolor</option><option>Marble</option><option>Koi</option><option>Galaxy</option><option>Metallic</option></select></label>
 <label>Price <select id="shopPriceFilter" onchange="renderProducts()"><option value="">Any price</option><option value="0-500">₱0–₱500</option><option value="500-1000">₱500–₱1,000</option><option value="1000+">₱1,000+</option></select></label>
 <label>Availability <select id="shopAvailabilityFilter" onchange="renderProducts()"><option value="available">Available</option><option value="all">All products</option><option value="soldout">Sold out</option></select></label>
 <label>Sort <select id="shopSortFilter" onchange="renderProducts()"><option value="default">Default</option><option value="low">Price: Low to High</option><option value="high">Price: High to Low</option><option value="az">Name A–Z</option></select></label>
@@ -3346,7 +3346,7 @@ async function submitProductReview(productId,productCode){
 }
 
 function clearShopFilters(){
- for(const id of ["shopAppearanceFilter","shopPriceFilter","shopSortFilter"]){const el=document.getElementById(id);if(el)el.value="";}
+ for(const id of ["shopAppearanceFilter","shopPriceFilter","shopSortFilter"]){const el=document.getElementById(id);if(el){if(el.multiple)[...el.options].forEach(o=>o.selected=false);else el.value="";}}
  const availability=document.getElementById("shopAvailabilityFilter");if(availability)availability.value="available";
  const search=document.getElementById("searchInput");if(search)search.value="";
  selectedFishCategory="all";
@@ -3356,7 +3356,7 @@ function renderProducts(){
  const container=document.getElementById("productGrid");if(!container)return;
  renderFishCategories();
  const search=(document.getElementById("searchInput")?.value||"").trim().toLowerCase();
- const appearance=document.getElementById("shopAppearanceFilter")?.value||"";
+ const appearance=[...(document.getElementById("shopAppearanceFilter")?.selectedOptions||[])].map(o=>o.value);
  const price=document.getElementById("shopPriceFilter")?.value||"";
  const availability=document.getElementById("shopAvailabilityFilter")?.value||"available";
  const sort=document.getElementById("shopSortFilter")?.value||"default";
@@ -3366,7 +3366,7 @@ function renderProducts(){
   return (availability==="all"||(availability==="available"?available:!available))
    &&(!search||String(p.name||"").toLowerCase().includes(search))
    &&(selectedFishCategory==="all"||p.category===selectedFishCategory)
-   &&(!appearance||p.appearance===appearance)
+   &&(!appearance.length||appearance.includes(p.appearance))
    &&(!price||(price==="0-500"?cost<=500:price==="500-1000"?cost>500&&cost<=1000:cost>1000));
  });
  if(sort==="low")filtered.sort((a,b)=>Number(a.price)-Number(b.price));
@@ -9975,6 +9975,7 @@ renderCheckoutCouriers();
 .shop-filters-v23 label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700;min-width:145px;flex:1}
 .shop-filters-v23 select,.shop-filters-v23 button{border:1px solid #ccdce3;border-radius:9px;padding:10px;background:#fff;color:#183b4b;font-size:13px}
 .shop-filters-v23 button{cursor:pointer;font-weight:700}
+.shop-filters-v23 select[multiple]{min-height:112px}
 @media(max-width:600px){.shop-filters-v23 label{min-width:calc(50% - 8px)}}
 </style>
 </body>
