@@ -1,8 +1,15 @@
 <?php
 require_once "db.php";
 
+// Ensure appearance is available on existing installations without resetting products.
+$appearanceColumn = $conn->query("SHOW COLUMNS FROM products LIKE 'appearance'");
+if ($appearanceColumn && $appearanceColumn->num_rows === 0) {
+    if (!$conn->query("ALTER TABLE products ADD COLUMN appearance VARCHAR(60) NOT NULL DEFAULT ''")) {
+        respond(false, "Unable to initialize appearance filter.", [], 500);
+    }
+}
 $result = $conn->query(
-    "SELECT id, product_code, name, category, price, stock,
+    "SELECT id, product_code, name, category, appearance, price, stock,
             description, image, status
      FROM products
      WHERE status <> 'deleted'
@@ -25,6 +32,7 @@ while ($row = $result->fetch_assoc()) {
         "db_id" => (int)$row["id"],
         "name" => $row["name"],
         "category" => $row["category"],
+        "appearance" => $row["appearance"],
         "price" => (float)$row["price"],
         "stock" => (int)$row["stock"],
         "description" => $row["description"],
