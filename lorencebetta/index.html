@@ -1799,7 +1799,14 @@ body:not(.dark-mode) .hero-kicker{
                     <input id="searchInput" class="search-box" placeholder=" Search Betta fish..." oninput="renderProducts()">
                 </div>
 
-                <div id="fishCategories" class="categories" aria-label="Betta fish categories"></div>
+                <div id="shopAdvancedFilters" class="shop-filters-v23">
+<label>Appearance <select id="shopAppearanceFilter" onchange="renderProducts()"><option value="">All appearances</option><option>Solid Color</option><option>Multicolor</option><option>Marble</option><option>Koi</option><option>Galaxy</option><option>Metallic</option></select></label>
+<label>Price <select id="shopPriceFilter" onchange="renderProducts()"><option value="">Any price</option><option value="0-500">₱0–₱500</option><option value="500-1000">₱500–₱1,000</option><option value="1000+">₱1,000+</option></select></label>
+<label>Availability <select id="shopAvailabilityFilter" onchange="renderProducts()"><option value="available">Available</option><option value="all">All products</option><option value="soldout">Sold out</option></select></label>
+<label>Sort <select id="shopSortFilter" onchange="renderProducts()"><option value="default">Default</option><option value="low">Price: Low to High</option><option value="high">Price: High to Low</option><option value="az">Name A–Z</option></select></label>
+<button type="button" onclick="clearShopFilters()">Clear Filters</button>
+</div>
+<div id="fishCategories" class="categories" aria-label="Betta fish categories"></div>
 
                 <div id="productGrid" class="products-grid"></div>
 
@@ -2413,6 +2420,7 @@ body:not(.dark-mode) .hero-kicker{
             <select id="productCategory" required></select>
             <small style="color:#71818a">Manage this list from Admin → Products.</small>
         </div>
+        <div class="form-group"><label>Appearance</label><select id="productAppearance"><option value="">Not specified</option><option>Solid Color</option><option>Multicolor</option><option>Marble</option><option>Koi</option><option>Galaxy</option><option>Metallic</option></select></div>
         <div class="form-group">
             <label>Price</label>
 
@@ -3337,34 +3345,34 @@ async function submitProductReview(productId,productCode){
     try{await apiRequest("product_reviews.php",{method:"POST",body:f});await loadProductReviews();renderProducts();renderGuestProducts();openProductDetail(productCode);showToast("Product rating submitted.");}catch(e){showToast(e.message,"warning");}
 }
 
-function renderProducts() {
-    const container = document.getElementById("productGrid");
-    if (!container) return;
-
-    renderFishCategories();
-
-    const search = (
-        document.getElementById("searchInput")?.value || ""
-    ).trim().toLowerCase();
-
-    const filtered = products.filter(product => {
-        const isAvailable = String(product.status || "available").toLowerCase() === "available";
-        const matchesSearch = String(product.name).toLowerCase().includes(search);
-        const matchesCategory = selectedFishCategory === "all" || product.category === selectedFishCategory;
-        return isAvailable && matchesSearch && matchesCategory;
-    });
-
-    if (filtered.length === 0) {
-        container.innerHTML = `
-            <div class="card">
-                <h3>No fish found</h3>
-                <p>Try another search term or category.</p>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = filtered.map(productHTML).join("");
+function clearShopFilters(){
+ for(const id of ["shopAppearanceFilter","shopPriceFilter","shopSortFilter"]){const el=document.getElementById(id);if(el)el.value="";}
+ const availability=document.getElementById("shopAvailabilityFilter");if(availability)availability.value="available";
+ const search=document.getElementById("searchInput");if(search)search.value="";
+ selectedFishCategory="all";
+ renderProducts();
+}
+function renderProducts(){
+ const container=document.getElementById("productGrid");if(!container)return;
+ renderFishCategories();
+ const search=(document.getElementById("searchInput")?.value||"").trim().toLowerCase();
+ const appearance=document.getElementById("shopAppearanceFilter")?.value||"";
+ const price=document.getElementById("shopPriceFilter")?.value||"";
+ const availability=document.getElementById("shopAvailabilityFilter")?.value||"available";
+ const sort=document.getElementById("shopSortFilter")?.value||"default";
+ const filtered=products.filter(p=>{
+  const available=String(p.status||"available").toLowerCase()==="available"&&Number(p.stock)>0;
+  const cost=Number(p.price);
+  return (availability==="all"||(availability==="available"?available:!available))
+   &&(!search||String(p.name||"").toLowerCase().includes(search))
+   &&(selectedFishCategory==="all"||p.category===selectedFishCategory)
+   &&(!appearance||p.appearance===appearance)
+   &&(!price||(price==="0-500"?cost<=500:price==="500-1000"?cost>500&&cost<=1000:cost>1000));
+ });
+ if(sort==="low")filtered.sort((a,b)=>Number(a.price)-Number(b.price));
+ if(sort==="high")filtered.sort((a,b)=>Number(b.price)-Number(a.price));
+ if(sort==="az")filtered.sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+ container.innerHTML=filtered.length?filtered.map(productHTML).join(""):'<div class="card"><h3>No fish found</h3><p>Try clearing or changing your filters.</p></div>';
 }
 
 
@@ -4294,6 +4302,7 @@ function openProductModal(product = null) {
 
     document.getElementById("productImage").value = "";
     populateProductCategorySelect(product?.category || "");
+    document.getElementById("productAppearance").value = product?.appearance || "";
 
     if (product) {
         document.getElementById("productModalTitle").textContent =
@@ -4391,6 +4400,7 @@ async function saveProduct() {
 
     formData.append("name", name);
     formData.append("category", category);
+    formData.append("appearance", document.getElementById("productAppearance").value);
     formData.append("price", price);
     formData.append("stock", stock);
     formData.append("description", description);
@@ -9960,6 +9970,13 @@ renderCheckoutCouriers();
  };
 })();
 </script>
+<style id="shop-filters-v23-style">
+.shop-filters-v23{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:14px 0}
+.shop-filters-v23 label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700;min-width:145px;flex:1}
+.shop-filters-v23 select,.shop-filters-v23 button{border:1px solid #ccdce3;border-radius:9px;padding:10px;background:#fff;color:#183b4b;font-size:13px}
+.shop-filters-v23 button{cursor:pointer;font-weight:700}
+@media(max-width:600px){.shop-filters-v23 label{min-width:calc(50% - 8px)}}
+</style>
 </body>
 </html>
 
