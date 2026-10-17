@@ -1976,6 +1976,15 @@ body:not(.dark-mode) .hero-kicker{
                 </div>
                 <div class="chat-panel">
                     <div id="customerChatMessages" class="chat-messages"></div>
+                    <div class="customer-quick-v27" id="customerQuickV27" hidden>
+                      <button type="button" id="customerQuickToggleV27" class="customer-quick-toggle-v27" onclick="toggleCustomerQuickReplies()" aria-expanded="false">💬 Quick Replies <span aria-hidden="true">▾</span></button>
+                      <div id="customerQuickPanelV27" class="customer-quick-panel-v27" hidden><strong>How can we help you?</strong><p>Choose a topic to prepare a message.</p><div class="customer-quick-grid-v27"><button type="button" class="quick-reply-card-v27" data-message="Hi Admin! I have a question about a Betta fish." onclick="chooseCustomerQuickReply(this)"><span aria-hidden="true">🐟</span><span>Fish Inquiry</span></button>
+<button type="button" class="quick-reply-card-v27" data-message="Hi Admin! I would like to ask about my order." onclick="chooseCustomerQuickReply(this)"><span aria-hidden="true">📦</span><span>My Orders</span></button>
+<button type="button" class="quick-reply-card-v27" data-message="Hi Admin! I need help with my payment." onclick="chooseCustomerQuickReply(this)"><span aria-hidden="true">💳</span><span>Payment Concern</span></button>
+<button type="button" class="quick-reply-card-v27" data-message="Hi Admin! I would like to ask about shipping and delivery." onclick="chooseCustomerQuickReply(this)"><span aria-hidden="true">🚚</span><span>Shipping & Delivery</span></button>
+<button type="button" class="quick-reply-card-v27" data-message="Hi Admin! Is this Betta fish still available?" onclick="chooseCustomerQuickReply(this)"><span aria-hidden="true">🏷️</span><span>Price & Availability</span></button>
+<button type="button" class="quick-reply-card-v27" data-message="Hi Admin! I need assistance." onclick="chooseCustomerQuickReply(this)"><span aria-hidden="true">💬</span><span>Other Concern</span></button></div></div>
+                    </div>
                     <div class="chat-compose">
                         <input id="customerChatInput" placeholder="Type your message..." maxlength="1000" onkeydown="if(event.key==='Enter') sendCustomerMessage()">
                         <button class="primary-btn" onclick="sendCustomerMessage()">Send</button>
@@ -3103,6 +3112,7 @@ async function loadCustomerChat(){
         const data=await apiRequest("messages.php?username="+encodeURIComponent(currentUser.username));
         const messages=data.messages||[];
         renderChatMessages(document.getElementById("customerChatMessages"),messages,currentUser.username);
+        syncCustomerQuickReplies(messages);
         updateChatNotifications("customer",messages);
     }catch(err){console.error(err);}
 }
@@ -11109,4 +11119,47 @@ viewOrder=function(orderId){
 @media(max-width:360px){#productModal .product-colors-v25{grid-template-columns:1fr}}
 body.dark-mode #productModal .product-colors-v25 label{background:#163e52;border-color:#37677c;color:#f1f9fd}
 body.dark-mode #productModal .product-colors-v25 label:has(input:checked){background:#1b5369;border-color:#62b8d6}
+</style>
+
+<script id="customer-quick-replies-v27">
+(function(){
+ const section=()=>document.getElementById("customerQuickV27");
+ const panel=()=>document.getElementById("customerQuickPanelV27");
+ const toggle=()=>document.getElementById("customerQuickToggleV27");
+ window.syncCustomerQuickReplies=function(messages){
+   const root=section(),p=panel(),t=toggle();if(!root||!p||!t)return;
+   root.hidden=false;
+   const firstChat=!Array.isArray(messages)||messages.length===0;
+   root.classList.toggle("customer-quick-first-v27",firstChat);
+   t.hidden=firstChat;
+   if(firstChat)p.hidden=false;
+   else if(!root.dataset.initialized)p.hidden=true;
+   root.dataset.initialized="1";
+   t.setAttribute("aria-expanded",String(!p.hidden));
+ };
+ window.toggleCustomerQuickReplies=function(){const p=panel(),t=toggle();if(!p||!t)return;p.hidden=!p.hidden;t.setAttribute("aria-expanded",String(!p.hidden));};
+ window.chooseCustomerQuickReply=function(button){
+   const input=document.getElementById("customerChatInput");if(!input)return;
+   input.value=button.dataset.message||"";input.focus();
+   const root=section(),p=panel(),t=toggle();
+   if(root&&!root.classList.contains("customer-quick-first-v27")&&p&&t){p.hidden=true;t.setAttribute("aria-expanded","false");}
+ };
+})();
+</script>
+<style id="customer-quick-replies-style-v27">
+#customerQuickV27[hidden],#customerQuickPanelV27[hidden],#customerQuickToggleV27[hidden]{display:none!important}
+#customerQuickV27{padding:12px 16px 4px;flex-shrink:0}
+#customerQuickV27 .customer-quick-toggle-v27{border:1px solid #89c8dc;background:#e6f7fc;color:#07516d;padding:9px 14px;border-radius:22px;font-size:13px;font-weight:700;display:inline-flex;gap:10px;align-items:center}
+#customerQuickV27 .customer-quick-panel-v27{border:1px solid #d4e8f0;border-radius:16px;padding:16px;background:#f6fbfe;margin-top:10px;max-width:650px;box-shadow:0 4px 16px rgba(0,70,100,.07)}
+#customerQuickV27 .customer-quick-panel-v27>strong{display:block;font-size:15px;margin-bottom:5px}
+#customerQuickV27 .customer-quick-panel-v27>p{font-size:12px;color:#6b7b88;margin-bottom:14px}
+#customerQuickV27 .customer-quick-grid-v27{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+#customerQuickV27 .quick-reply-card-v27{border:1px solid #d2e5ed;background:white;border-radius:12px;padding:13px 9px;min-height:75px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;font-size:12px;font-weight:600;color:#23465a;text-align:center;cursor:pointer}
+#customerQuickV27 .quick-reply-card-v27:hover,#customerQuickV27 .quick-reply-card-v27:focus-visible{border-color:#087ea4;background:#e9f8fe;outline-offset:2px}
+#customerQuickV27 .quick-reply-card-v27 span:first-child{font-size:21px}
+#customerQuickV27.customer-quick-first-v27 .customer-quick-panel-v27{margin:0 auto 10px}
+@media(max-width:560px){#customerQuickV27 .customer-quick-grid-v27{grid-template-columns:repeat(2,minmax(0,1fr))}#customerQuickV27 .customer-quick-panel-v27{padding:12px}#customerQuickV27 .quick-reply-card-v27{min-height:70px}}
+body.dark-mode #customerQuickV27 .customer-quick-panel-v27{background:#12374a;border-color:#37677c;color:#eaf7fb}
+body.dark-mode #customerQuickV27 .quick-reply-card-v27{background:#1a4559;border-color:#37677c;color:#eaf7fb}
+body.dark-mode #customerQuickV27 .customer-quick-toggle-v27{background:#1a4559;border-color:#37677c;color:#eaf7fb}
 </style>
