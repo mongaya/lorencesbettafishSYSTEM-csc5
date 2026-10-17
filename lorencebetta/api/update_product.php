@@ -7,6 +7,12 @@ require_once "product_helpers.php";
 
 $id = trim($_POST["id"] ?? "");
 // Ensure appearance is available on existing installations without resetting products.
+$colorsColumn = $conn->query("SHOW COLUMNS FROM products LIKE 'colors'");
+if ($colorsColumn && $colorsColumn->num_rows === 0) {
+    if (!$conn->query("ALTER TABLE products ADD COLUMN colors VARCHAR(255) NOT NULL DEFAULT ''")) {
+        respond(false, "Unable to initialize product colors.", [], 500);
+    }
+}
 $appearanceColumn = $conn->query("SHOW COLUMNS FROM products LIKE 'appearance'");
 if ($appearanceColumn && $appearanceColumn->num_rows === 0) {
     if (!$conn->query("ALTER TABLE products ADD COLUMN appearance VARCHAR(60) NOT NULL DEFAULT ''")) {
@@ -19,6 +25,14 @@ $price = (float)($_POST["price"] ?? 0);
 $stock = (int)($_POST["stock"] ?? 0);
 $description = trim($_POST["description"] ?? "");
 $appearance = trim($_POST["appearance"] ?? "");
+$allowedColors = ["Red","Blue","White","Black","Yellow","Orange","Purple","Green","Pink","Gold","Silver","Multicolor"];
+$colorsInput = json_decode($_POST["colors"] ?? "[]", true);
+if (!is_array($colorsInput) || count($colorsInput) > count($allowedColors)) respond(false, "Invalid colors.", [], 400);
+$colorsInput = array_values(array_unique($colorsInput));
+foreach ($colorsInput as $color) {
+    if (!is_string($color) || !in_array($color, $allowedColors, true)) respond(false, "Invalid color selection.", [], 400);
+}
+$colors = implode(",", $colorsInput);
 $allowedAppearances = ["", "Solid Color", "Multicolor", "Marble", "Koi", "Galaxy", "Metallic"];
 if (!in_array($appearance, $allowedAppearances, true)) respond(false, "Invalid appearance.", [], 400);
 
@@ -46,16 +60,17 @@ $status = $stock > 0 ? "available" : "out_of_stock";
 
 $stmt = $conn->prepare(
     "UPDATE products
-     SET name = ?, category = ?, appearance = ?, price = ?, stock = ?,
+     SET name = ?, category = ?, appearance = ?, colors = ?, price = ?, stock = ?,
          description = ?, image = ?, status = ?, updated_at = NOW()
      WHERE product_code = ?"
 );
 
 $stmt->bind_param(
-    "sssdissss",
+    "ssssdissss",
     $name,
     $category,
     $appearance,
+    $colors,
     $price,
     $stock,
     $description,

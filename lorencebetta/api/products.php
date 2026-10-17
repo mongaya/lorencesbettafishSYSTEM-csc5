@@ -2,6 +2,12 @@
 require_once "db.php";
 
 // Ensure appearance is available on existing installations without resetting products.
+$colorsColumn = $conn->query("SHOW COLUMNS FROM products LIKE 'colors'");
+if ($colorsColumn && $colorsColumn->num_rows === 0) {
+    if (!$conn->query("ALTER TABLE products ADD COLUMN colors VARCHAR(255) NOT NULL DEFAULT ''")) {
+        respond(false, "Unable to initialize product colors.", [], 500);
+    }
+}
 $appearanceColumn = $conn->query("SHOW COLUMNS FROM products LIKE 'appearance'");
 if ($appearanceColumn && $appearanceColumn->num_rows === 0) {
     if (!$conn->query("ALTER TABLE products ADD COLUMN appearance VARCHAR(60) NOT NULL DEFAULT ''")) {
@@ -9,7 +15,7 @@ if ($appearanceColumn && $appearanceColumn->num_rows === 0) {
     }
 }
 $result = $conn->query(
-    "SELECT id, product_code, name, category, appearance, price, stock,
+    "SELECT id, product_code, name, category, appearance, colors, price, stock,
             description, image, status
      FROM products
      WHERE status <> 'deleted'
@@ -33,6 +39,7 @@ while ($row = $result->fetch_assoc()) {
         "name" => $row["name"],
         "category" => $row["category"],
         "appearance" => $row["appearance"],
+        "colors" => $row["colors"] === "" ? [] : explode(",", $row["colors"]),
         "price" => (float)$row["price"],
         "stock" => (int)$row["stock"],
         "description" => $row["description"],
