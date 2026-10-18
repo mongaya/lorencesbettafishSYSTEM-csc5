@@ -3252,11 +3252,10 @@ function renderFishCategories() {
     const availableProducts = products.filter(product =>
         String(product.status || "available").toLowerCase() === "available"
     );
-    const categories = [...new Set(
-        availableProducts
-            .map(product => String(product.category || "").trim())
-            .filter(Boolean)
-    )].sort((a, b) => a.localeCompare(b));
+    const categories = [...new Set([
+        ...fishCategories.map(category => String(category.name || "").trim()),
+        ...availableProducts.map(product => String(product.category || "").trim())
+    ].filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
     const categoryCards = [
         { name: "all", label: "All Fish", icon: "", count: availableProducts.length },
@@ -4335,6 +4334,8 @@ async function categoryAction(payload) {
     await apiRequest("categories.php", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)});
     await Promise.all([loadCategories(), loadProducts()]);
     renderAdminCategoryManager(); renderAdminProducts(); renderProducts();
+    if (typeof renderGuestCategories === "function") renderGuestCategories();
+    if (typeof renderGuestProducts === "function") renderGuestProducts();
 }
 
 async function addFishCategory() {
@@ -4735,7 +4736,7 @@ function openAuthScreen(type="login"){document.getElementById("publicStore")?.cl
 function backToStore(){document.getElementById("authScreen")?.classList.add("hidden");document.getElementById("publicStore")?.classList.remove("hidden");document.getElementById("authError")?.classList.add("hidden");document.getElementById("loginForm")?.reset();document.getElementById("signupForm")?.reset();}
 function scrollToStoreTop(){document.getElementById("storeTop")?.scrollIntoView({behavior:"smooth"});}
 async function initPublicStorefront(){try{await Promise.all([loadProducts(),loadCategories()]);renderGuestCategories();renderGuestProducts();}catch(e){const g=document.getElementById("guestProductGrid");if(g)g.innerHTML='<div class="store-loading">Products could not be loaded. Please refresh the page.</div>';}}
-function renderGuestCategories(){const sel=document.getElementById("guestCategorySelect"),pills=document.getElementById("guestCategories");if(!sel||!pills)return;const available=products.filter(p=>String(p.status||"available").toLowerCase()==="available");const cats=[...new Set(available.map(p=>String(p.category||"").trim()).filter(Boolean))].sort();const current=sel.value||"all";sel.innerHTML='<option value="all">All Categories</option>'+cats.map(c=>`<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join("");if([...sel.options].some(o=>o.value===current))sel.value=current;pills.innerHTML=["all",...cats].map(c=>`<button class="guest-category-pill ${sel.value===c?'active':''}" onclick="setGuestCategory('${escapeHTML(c)}')">${c==='all'?'All Products':escapeHTML(c)}</button>`).join("");}
+function renderGuestCategories(){const sel=document.getElementById("guestCategorySelect"),pills=document.getElementById("guestCategories");if(!sel||!pills)return;const available=products.filter(p=>String(p.status||"available").toLowerCase()==="available");const cats=[...new Set([...fishCategories.map(c=>String(c.name||"").trim()),...available.map(p=>String(p.category||"").trim())].filter(Boolean))].sort((a,b)=>a.localeCompare(b));const current=sel.value||"all";sel.innerHTML='<option value="all">All Categories</option>'+cats.map(c=>`<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join("");if([...sel.options].some(o=>o.value===current))sel.value=current;pills.innerHTML=["all",...cats].map(c=>`<button class="guest-category-pill ${sel.value===c?'active':''}" onclick="setGuestCategory('${escapeHTML(c)}')">${c==='all'?'All Products':escapeHTML(c)}</button>`).join("");}
 function setGuestCategory(c){const s=document.getElementById("guestCategorySelect");if(s)s.value=c;renderGuestCategories();renderGuestProducts();}
 function renderGuestProducts(){const grid=document.getElementById("guestProductGrid");if(!grid)return;const q=(document.getElementById("guestSearchInput")?.value||"").trim().toLowerCase(),cat=document.getElementById("guestCategorySelect")?.value||"all";const appearance=[...document.querySelectorAll("#guestAppearanceDetails input:checked")].map(el=>el.value);
 const colors=[...document.querySelectorAll("#guestColorDetails input:checked")].map(el=>el.value);
@@ -11460,7 +11461,7 @@ body.dark-mode .attached-search-filters-v39 .fish-category-filter-v42 select opt
   });
  }
  function populateCategories(){
-  const cats=[...new Set((typeof products!=="undefined"?products:[]).filter(p=>String(p.status||"available").toLowerCase()==="available"&&Number(p.stock)>0).map(p=>String(p.category||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const cats=[...new Set([...(typeof fishCategories!=="undefined"?fishCategories:[]).map(c=>String(c.name||"").trim()),...(typeof products!=="undefined"?products:[]).filter(p=>String(p.status||"available").toLowerCase()==="available").map(p=>String(p.category||"").trim())].filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   [["guestFishCategoryFilterV42",document.getElementById("guestCategorySelect")?.value||"all"],["shopFishCategoryFilterV42",typeof selectedFishCategory!=="undefined"?selectedFishCategory:"all"]].forEach(([id,current])=>{
    const select=document.getElementById(id);if(!select)return;
    const options=[["all","All fish categories"],...cats.map(c=>[c,c])];
