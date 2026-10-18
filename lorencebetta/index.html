@@ -1531,14 +1531,14 @@ body:not(.dark-mode) .hero-kicker{
       <div class="guest-search-row guest-search-row-v37"><div class="guest-search-wrap"><span>⌕</span><input id="guestSearchInput" placeholder="Search products" onfocus="showGuestFilters()" onclick="showGuestFilters()" oninput="renderGuestProducts()" aria-controls="guestFilterPanel" aria-expanded="false"></div><select id="guestCategorySelect" hidden aria-hidden="true" tabindex="-1"><option value="all">All Categories</option></select></div>
       
 <div class="shop-filter-panel-v24 guest-filter-panel-v37" id="guestFilterPanel" hidden>
-<div class="shop-filter-heading-v24"><strong>Filter Products</strong><span>Find fish by appearance, color, price and availability.</span></div>
+<div class="shop-filter-heading-v24"><strong>⚙ Filter Products</strong><span>Refine your search</span></div>
 <div class="shop-filters-v23">
 <div class="shop-appearance-wrap-v24"><label for="guestAppearanceDetails">Appearance</label><details id="guestAppearanceDetails" class="shop-appearance-v24"><summary>All appearances</summary><div class="shop-appearance-options-v24"><label><input type="checkbox" value="Solid Color" onchange="renderGuestProducts()"> Solid Color</label><label><input type="checkbox" value="Multicolor" onchange="renderGuestProducts()"> Multicolor</label><label><input type="checkbox" value="Marble" onchange="renderGuestProducts()"> Marble</label><label><input type="checkbox" value="Koi" onchange="renderGuestProducts()"> Koi</label><label><input type="checkbox" value="Galaxy" onchange="renderGuestProducts()"> Galaxy</label><label><input type="checkbox" value="Metallic" onchange="renderGuestProducts()"> Metallic</label></div></details></div>
 <div class="shop-appearance-wrap-v24"><label for="guestColorDetails">Color</label><details id="guestColorDetails" class="shop-appearance-v24"><summary>All colors</summary><div class="shop-appearance-options-v24"><label><input type="checkbox" value="Red" onchange="renderGuestProducts()"> Red</label><label><input type="checkbox" value="Blue" onchange="renderGuestProducts()"> Blue</label><label><input type="checkbox" value="White" onchange="renderGuestProducts()"> White</label><label><input type="checkbox" value="Black" onchange="renderGuestProducts()"> Black</label><label><input type="checkbox" value="Yellow" onchange="renderGuestProducts()"> Yellow</label><label><input type="checkbox" value="Orange" onchange="renderGuestProducts()"> Orange</label><label><input type="checkbox" value="Purple" onchange="renderGuestProducts()"> Purple</label><label><input type="checkbox" value="Green" onchange="renderGuestProducts()"> Green</label><label><input type="checkbox" value="Pink" onchange="renderGuestProducts()"> Pink</label><label><input type="checkbox" value="Gold" onchange="renderGuestProducts()"> Gold</label><label><input type="checkbox" value="Silver" onchange="renderGuestProducts()"> Silver</label><label><input type="checkbox" value="Multicolor" onchange="renderGuestProducts()"> Multicolor</label></div></details></div>
 <label>Price Range <select id="guestPriceFilter" onchange="renderGuestProducts()"><option value="">Any price</option><option value="0-50">₱0–₱50</option><option value="50-150">₱50–₱150</option><option value="150-250">₱150–₱250</option><option value="250-500">₱250–₱500</option><option value="500-1000">₱500–₱1,000</option><option value="1000+">₱1,000+</option></select></label>
-<label>Availability <select id="guestAvailabilityFilter" onchange="renderGuestProducts()"><option value="available">Available</option><option value="all">All products</option><option value="soldout">Sold out</option></select></label>
+
 <label>Sort By <select id="guestSortFilter" onchange="renderGuestProducts()"><option value="default">Default</option><option value="low">Price: Low to High</option><option value="high">Price: High to Low</option><option value="az">Name A–Z</option></select></label>
-<button type="button" class="shop-clear-v24" onclick="clearGuestFilters()">Clear Filters</button>
+<div class="compact-filter-actions-v38"><button type="button" class="shop-clear-v24" onclick="clearGuestFilters()">Clear</button><button type="button" class="compact-filter-apply-v38" onclick="hideGuestFilters()">Apply Filters</button></div>
 </div></div>
 <div id="guestCategories" class="guest-category-pills"></div>
       <div id="guestProductGrid" class="store-product-grid"><div class="store-loading">Loading products...</div></div>
@@ -1811,16 +1811,16 @@ body:not(.dark-mode) .hero-kicker{
                 </div>
 
                 <div class="shop-filter-panel-v24" id="shopFilterPanel" hidden>
-<div class="shop-filter-heading-v24"><strong>Find your Betta</strong><span>Appearance means the fish's color or pattern (e.g. Koi, Galaxy, Marble).</span></div>
+<div class="shop-filter-heading-v24"><strong>⚙ Filter Products</strong><span>Refine your search</span></div>
 <div id="shopAdvancedFilters" class="shop-filters-v23">
 <div class="shop-appearance-wrap-v24"><label for="shopAppearanceToggle">Appearance</label><details id="shopAppearanceDetails" class="shop-appearance-v24"><summary id="shopAppearanceToggle">All appearances</summary><div class="shop-appearance-options-v24">
 <label><input type="checkbox" value="Solid Color" onchange="renderProducts();updateAppearanceFilterLabel()"> Solid Color</label><label><input type="checkbox" value="Multicolor" onchange="renderProducts();updateAppearanceFilterLabel()"> Multicolor</label><label><input type="checkbox" value="Marble" onchange="renderProducts();updateAppearanceFilterLabel()"> Marble</label><label><input type="checkbox" value="Koi" onchange="renderProducts();updateAppearanceFilterLabel()"> Koi</label><label><input type="checkbox" value="Galaxy" onchange="renderProducts();updateAppearanceFilterLabel()"> Galaxy</label><label><input type="checkbox" value="Metallic" onchange="renderProducts();updateAppearanceFilterLabel()"> Metallic</label>
 </div></details></div>
 <div class="shop-appearance-wrap-v24"><label for="shopColorToggle">Color</label><details id="shopColorDetails" class="shop-appearance-v24"><summary id="shopColorToggle">All colors</summary><div class="shop-appearance-options-v24"><label><input type="checkbox" value="Red" onchange="renderProducts();updateColorFilterLabel()"> Red</label><label><input type="checkbox" value="Blue" onchange="renderProducts();updateColorFilterLabel()"> Blue</label><label><input type="checkbox" value="White" onchange="renderProducts();updateColorFilterLabel()"> White</label><label><input type="checkbox" value="Black" onchange="renderProducts();updateColorFilterLabel()"> Black</label><label><input type="checkbox" value="Yellow" onchange="renderProducts();updateColorFilterLabel()"> Yellow</label><label><input type="checkbox" value="Orange" onchange="renderProducts();updateColorFilterLabel()"> Orange</label><label><input type="checkbox" value="Purple" onchange="renderProducts();updateColorFilterLabel()"> Purple</label><label><input type="checkbox" value="Green" onchange="renderProducts();updateColorFilterLabel()"> Green</label><label><input type="checkbox" value="Pink" onchange="renderProducts();updateColorFilterLabel()"> Pink</label><label><input type="checkbox" value="Gold" onchange="renderProducts();updateColorFilterLabel()"> Gold</label><label><input type="checkbox" value="Silver" onchange="renderProducts();updateColorFilterLabel()"> Silver</label><label><input type="checkbox" value="Multicolor" onchange="renderProducts();updateColorFilterLabel()"> Multicolor</label></div></details></div>
 <label>Price Range <select id="shopPriceFilter" onchange="renderProducts()"><option value="">Any price</option><option value="0-50">₱0–₱50</option><option value="50-150">₱50–₱150</option><option value="150-250">₱150–₱250</option><option value="250-500">₱250–₱500</option><option value="500-1000">₱500–₱1,000</option><option value="1000+">₱1,000+</option></select></label>
-<label>Availability <select id="shopAvailabilityFilter" onchange="renderProducts()"><option value="available">Available</option><option value="all">All products</option><option value="soldout">Sold out</option></select></label>
+
 <label>Sort By <select id="shopSortFilter" onchange="renderProducts()"><option value="default">Default</option><option value="low">Price: Low to High</option><option value="high">Price: High to Low</option><option value="az">Name A–Z</option></select></label>
-<button type="button" class="shop-clear-v24" onclick="clearShopFilters()">Clear Filters</button>
+<div class="compact-filter-actions-v38"><button type="button" class="shop-clear-v24" onclick="clearShopFilters()">Clear</button><button type="button" class="compact-filter-apply-v38" onclick="hideShopSearchFilters()">Apply Filters</button></div>
 </div></div>
 <div id="fishCategories" class="categories" aria-label="Betta fish categories"></div>
 
@@ -3421,7 +3421,7 @@ function renderProducts(){
  const appearance=[...document.querySelectorAll("#shopAppearanceDetails input:checked")].map(o=>o.value);
  const colorSelections=[...document.querySelectorAll("#shopColorDetails input:checked")].map(el=>el.value);
  const price=document.getElementById("shopPriceFilter")?.value||"";
- const availability=document.getElementById("shopAvailabilityFilter")?.value||"available";
+ const availability="available";
  const sort=document.getElementById("shopSortFilter")?.value||"default";
  const filtered=products.filter(p=>{
   const available=String(p.status||"available").toLowerCase()==="available"&&Number(p.stock)>0;
@@ -4740,7 +4740,7 @@ function setGuestCategory(c){const s=document.getElementById("guestCategorySelec
 function renderGuestProducts(){const grid=document.getElementById("guestProductGrid");if(!grid)return;const q=(document.getElementById("guestSearchInput")?.value||"").trim().toLowerCase(),cat=document.getElementById("guestCategorySelect")?.value||"all";const appearance=[...document.querySelectorAll("#guestAppearanceDetails input:checked")].map(el=>el.value);
 const colors=[...document.querySelectorAll("#guestColorDetails input:checked")].map(el=>el.value);
 const price=document.getElementById("guestPriceFilter")?.value||"";
-const availability=document.getElementById("guestAvailabilityFilter")?.value||"available";
+const availability="available";
 const sort=document.getElementById("guestSortFilter")?.value||"default";
 const list=products.filter(p=>{const available=String(p.status||"available").toLowerCase()==="available"&&Number(p.stock)>0;const cost=Number(p.price);return (availability==="all"||(availability==="available"?available:!available))&&String(p.name||"").toLowerCase().includes(q)&&(cat==="all"||p.category===cat)&&(!appearance.length||appearance.includes(p.appearance))&&(!colors.length||colors.some(color=>Array.isArray(p.colors)&&p.colors.includes(color)))&&(!price||(price==="0-50"?cost>=0&&cost<=50:price==="50-150"?cost>50&&cost<=150:price==="150-250"?cost>150&&cost<=250:price==="250-500"?cost>250&&cost<=500:price==="500-1000"?cost>500&&cost<=1000:cost>1000));});
 if(sort==="low")list.sort((a,b)=>Number(a.price)-Number(b.price));
@@ -11307,4 +11307,23 @@ document.addEventListener("click",function(e){const p=document.getElementById("g
 #publicStore .guest-filter-panel-v37 .shop-filters-v23{grid-template-columns:repeat(5,minmax(0,1fr)) auto}
 @media(max-width:900px){#publicStore .guest-filter-panel-v37 .shop-filters-v23{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){#publicStore .guest-filter-panel-v37 .shop-filters-v23{grid-template-columns:1fr}}
+</style>
+
+<style id="compact-filters-home-guest-v38">
+/* Compact, shared four-field filter card for public storefront and customer Home. */
+#publicStore #guestFilterPanel,#customerApp #shopFilterPanel{box-sizing:border-box;width:min(490px,100%);max-width:100%;margin:10px 0 16px;padding:14px 16px;border-radius:15px;border:1px solid #d6e6ed;background:#fff;box-shadow:0 9px 26px rgba(9,64,85,.09)}
+#publicStore #guestFilterPanel .shop-filter-heading-v24,#customerApp #shopFilterPanel .shop-filter-heading-v24{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #e3edf1;padding-bottom:10px;margin-bottom:12px}
+#publicStore #guestFilterPanel .shop-filter-heading-v24 strong,#customerApp #shopFilterPanel .shop-filter-heading-v24 strong{font-size:15px;color:#163e50}
+#publicStore #guestFilterPanel .shop-filter-heading-v24 span,#customerApp #shopFilterPanel .shop-filter-heading-v24 span{font-size:11px;color:#6d8590}
+#publicStore #guestFilterPanel .shop-filters-v23,#customerApp #shopFilterPanel .shop-filters-v23{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+#publicStore #guestFilterPanel .shop-filters-v23>label,#customerApp #shopFilterPanel .shop-filters-v23>label,#publicStore #guestFilterPanel .shop-appearance-wrap-v24,#customerApp #shopFilterPanel .shop-appearance-wrap-v24{font-size:12px;gap:5px;min-width:0}
+#publicStore #guestFilterPanel select,#customerApp #shopFilterPanel select,#publicStore #guestFilterPanel .shop-appearance-v24 summary,#customerApp #shopFilterPanel .shop-appearance-v24 summary{height:38px;min-height:38px;padding:8px 10px;font-size:12px;border-radius:9px}
+#publicStore #guestFilterPanel .compact-filter-actions-v38,#customerApp #shopFilterPanel .compact-filter-actions-v38{grid-column:1/-1;display:flex;justify-content:flex-end;gap:9px;border-top:1px solid #e3edf1;padding-top:11px;margin-top:2px}
+#publicStore #guestFilterPanel .compact-filter-actions-v38 button,#customerApp #shopFilterPanel .compact-filter-actions-v38 button{height:36px;width:auto;min-width:76px;border-radius:9px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer}
+#publicStore #guestFilterPanel .compact-filter-apply-v38,#customerApp #shopFilterPanel .compact-filter-apply-v38{background:#087fa7;border:1px solid #087fa7;color:#fff}
+#publicStore #guestFilterPanel .shop-clear-v24,#customerApp #shopFilterPanel .shop-clear-v24{background:#fff;color:#28556a;border:1px solid #bcd2dc}
+body.dark-mode #publicStore #guestFilterPanel,body.dark-mode #customerApp #shopFilterPanel{background:#15394b;border-color:#365e70}
+body.dark-mode #publicStore #guestFilterPanel .shop-filter-heading-v24 strong,body.dark-mode #customerApp #shopFilterPanel .shop-filter-heading-v24 strong{color:#f1fbff}
+body.dark-mode #publicStore #guestFilterPanel .shop-filter-heading-v24 span,body.dark-mode #customerApp #shopFilterPanel .shop-filter-heading-v24 span{color:#b9d2dc}
+@media(max-width:380px){#publicStore #guestFilterPanel .shop-filters-v23,#customerApp #shopFilterPanel .shop-filters-v23{grid-template-columns:1fr}}
 </style>
