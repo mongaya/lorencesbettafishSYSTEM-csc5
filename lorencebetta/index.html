@@ -11364,3 +11364,34 @@ body.dark-mode .attached-search-filters-v39 .attached-filter-toggle-v39{backgrou
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
 </script>
+
+<style id="pill-search-filter-design-v40">
+/* Polished oblong search + filter styling, shared by Starting Page and Home. */
+.attached-search-filters-v39{width:min(680px,100%)!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
+.attached-search-filters-v39 .attached-search-top-v39{background:#fff!important;border:1px solid #d1e4ed!important;border-radius:999px!important;min-height:58px!important;padding:7px 9px 7px 12px!important;box-shadow:0 5px 18px rgba(20,91,117,.07)!important;gap:9px!important}
+.attached-search-filters-v39 .guest-search-wrap,.attached-search-filters-v39 .search-area{border-radius:999px!important;background:#edf6fa!important;min-height:43px!important;display:flex!important;align-items:center!important;overflow:hidden!important}
+.attached-search-filters-v39 .guest-search-wrap>span{padding-left:15px;color:#386b83;font-size:24px}
+.attached-search-filters-v39 input#guestSearchInput,.attached-search-filters-v39 input#searchInput{height:43px!important;min-height:43px!important;border-radius:999px!important;background:#edf6fa!important;padding:0 16px!important;font-size:14px!important;color:#123e55!important}
+.attached-search-filters-v39 .attached-filter-toggle-v39{width:43px!important;height:43px!important;min-width:43px!important;border-radius:999px!important;border:1px solid #087fa7!important;background:#087fa7!important;color:#fff!important;box-shadow:0 2px 5px rgba(0,95,130,.16)!important;display:grid!important;place-items:center!important;padding:0!important}
+.attached-search-filters-v39 .attached-filter-toggle-v39 svg{width:22px;height:22px;display:block;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.attached-search-filters-v39 .attached-filter-toggle-v39:hover{background:#076b8e!important}
+.attached-search-filters-v39 .shop-filter-panel-v24{margin:0!important;padding:17px 19px 18px!important;border:1px solid #d1e4ed!important;border-radius:25px!important;background:#fff!important;box-shadow:0 8px 24px rgba(20,91,117,.08)!important}
+.attached-search-filters-v39 .shop-filter-heading-v24{padding-bottom:12px!important;margin-bottom:13px!important}
+.attached-search-filters-v39 .shop-filter-heading-v24 strong{display:flex;align-items:center;gap:8px;font-size:15px!important}
+.attached-search-filters-v39 .shop-filter-heading-v24 strong svg{width:20px;height:20px;stroke:#164b64;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.attached-search-filters-v39 .shop-filters-v23{gap:13px 15px!important}
+.attached-search-filters-v39 .shop-filters-v23 select,.attached-search-filters-v39 .shop-appearance-v24 summary{border-radius:999px!important;min-height:41px!important;height:41px!important;background:#fff!important;border:1px solid #bed9e5!important;padding:9px 14px!important}
+.attached-search-filters-v39 .compact-filter-actions-v38{margin-top:3px!important;padding-top:14px!important}
+.attached-search-filters-v39 .compact-filter-actions-v38 button{border-radius:999px!important;height:39px!important;padding:8px 20px!important}
+.attached-search-filters-v39 .compact-filter-apply-v38{background:#087fa7!important;color:white!important}
+body.dark-mode .attached-search-filters-v39 .attached-search-top-v39,body.dark-mode .attached-search-filters-v39 .shop-filter-panel-v24{background:#15394b!important;border-color:#365e70!important}
+body.dark-mode .attached-search-filters-v39 .guest-search-wrap,body.dark-mode .attached-search-filters-v39 .search-area,body.dark-mode .attached-search-filters-v39 input#guestSearchInput,body.dark-mode .attached-search-filters-v39 input#searchInput{background:#244b60!important;color:#fff!important}
+@media(max-width:580px){.attached-search-filters-v39 .shop-filter-panel-v24{padding:13px!important;border-radius:18px!important}.attached-search-filters-v39 .attached-search-top-v39{min-height:54px!important}}
+</style>
+<script id="pill-search-filter-icon-v40">
+(function(){
+ const icon='<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2.5" fill="#087fa7"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="16" cy="12" r="2.5" fill="#087fa7"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="10" cy="18" r="2.5" fill="#087fa7"/></svg>';
+ function init(){document.querySelectorAll(".attached-filter-toggle-v39").forEach(b=>{b.innerHTML=icon;b.setAttribute("aria-label","Show or hide product filters")});document.querySelectorAll(".attached-search-filters-v39 .shop-filter-heading-v24 strong").forEach(h=>{h.innerHTML=icon+"<span>Filter Products</span>"})}
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+})();
+</script>
