@@ -3461,7 +3461,10 @@ function saveCart(cart) {
     );
 }
 
-function addToCart(productId) {
+function addToCart(productId) { return openProductQuantityDialog(productId, false); }
+function buyProductNow(productId) { return openProductQuantityDialog(productId, true); }
+
+function openProductQuantityDialog(productId, isBuyNow) {
     if (!currentUser) return requireLoginToOrder();
     const product = products.find(p => String(p.id) === String(productId));
     if (!product || String(product.status || "available").toLowerCase() !== "available" || Number(product.stock) <= 0) {
@@ -3470,14 +3473,14 @@ function addToCart(productId) {
     }
     document.getElementById("cartQuantityOverlayV45")?.remove();
     const existing = getCart().find(item => String(item.productId) === String(productId));
-    const remaining = Number(product.stock) - (Number(existing?.quantity) || 0);
+    const remaining = isBuyNow ? Number(product.stock) : Number(product.stock) - (Number(existing?.quantity) || 0);
     if (remaining <= 0) return showToast("You reached the available stock.");
     const overlay = document.createElement("div");
     overlay.id = "cartQuantityOverlayV45";
     overlay.className = "cart-quantity-overlay-v45";
     overlay.innerHTML = '<div class="cart-quantity-dialog-v45" role="dialog" aria-modal="true" aria-labelledby="cartQuantityTitleV45">' +
       '<button type="button" class="cart-quantity-close-v45" aria-label="Close" data-cart-quantity-close>×</button>' +
-      '<h3 id="cartQuantityTitleV45">Add to Cart</h3>' +
+      '<h3 id="cartQuantityTitleV45">' + (isBuyNow ? 'Buy Now' : 'Add to Cart') + '</h3>' +
       '<p class="cart-quantity-product-v45"></p>' +
       '<label for="cartQuantityInputV45">Quantity</label>' +
       '<div class="cart-quantity-stepper-v45"><button type="button" data-qty-minus aria-label="Decrease quantity">−</button>' +
@@ -3485,7 +3488,7 @@ function addToCart(productId) {
       '<button type="button" data-qty-plus aria-label="Increase quantity">+</button></div>' +
       '<small class="cart-quantity-stock-v45"></small>' +
       '<div class="cart-quantity-actions-v45"><button type="button" data-cart-quantity-close>Cancel</button>' +
-      '<button type="button" data-cart-quantity-confirm>Add to Cart</button></div></div>';
+      '<button type="button" data-cart-quantity-confirm>' + (isBuyNow ? 'Buy Now' : 'Add to Cart') + '</button></div></div>';
     overlay.querySelector(".cart-quantity-product-v45").textContent = product.name;
     overlay.querySelector(".cart-quantity-stock-v45").textContent = remaining + " more available to add";
     const input = overlay.querySelector("#cartQuantityInputV45");
@@ -3495,7 +3498,7 @@ function addToCart(productId) {
     overlay.addEventListener("click", event => { if (event.target === overlay) close(); });
     overlay.querySelector("[data-qty-minus]").addEventListener("click", () => { input.value = String(Math.max(1, (Number(input.value) || 1) - 1)); });
     overlay.querySelector("[data-qty-plus]").addEventListener("click", () => { input.value = String(Math.min(remaining, (Number(input.value) || 0) + 1)); });
-    const confirm = () => {
+    const confirm = async () => {
         const quantity = input.value.trim() === "" ? 1 : Number(input.value);
         if (!Number.isInteger(quantity) || quantity < 1 || quantity > remaining) {
             showToast("Enter a whole number between 1 and " + remaining + ".");
@@ -3504,41 +3507,27 @@ function addToCart(productId) {
         }
         const cart = getCart();
         const item = cart.find(entry => String(entry.productId) === String(productId));
-        if (item) item.quantity = Number(item.quantity) + quantity;
-        else cart.push({productId: product.id, quantity});
+        if (isBuyNow) {
+            // Only the chosen product is selected for checkout; keep all other cart items.
+            cart.forEach(entry => { entry.selected = false; });
+            if (item) { item.quantity = quantity; item.selected = true; }
+            else cart.push({productId: product.id, quantity, selected: true});
+        } else {
+            if (item) item.quantity = Number(item.quantity) + quantity;
+            else cart.push({productId: product.id, quantity});
+        }
         saveCart(cart);
         updateCartCount();
         close();
-        showToast(quantity + " × " + product.name + " added to cart!");
+        if (isBuyNow) {
+            try { await openCheckout(); }
+            catch (error) { showToast(error.message || "Unable to open checkout."); }
+        } else showToast(quantity + " × " + product.name + " added to cart!");
     };
     overlay.querySelector("[data-cart-quantity-confirm]").addEventListener("click", confirm);
     input.addEventListener("keydown", event => { if (event.key === "Enter") confirm(); if (event.key === "Escape") close(); });
     document.body.appendChild(overlay);
     input.focus();
-}
-
-async function buyProductNow(productId) {
-    if (!currentUser) return requireLoginToOrder();
-    const product = products.find(p => String(p.id) === String(productId));
-    if (!product || String(product.status || "available").toLowerCase() !== "available" || Number(product.stock) <= 0) {
-        showToast("This product is currently unavailable.");
-        return;
-    }
-    // Buy Now checks out only the chosen fish; other cart products stay saved.
-    const cart = getCart();
-    cart.forEach(item => { item.selected = false; });
-    let item = cart.find(i => String(i.productId) === String(productId));
-    if (!item) {
-        item = {productId: product.id, quantity: 1, selected: true};
-        cart.push(item);
-    } else {
-        item.selected = true;
-        item.quantity = Math.min(Math.max(1, Number(item.quantity) || 1), Number(product.stock));
-    }
-    saveCart(cart);
-    updateCartCount();
-    try { await openCheckout(); }
-    catch (error) { showToast(error.message || "Unable to open checkout."); }
 }
 
 function updateCartCount() {
