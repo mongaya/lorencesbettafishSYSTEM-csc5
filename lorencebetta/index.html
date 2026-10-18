@@ -3604,7 +3604,22 @@ function renderCart(){
 function selectedAddress(){return savedAddresses.find(a=>Number(a.id)===Number(selectedAddressId))||savedAddresses.find(a=>Number(a.is_default)===1)||savedAddresses[0]||null;}
 function addressSnapshot(a){return a?[a.house_unit,a.street,"Brgy. "+a.barangay,a.city,a.province,a.postal_code].filter(Boolean).join(", "):"";}
 function renderCheckoutAddress(){const box=document.getElementById("checkoutAddressCard");if(!box)return;const a=selectedAddress();if(!a){box.innerHTML='<div class="error">Please add a saved address first.</div>';return;}selectedAddressId=Number(a.id);const n=`${a.first_name||""} ${a.last_name||""}`.trim(),ad=addressSnapshot(a);document.getElementById("checkoutName").value=n;document.getElementById("checkoutPhone").value=a.phone||"";document.getElementById("checkoutAddress").value=ad;box.innerHTML=`<div class="checkout-selected-address"><strong>${escapeHTML(n)}</strong>${Number(a.is_default)===1?' <small class="checkout-default-label">Default</small>':""}<div>${escapeHTML(a.phone)}</div><div>${escapeHTML(ad)}</div></div>`;}
-function openCheckoutAddressPicker(){const m=document.getElementById("checkoutAddressPicker"),c=document.getElementById("checkoutAddressChoices");c.innerHTML=savedAddresses.map(a=>`<label style="display:block;border:1px solid #d8eaf0;border-radius:12px;padding:14px;margin-bottom:10px"><input type="radio" name="pickAddress" ${Number(a.id)===Number(selectedAddressId)?"checked":""} onchange="chooseCheckoutAddress(${Number(a.id)})"> <strong>${escapeHTML(a.first_name)} ${escapeHTML(a.last_name)}</strong><div style="margin-left:22px">${escapeHTML(a.phone)}<br>${escapeHTML(addressSnapshot(a))}</div></label>`).join("")||'<p>No saved address.</p>';m.classList.remove("hidden");}
+function openCheckoutAddressPicker(){
+    const modal=document.getElementById("checkoutAddressPicker");
+    const container=document.getElementById("checkoutAddressChoices");
+    if(!modal||!container)return;
+    container.innerHTML=savedAddresses.map(address=>{
+        const id=Number(address.id),selected=id===Number(selectedAddressId);
+        return `<label class="checkout-address-option-v48 ${selected?"selected-v48":""}">
+            <input type="radio" name="pickAddress" ${selected?"checked":""} onchange="chooseCheckoutAddress(${id})">
+            <span><strong>${escapeHTML([address.first_name,address.last_name].filter(Boolean).join(" "))}</strong>
+            ${Number(address.is_default)===1?'<span class="address-default-v48">Default</span>':""}
+            <small>${escapeHTML(address.phone||"")}</small>
+            <span class="checkout-address-text-v48">${escapeHTML(addressSnapshot(address))}</span></span>
+        </label>`;
+    }).join("")||'<p>No saved addresses. Add a new address below.</p>';
+    modal.classList.remove("hidden");
+}
 function closeCheckoutAddressPicker(){document.getElementById("checkoutAddressPicker")?.classList.add("hidden");}
 function chooseCheckoutAddress(id){selectedAddressId=Number(id);renderCheckoutAddress();closeCheckoutAddressPicker();}
 
@@ -3809,51 +3824,27 @@ async function loadAddresses() {
 function renderSavedAddresses() {
     const container = document.getElementById("savedAddresses");
     if (!container) return;
-
     if (!savedAddresses.length) {
-        container.innerHTML = `
-            <div style="padding:22px;border:1px dashed #b9dfe9;border-radius:14px;text-align:center;color:#6b7b88;background:#f8fdff;">
-                <div style="font-size:30px;margin-bottom:8px;"></div>
-                <strong>No saved address yet.</strong>
-                <p style="margin-top:6px;">Add a delivery address to make checkout faster.</p>
-            </div>
-        `;
+        container.innerHTML = '<div class="address-empty-v48"><strong>No saved addresses yet</strong><p>Add a delivery address to make checkout easier.</p><button type="button" class="primary-btn" onclick="openAddressModal()">+ Add New Address</button></div>';
         return;
     }
-
-    container.innerHTML = savedAddresses.map(address => {
+    const sorted = [...savedAddresses].sort((a,b) => Number(b.is_default) - Number(a.is_default));
+    container.innerHTML = sorted.map(address => {
         const isDefault = Number(address.is_default) === 1;
-
-        return `
-            <div style="border:${isDefault ? "2px solid #00a3d5" : "1px solid #d8eaf0"};border-radius:14px;padding:16px;margin-bottom:12px;background:${isDefault ? "#f2fcff" : "#ffffff"};">
-                <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
-                    <div style="flex:1;min-width:220px;">
-                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:7px;">
-                            <strong style="color:#174d62;">
-                                ${escapeHTML(address.first_name)} ${escapeHTML(address.last_name)}
-                            </strong>
-                            ${isDefault ? `
-                                <span style="background:#dff7ff;color:#00789d;border:1px solid #a9e2f1;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:bold;">Default</span>
-                            ` : ""}
-                        </div>
-                        <div style="color:#536d79;margin-bottom:5px;"> ${escapeHTML(address.phone)}</div>
-                        <div style="color:#536d79;line-height:1.6;">
-                            ${escapeHTML(address.house_unit)}, ${escapeHTML(address.street)},
-                            Brgy. ${escapeHTML(address.barangay)}, ${escapeHTML(address.city)},
-                            ${escapeHTML(address.province)} ${escapeHTML(address.postal_code)}
-                        </div>
-                    </div>
-
-                    <div style="display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;">
-                        ${!isDefault ? `
-                            <button type="button" class="action-btn view-btn" onclick="setDefaultAddress(${Number(address.id)})">Set Default</button>
-                        ` : ""}
-                        <button type="button" class="action-btn edit-btn" onclick="openAddressModal(${Number(address.id)})">Edit</button>
-                        <button type="button" class="action-btn delete-btn" onclick="deleteAddress(${Number(address.id)})">Delete</button>
-                    </div>
-                </div>
+        const id = Number(address.id);
+        const fullName = [address.first_name, address.last_name].filter(Boolean).join(" ");
+        return `<div class="address-card-v48 ${isDefault ? "is-default-v48" : ""}">
+            <div class="address-card-content-v48">
+                <div class="address-card-name-v48"><strong>${escapeHTML(fullName)}</strong>${isDefault ? '<span class="address-default-v48">Default</span>' : ""}</div>
+                <div class="address-card-phone-v48">${escapeHTML(address.phone || "")}</div>
+                <div class="address-card-location-v48">${escapeHTML(addressSnapshot(address))}</div>
             </div>
-        `;
+            <div class="address-card-actions-v48">
+                ${!isDefault ? `<button type="button" class="address-btn-v48" onclick="setDefaultAddress(${id})">Set as Default</button>` : ""}
+                <button type="button" class="address-btn-v48" onclick="openAddressModal(${id})">Edit</button>
+                <button type="button" class="address-btn-v48 address-delete-v48" onclick="deleteAddress(${id})">Delete</button>
+            </div>
+        </div>`;
     }).join("");
 }
 
@@ -3987,7 +3978,7 @@ async function deleteAddress(addressId) {
         return;
     }
 
-    if (!confirm("Delete this saved address?")) return;
+    if (!confirm("Delete this saved address? This action cannot be undone.")) return;
 
     try {
         await apiRequest("addresses.php", {
@@ -11585,4 +11576,32 @@ body.dark-mode .cart-quantity-actions-v45 button:first-child{color:#c7edff}
 #customerApp .cart-item .cart-delete-visible-v47:hover{background:#ffdbdf!important}
 body.dark-mode #customerApp .cart-item .cart-delete-visible-v47{background:#562b35!important;color:#ffd9df!important;border-color:#a75466!important}
 @media(max-width:680px){#customerApp .cart-item{flex-wrap:wrap}#customerApp .cart-item .cart-delete-visible-v47{min-width:40px}#customerApp .cart-item .cart-delete-visible-v47 span{display:none}}
+</style>
+
+<style id="address-management-refresh-v48">
+#savedAddresses{display:grid;gap:13px}
+.address-card-v48{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:18px;border:1px solid #d6e6ed;border-radius:16px;background:#fff}
+.address-card-v48.is-default-v48{border-color:#62b9d1;background:#f3fbff}
+.address-card-content-v48{flex:1;min-width:220px}
+.address-card-name-v48{display:flex;align-items:center;flex-wrap:wrap;gap:9px;color:#174d62;margin-bottom:7px}
+.address-default-v48{display:inline-block;background:#d9f5ec;color:#087455;border:1px solid #9bdec9;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700;vertical-align:middle}
+.address-card-phone-v48{color:#456a79;margin-bottom:6px}
+.address-card-location-v48{color:#587584;line-height:1.55}
+.address-card-actions-v48{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.address-btn-v48{background:transparent!important;border:1px solid #a8c9d7!important;color:#087a9f!important;border-radius:10px!important;padding:9px 12px!important;font-weight:700!important;cursor:pointer}
+.address-btn-v48:hover{background:#e8f6fc!important}
+.address-delete-v48{color:#bd3041!important;border-color:#eab1b9!important}
+.address-delete-v48:hover{background:#fff0f2!important}
+.address-empty-v48{text-align:center;padding:28px;border:1px dashed #b8dce7;border-radius:16px;background:#f8fcff}
+.address-empty-v48 p{color:#67818e;margin:10px 0 18px}
+.checkout-address-option-v48{display:flex;align-items:flex-start;gap:12px;border:1px solid #d8eaf0;border-radius:13px;padding:14px;margin-bottom:10px;cursor:pointer}
+.checkout-address-option-v48.selected-v48{border-color:#159cc2;background:#f0fbff}
+.checkout-address-option-v48>span{display:grid;gap:5px;flex:1}
+.checkout-address-option-v48 small,.checkout-address-text-v48{color:#597787}
+body.dark-mode .address-card-v48,body.dark-mode .address-card-v48.is-default-v48,body.dark-mode .checkout-address-option-v48,body.dark-mode .checkout-address-option-v48.selected-v48{background:#183c50;border-color:#47748a}
+body.dark-mode .address-card-name-v48,body.dark-mode .address-card-phone-v48,body.dark-mode .address-card-location-v48,body.dark-mode .checkout-address-option-v48 small,body.dark-mode .checkout-address-text-v48{color:#d5edf6}
+body.dark-mode .address-empty-v48{background:#183c50;color:#d5edf6;border-color:#47748a}
+body.dark-mode .address-btn-v48{color:#b5e8fa!important;border-color:#578da3!important}
+body.dark-mode .address-delete-v48{color:#ffd1d9!important;border-color:#aa6a77!important}
+@media(max-width:650px){.address-card-actions-v48{width:100%;justify-content:flex-start}.address-card-v48{padding:14px}}
 </style>
