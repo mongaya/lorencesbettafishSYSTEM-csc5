@@ -11395,3 +11395,48 @@ body.dark-mode .attached-search-filters-v39 .guest-search-wrap,body.dark-mode .a
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
 </script>
+
+<style id="inline-filter-dropdown-fix-v41">
+/* Keep expanded dropdown choices inside their filter card instead of overlaying product pills. */
+.attached-search-filters-v39 .shop-filter-panel-v24{overflow:visible!important}
+.attached-search-filters-v39 .shop-appearance-wrap-v24{min-width:0!important;align-self:start!important}
+.attached-search-filters-v39 .shop-appearance-v24{position:relative!important;width:100%!important}
+.attached-search-filters-v39 .shop-appearance-options-v24{position:static!important;top:auto!important;left:auto!important;right:auto!important;min-width:0!important;width:100%!important;max-height:175px!important;overflow-y:auto!important;overflow-x:hidden!important;margin-top:6px!important;border-radius:13px!important;box-shadow:none!important;z-index:auto!important}
+.attached-search-filters-v39 .shop-appearance-options-v24 label{white-space:normal!important;line-height:1.3!important;padding:7px 9px!important}
+.attached-search-filters-v39 .shop-filters-v23{align-items:start!important}
+.attached-search-filters-v39 .shop-appearance-v24:not([open]) .shop-appearance-options-v24{display:none!important}
+/* Dark mode: readable contrast on all dropdowns, options, inputs and actions. */
+body.dark-mode .attached-search-filters-v39 .shop-appearance-v24 summary,
+body.dark-mode .attached-search-filters-v39 .shop-filters-v23 select{background:#244b60!important;color:#f4fbff!important;border-color:#557b8e!important}
+body.dark-mode .attached-search-filters-v39 .shop-appearance-options-v24{background:#193e51!important;border-color:#557b8e!important;color:#f4fbff!important}
+body.dark-mode .attached-search-filters-v39 .shop-appearance-options-v24 label{color:#f4fbff!important;background:transparent!important}
+body.dark-mode .attached-search-filters-v39 .shop-appearance-options-v24 label:hover{background:#29596e!important}
+body.dark-mode .attached-search-filters-v39 .shop-filter-heading-v24 strong svg{stroke:#d9f4ff!important}
+body.dark-mode .attached-search-filters-v39 .shop-clear-v24{background:#244b60!important;color:#f4fbff!important;border-color:#557b8e!important}
+body.dark-mode .attached-search-filters-v39 .compact-filter-apply-v38{background:#087fa7!important;color:#fff!important}
+body.dark-mode .attached-search-filters-v39 .shop-filters-v23 select option{background:#193e51!important;color:#fff!important}
+</style>
+<script id="inline-filter-dropdown-behavior-v41">
+(function(){
+ function init(){
+  const ids=["guestAppearanceDetails","guestColorDetails","shopAppearanceDetails","shopColorDetails"];
+  ids.forEach(id=>{
+   const details=document.getElementById(id);if(!details||details.dataset.inlineFilterFix)return;
+   details.dataset.inlineFilterFix="1";
+   details.addEventListener("toggle",()=>{
+    if(!details.open)return;
+    const panel=details.closest(".shop-filter-panel-v24");
+    panel?.querySelectorAll(".shop-appearance-v24[open]").forEach(other=>{if(other!==details)other.open=false});
+   });
+   details.querySelectorAll('input[type="checkbox"]').forEach(input=>input.addEventListener("change",()=>{details.open=false}));
+  });
+  document.addEventListener("pointerdown",e=>{
+   ids.forEach(id=>{
+    const d=document.getElementById(id);
+    if(d?.open&&!d.contains(e.target))d.open=false;
+   });
+  });
+ }
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+})();
+</script>
