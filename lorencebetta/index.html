@@ -3309,7 +3309,10 @@ function productHTML(product) {
                 <div><span class="price">₱${Number(product.price).toLocaleString(undefined,{minimumFractionDigits:2})}</span></div>
                 <div class="product-bottom">
                     <small>${Number(product.stock)} available</small>
-                    <button class="add-btn" onclick="event.stopPropagation();addToCart('${escapeHTML(product.id)}')" ${Number(product.stock)<=0?"disabled":""}>Add</button>
+                    <div class="product-card-actions-v44">
+                        <button type="button" class="add-btn product-card-add-v44" onclick="event.stopPropagation();addToCart('${escapeHTML(product.id)}')" ${Number(product.stock)<=0?"disabled":""}>Add to Cart</button>
+                        <button type="button" class="product-card-buy-v44" onclick="event.stopPropagation();buyProductNow('${escapeHTML(product.id)}')" ${Number(product.stock)<=0?"disabled":""}>Buy Now</button>
+                    </div>
                 </div>
             </div>
         </div>`;
@@ -3458,37 +3461,73 @@ function saveCart(cart) {
     );
 }
 
-function addToCart(productId) {
+function addToCart(productId) { return openProductQuantityDialog(productId, false); }
+function buyProductNow(productId) { return openProductQuantityDialog(productId, true); }
+
+function openProductQuantityDialog(productId, isBuyNow) {
+    if (!currentUser) return requireLoginToOrder();
     const product = products.find(p => String(p.id) === String(productId));
-
-    if (!product) return;
-
-    if (Number(product.stock) <= 0) {
-        showToast("This product is out of stock.");
+    if (!product || String(product.status || "available").toLowerCase() !== "available" || Number(product.stock) <= 0) {
+        showToast("This product is currently unavailable.");
         return;
     }
-
-    const cart = getCart();
-    const existing = cart.find(
-        item => String(item.productId) === String(productId)
-    );
-
-    if (existing) {
-        if (existing.quantity >= Number(product.stock)) {
-            showToast("You reached the available stock.");
+    document.getElementById("cartQuantityOverlayV45")?.remove();
+    const existing = getCart().find(item => String(item.productId) === String(productId));
+    const remaining = isBuyNow ? Number(product.stock) : Number(product.stock) - (Number(existing?.quantity) || 0);
+    if (remaining <= 0) return showToast("You reached the available stock.");
+    const overlay = document.createElement("div");
+    overlay.id = "cartQuantityOverlayV45";
+    overlay.className = "cart-quantity-overlay-v45";
+    overlay.innerHTML = '<div class="cart-quantity-dialog-v45" role="dialog" aria-modal="true" aria-labelledby="cartQuantityTitleV45">' +
+      '<button type="button" class="cart-quantity-close-v45" aria-label="Close" data-cart-quantity-close>×</button>' +
+      '<h3 id="cartQuantityTitleV45">' + (isBuyNow ? 'Buy Now' : 'Add to Cart') + '</h3>' +
+      '<p class="cart-quantity-product-v45"></p>' +
+      '<label for="cartQuantityInputV45">Quantity</label>' +
+      '<div class="cart-quantity-stepper-v45"><button type="button" data-qty-minus aria-label="Decrease quantity">−</button>' +
+      '<input type="number" id="cartQuantityInputV45" min="1" step="1" inputmode="numeric" placeholder="1" value="1">' +
+      '<button type="button" data-qty-plus aria-label="Increase quantity">+</button></div>' +
+      '<small class="cart-quantity-stock-v45"></small>' +
+      '<div class="cart-quantity-actions-v45"><button type="button" data-cart-quantity-close>Cancel</button>' +
+      '<button type="button" data-cart-quantity-confirm>' + (isBuyNow ? 'Buy Now' : 'Add to Cart') + '</button></div></div>';
+    overlay.querySelector(".cart-quantity-product-v45").textContent = product.name;
+    overlay.querySelector(".cart-quantity-stock-v45").textContent = remaining + " more available to add";
+    const input = overlay.querySelector("#cartQuantityInputV45");
+    input.max = String(remaining);
+    const close = () => overlay.remove();
+    overlay.querySelectorAll("[data-cart-quantity-close]").forEach(button => button.addEventListener("click", close));
+    overlay.addEventListener("click", event => { if (event.target === overlay) close(); });
+    overlay.querySelector("[data-qty-minus]").addEventListener("click", () => { input.value = String(Math.max(1, (Number(input.value) || 1) - 1)); });
+    overlay.querySelector("[data-qty-plus]").addEventListener("click", () => { input.value = String(Math.min(remaining, (Number(input.value) || 0) + 1)); });
+    const confirm = async () => {
+        const quantity = input.value.trim() === "" ? 1 : Number(input.value);
+        if (!Number.isInteger(quantity) || quantity < 1 || quantity > remaining) {
+            showToast("Enter a whole number between 1 and " + remaining + ".");
+            input.focus();
             return;
         }
-        existing.quantity++;
-    } else {
-        cart.push({
-            productId: product.id,
-            quantity: 1
-        });
-    }
-
-    saveCart(cart);
-    updateCartCount();
-    showToast(product.name + " added to cart!");
+        const cart = getCart();
+        const item = cart.find(entry => String(entry.productId) === String(productId));
+        if (isBuyNow) {
+            // Only the chosen product is selected for checkout; keep all other cart items.
+            cart.forEach(entry => { entry.selected = false; });
+            if (item) { item.quantity = quantity; item.selected = true; }
+            else cart.push({productId: product.id, quantity, selected: true});
+        } else {
+            if (item) item.quantity = Number(item.quantity) + quantity;
+            else cart.push({productId: product.id, quantity});
+        }
+        saveCart(cart);
+        updateCartCount();
+        close();
+        if (isBuyNow) {
+            try { await openCheckout(); }
+            catch (error) { showToast(error.message || "Unable to open checkout."); }
+        } else showToast(quantity + " × " + product.name + " added to cart!");
+    };
+    overlay.querySelector("[data-cart-quantity-confirm]").addEventListener("click", confirm);
+    input.addEventListener("keydown", event => { if (event.key === "Enter") confirm(); if (event.key === "Escape") close(); });
+    document.body.appendChild(overlay);
+    input.focus();
 }
 
 function updateCartCount() {
@@ -11504,3 +11543,38 @@ body.dark-mode .attached-search-filters-v39 .fish-category-filter-v42 select opt
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
 </script>
+
+<style id="product-card-buy-now-v44">
+#customerApp .product-card .product-bottom{display:flex;flex-direction:column;align-items:stretch;gap:9px;margin-top:12px}
+#customerApp .product-card .product-bottom>small{font-size:12px;color:#617987}
+#customerApp .product-card-actions-v44{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+#customerApp .product-card-actions-v44 button{width:100%;min-width:0;min-height:40px;border-radius:999px;padding:9px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+#customerApp .product-card-actions-v44 .product-card-add-v44{border:1px solid #087fa7;background:#fff;color:#087fa7}
+#customerApp .product-card-actions-v44 .product-card-buy-v44{border:1px solid #087fa7;background:#087fa7;color:#fff}
+#customerApp .product-card-actions-v44 button:disabled{opacity:.5;cursor:not-allowed}
+#customerApp .product-card-actions-v44 button:not(:disabled):hover{filter:brightness(.94)}
+body.dark-mode #customerApp .product-card-actions-v44 .product-card-add-v44{background:#244b60;color:#e0f7ff;border-color:#5bacc9}
+body.dark-mode #customerApp .product-card-actions-v44 .product-card-buy-v44{background:#0795be;border-color:#0795be;color:#fff}
+@media(max-width:400px){#customerApp .product-card-actions-v44{gap:6px}#customerApp .product-card-actions-v44 button{font-size:11px;padding:9px 6px}}
+</style>
+
+<style id="cart-quantity-dialog-style-v45">
+.cart-quantity-overlay-v45{position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(9,33,46,.58)}
+.cart-quantity-dialog-v45{position:relative;box-sizing:border-box;width:min(390px,100%);background:#fff;color:#163e50;border-radius:22px;padding:25px;box-shadow:0 16px 50px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:12px}
+.cart-quantity-dialog-v45 h3{font-size:21px;margin:0}
+.cart-quantity-dialog-v45 p{margin:0;color:#567181}
+.cart-quantity-dialog-v45 label{font-size:13px;font-weight:700}
+.cart-quantity-close-v45{position:absolute;top:13px;right:15px;background:transparent;font-size:26px;color:#547487}
+.cart-quantity-stepper-v45{display:grid;grid-template-columns:44px 1fr 44px;gap:8px}
+.cart-quantity-stepper-v45 button{border:1px solid #c7dfe9;border-radius:12px;background:#eaf5f9;color:#146181;font-size:21px}
+.cart-quantity-stepper-v45 input{width:100%;min-width:0;box-sizing:border-box;text-align:center;border:1px solid #c7dfe9;border-radius:12px;padding:11px;color:#163e50;background:#fff}
+.cart-quantity-stock-v45{color:#6a8492}
+.cart-quantity-actions-v45{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:7px}
+.cart-quantity-actions-v45 button{border-radius:999px;padding:12px 8px;font-weight:700;border:1px solid #087fa7}
+.cart-quantity-actions-v45 button:first-child{background:transparent;color:#087fa7}
+.cart-quantity-actions-v45 button:last-child{background:#087fa7;color:white}
+body.dark-mode .cart-quantity-dialog-v45{background:#15394b;color:#f4fbff}
+body.dark-mode .cart-quantity-dialog-v45 p,body.dark-mode .cart-quantity-dialog-v45 small{color:#b9d2dc}
+body.dark-mode .cart-quantity-stepper-v45 input,body.dark-mode .cart-quantity-stepper-v45 button{background:#244b60;color:#f4fbff;border-color:#557b8e}
+body.dark-mode .cart-quantity-actions-v45 button:first-child{color:#c7edff}
+</style>
