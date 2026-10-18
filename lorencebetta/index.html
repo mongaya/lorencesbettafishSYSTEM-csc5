@@ -3392,7 +3392,7 @@ document.addEventListener("pointerdown",function(e){
  const panel=document.getElementById("shopFilterPanel");
  const search=document.getElementById("searchInput");
  if(!panel||panel.hidden||!search)return;
- if(!panel.contains(e.target)&&e.target!==search)hideShopSearchFilters();
+ if(!panel.closest(".attached-search-filters-v39")?.contains(e.target)&&e.target!==search)hideShopSearchFilters();
 });
 function updateColorFilterLabel(){
  const selected=[...document.querySelectorAll("#shopColorDetails input:checked")].map(e=>e.value);
@@ -11296,7 +11296,7 @@ body.dark-mode #adminApp .chat-compose input{background:#214657!important;color:
 function showGuestFilters(){const p=document.getElementById("guestFilterPanel"),input=document.getElementById("guestSearchInput");if(p)p.hidden=false;if(input)input.setAttribute("aria-expanded","true");}
 function hideGuestFilters(){const p=document.getElementById("guestFilterPanel"),input=document.getElementById("guestSearchInput");if(p)p.hidden=true;if(input)input.setAttribute("aria-expanded","false");}
 function clearGuestFilters(){document.querySelectorAll("#guestAppearanceDetails input,#guestColorDetails input").forEach(el=>el.checked=false);["guestPriceFilter","guestSortFilter"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});const availability=document.getElementById("guestAvailabilityFilter");if(availability)availability.value="available";renderGuestProducts();}
-document.addEventListener("click",function(e){const p=document.getElementById("guestFilterPanel"),input=document.getElementById("guestSearchInput");if(p&&!p.hidden&&!p.contains(e.target)&&e.target!==input)hideGuestFilters();});
+document.addEventListener("click",function(e){const p=document.getElementById("guestFilterPanel"),input=document.getElementById("guestSearchInput");if(p&&!p.hidden&&!p.closest(".attached-search-filters-v39")?.contains(e.target)&&e.target!==input)hideGuestFilters();});
 </script>
 <style id="guest-filter-style-v37">
 #publicStore #guestCategorySelect{display:none!important}
@@ -11327,3 +11327,40 @@ body.dark-mode #publicStore #guestFilterPanel .shop-filter-heading-v24 strong,bo
 body.dark-mode #publicStore #guestFilterPanel .shop-filter-heading-v24 span,body.dark-mode #customerApp #shopFilterPanel .shop-filter-heading-v24 span{color:#b9d2dc}
 @media(max-width:380px){#publicStore #guestFilterPanel .shop-filters-v23,#customerApp #shopFilterPanel .shop-filters-v23{grid-template-columns:1fr}}
 </style>
+
+<style id="attached-search-filters-style-v39">
+.attached-search-filters-v39{width:min(540px,100%);max-width:100%;border:1px solid #d4e3e9;border-radius:15px;background:#fff;overflow:visible;box-shadow:0 3px 14px rgba(19,72,90,.07);margin:10px 0 18px;box-sizing:border-box}
+.attached-search-filters-v39 .attached-search-top-v39{display:flex;align-items:center;gap:8px;padding:9px 12px;min-height:48px;box-sizing:border-box}
+.attached-search-filters-v39 .attached-search-top-v39 .guest-search-row,.attached-search-filters-v39 .attached-search-top-v39 .search-area{flex:1;min-width:0;width:auto!important;max-width:none!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important}
+.attached-search-filters-v39 .guest-search-wrap{width:100%!important;max-width:none!important;margin:0!important;border:0!important;box-shadow:none!important}
+.attached-search-filters-v39 input#guestSearchInput,.attached-search-filters-v39 input#searchInput{width:100%!important;min-width:0!important;border:0!important;outline:none!important;box-shadow:none!important;background:transparent!important;margin:0!important}
+.attached-search-filters-v39 .attached-filter-toggle-v39{flex:none;width:37px;height:37px;border:1px solid #d7e5ea;border-radius:9px;background:#f3f8fa;color:#28556a;display:grid;place-items:center;cursor:pointer;font-size:18px}
+.attached-search-filters-v39 .attached-filter-toggle-v39:hover{background:#e7f2f7}
+.attached-search-filters-v39 .shop-filter-panel-v24{width:100%!important;max-width:none!important;box-sizing:border-box!important;margin:0!important;border:0!important;border-top:1px solid #e2ebef!important;border-radius:0 0 15px 15px!important;box-shadow:none!important;padding:14px 16px!important}
+.attached-search-filters-v39 .shop-filter-panel-v24[hidden]{display:none!important}
+.attached-search-filters-v39 .shop-filter-heading-v24{margin-top:0}
+body.dark-mode .attached-search-filters-v39{background:#15394b;border-color:#365e70}
+body.dark-mode .attached-search-filters-v39 .attached-filter-toggle-v39{background:#244b60;color:#fff;border-color:#365e70}
+@media(max-width:580px){.attached-search-filters-v39{width:100%}.attached-search-filters-v39 .attached-search-top-v39{padding:7px 10px}}
+</style>
+<script id="attached-search-filters-script-v39">
+(function(){
+ function attach(searchId,panelId,show,hide){
+  const input=document.getElementById(searchId),panel=document.getElementById(panelId);
+  if(!input||!panel||panel.closest(".attached-search-filters-v39"))return;
+  const searchRow=searchId==="guestSearchInput"?input.closest(".guest-search-row"):input.closest(".search-area");
+  if(!searchRow)return;
+  const wrapper=document.createElement("div");wrapper.className="attached-search-filters-v39";
+  const top=document.createElement("div");top.className="attached-search-top-v39";
+  searchRow.parentNode.insertBefore(wrapper,searchRow);wrapper.appendChild(top);top.appendChild(searchRow);
+  const toggle=document.createElement("button");toggle.type="button";toggle.className="attached-filter-toggle-v39";toggle.setAttribute("aria-label","Toggle product filters");toggle.setAttribute("aria-controls",panelId);toggle.setAttribute("aria-expanded","false");toggle.innerHTML="&#9881;";
+  top.appendChild(toggle);wrapper.appendChild(panel);
+  function sync(){toggle.setAttribute("aria-expanded",String(!panel.hidden));}
+  toggle.addEventListener("click",function(){if(panel.hidden)show();else hide();sync();});
+  input.addEventListener("focus",sync);input.addEventListener("click",sync);
+  new MutationObserver(sync).observe(panel,{attributes:true,attributeFilter:["hidden"]});sync();
+ }
+ function init(){attach("guestSearchInput","guestFilterPanel",showGuestFilters,hideGuestFilters);attach("searchInput","shopFilterPanel",showShopSearchFilters,hideShopSearchFilters);}
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+})();
+</script>
