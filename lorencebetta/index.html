@@ -3616,9 +3616,21 @@ function openCheckoutAddressPicker(){
             ${Number(address.is_default)===1?'<span class="address-default-v48">Default</span>':""}
             <small>${escapeHTML(address.phone||"")}</small>
             <span class="checkout-address-text-v48">${escapeHTML(addressSnapshot(address))}</span></span>
+            <button type="button" class="checkout-address-edit-v49" onclick="event.preventDefault();event.stopPropagation();goToProfileAddressEditV49(${id})">Edit Address</button>
         </label>`;
     }).join("")||'<p>No saved addresses. Add a new address below.</p>';
     modal.classList.remove("hidden");
+}
+function goToProfileAddressEditV49(addressId){
+    closeCheckoutAddressPicker();
+    showCustomerPage("profile");
+    const addressSection=document.getElementById("savedAddresses");
+    if(addressSection){
+        const heading=addressSection.closest(".card") || addressSection;
+        heading.scrollIntoView({behavior:"smooth",block:"start"});
+    }
+    // The profile page contains the existing Edit action for this address.
+    // Keep the selected checkout address unchanged until the customer chooses another.
 }
 function closeCheckoutAddressPicker(){document.getElementById("checkoutAddressPicker")?.classList.add("hidden");}
 function chooseCheckoutAddress(id){selectedAddressId=Number(id);renderCheckoutAddress();closeCheckoutAddressPicker();}
@@ -11604,4 +11616,12 @@ body.dark-mode .address-empty-v48{background:#183c50;color:#d5edf6;border-color:
 body.dark-mode .address-btn-v48{color:#b5e8fa!important;border-color:#578da3!important}
 body.dark-mode .address-delete-v48{color:#ffd1d9!important;border-color:#aa6a77!important}
 @media(max-width:650px){.address-card-actions-v48{width:100%;justify-content:flex-start}.address-card-v48{padding:14px}}
+</style>
+
+<style id="checkout-address-edit-v49">
+.checkout-address-option-v48{align-items:center;flex-wrap:wrap}
+.checkout-address-edit-v49{margin-left:auto;align-self:center;flex-shrink:0;border:1px solid #a8c9d7;background:transparent;color:#087a9f;border-radius:10px;padding:9px 12px;font-size:13px;font-weight:700;cursor:pointer}
+.checkout-address-edit-v49:hover{background:#e8f6fc}
+body.dark-mode .checkout-address-edit-v49{color:#b5e8fa;border-color:#578da3}
+@media(max-width:550px){.checkout-address-edit-v49{margin-left:28px}}
 </style>
