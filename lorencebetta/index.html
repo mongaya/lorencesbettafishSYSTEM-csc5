@@ -3309,7 +3309,10 @@ function productHTML(product) {
                 <div><span class="price">₱${Number(product.price).toLocaleString(undefined,{minimumFractionDigits:2})}</span></div>
                 <div class="product-bottom">
                     <small>${Number(product.stock)} available</small>
-                    <button class="add-btn" onclick="event.stopPropagation();addToCart('${escapeHTML(product.id)}')" ${Number(product.stock)<=0?"disabled":""}>Add</button>
+                    <div class="product-card-actions-v44">
+                        <button type="button" class="add-btn product-card-add-v44" onclick="event.stopPropagation();addToCart('${escapeHTML(product.id)}')" ${Number(product.stock)<=0?"disabled":""}>Add to Cart</button>
+                        <button type="button" class="product-card-buy-v44" onclick="event.stopPropagation();buyProductNow('${escapeHTML(product.id)}')" ${Number(product.stock)<=0?"disabled":""}>Buy Now</button>
+                    </div>
                 </div>
             </div>
         </div>`;
@@ -3489,6 +3492,30 @@ function addToCart(productId) {
     saveCart(cart);
     updateCartCount();
     showToast(product.name + " added to cart!");
+}
+
+async function buyProductNow(productId) {
+    if (!currentUser) return requireLoginToOrder();
+    const product = products.find(p => String(p.id) === String(productId));
+    if (!product || String(product.status || "available").toLowerCase() !== "available" || Number(product.stock) <= 0) {
+        showToast("This product is currently unavailable.");
+        return;
+    }
+    // Buy Now checks out only the chosen fish; other cart products stay saved.
+    const cart = getCart();
+    cart.forEach(item => { item.selected = false; });
+    let item = cart.find(i => String(i.productId) === String(productId));
+    if (!item) {
+        item = {productId: product.id, quantity: 1, selected: true};
+        cart.push(item);
+    } else {
+        item.selected = true;
+        item.quantity = Math.min(Math.max(1, Number(item.quantity) || 1), Number(product.stock));
+    }
+    saveCart(cart);
+    updateCartCount();
+    try { await openCheckout(); }
+    catch (error) { showToast(error.message || "Unable to open checkout."); }
 }
 
 function updateCartCount() {
@@ -11504,3 +11531,17 @@ body.dark-mode .attached-search-filters-v39 .fish-category-filter-v42 select opt
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
 </script>
+
+<style id="product-card-buy-now-v44">
+#customerApp .product-card .product-bottom{display:flex;flex-direction:column;align-items:stretch;gap:9px;margin-top:12px}
+#customerApp .product-card .product-bottom>small{font-size:12px;color:#617987}
+#customerApp .product-card-actions-v44{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+#customerApp .product-card-actions-v44 button{width:100%;min-width:0;min-height:40px;border-radius:999px;padding:9px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+#customerApp .product-card-actions-v44 .product-card-add-v44{border:1px solid #087fa7;background:#fff;color:#087fa7}
+#customerApp .product-card-actions-v44 .product-card-buy-v44{border:1px solid #087fa7;background:#087fa7;color:#fff}
+#customerApp .product-card-actions-v44 button:disabled{opacity:.5;cursor:not-allowed}
+#customerApp .product-card-actions-v44 button:not(:disabled):hover{filter:brightness(.94)}
+body.dark-mode #customerApp .product-card-actions-v44 .product-card-add-v44{background:#244b60;color:#e0f7ff;border-color:#5bacc9}
+body.dark-mode #customerApp .product-card-actions-v44 .product-card-buy-v44{background:#0795be;border-color:#0795be;color:#fff}
+@media(max-width:400px){#customerApp .product-card-actions-v44{gap:6px}#customerApp .product-card-actions-v44 button{font-size:11px;padding:9px 6px}}
+</style>
