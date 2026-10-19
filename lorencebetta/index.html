@@ -2237,24 +2237,20 @@ body:not(.dark-mode) .hero-kicker{
 
 
             <section id="admin-courier-shipping" class="page">
-<div class="page-title"><h2>Courier Shipping</h2><p>Track J&amp;T Express orders from New to Shipped.</p></div>
-<div class="courier-guide-v50">New Order → Preparing → Ready to Ship → Shipped</div>
+<div class="page-title"><h2>Courier Shipping</h2><p>Print shipping details, hand over packages, and review dispatch history.</p></div>
 <div id="courierCountsV50" class="courier-counts-v50"></div>
 <div class="courier-tabs-v50">
-<button data-courier-tab="new" onclick="setCourierTabV50('new')">New Orders</button>
-<button data-courier-tab="preparing" onclick="setCourierTabV50('preparing')">Preparing</button>
 <button data-courier-tab="ready" onclick="setCourierTabV50('ready')">Ready to Ship</button>
-<button data-courier-tab="shipped" onclick="setCourierTabV50('shipped')">Shipped</button>
-<button data-courier-tab="all" onclick="setCourierTabV50('all')">All</button>
+<button data-courier-tab="shipped" onclick="setCourierTabV50('shipped')">Shipping History</button>
 </div>
 <div class="courier-toolbar-v50">
-<input id="courierSearchV50" type="search" placeholder="Search orders or customers" oninput="renderCourierShippingV50()">
+<input id="courierSearchV50" type="search" placeholder="Search order ID or customer" oninput="renderCourierShippingV50()">
 <span id="courierSelectedV50">0 selected</span>
 <button class="action-btn view-btn" onclick="copyCourierV50()">Copy Selected</button>
 <button class="primary-btn" onclick="printCourierV50()">Print Selected</button>
 </div>
 <div id="courierListV50" class="courier-list-v50"></div>
-<p class="muted">Print and Copy do not change order status. Confirm handover only after the courier receives the parcel.</p>
+<p class="muted">Only paid, packed J&amp;T Express orders appear under Ready to Ship. Printing or copying does not mark them Shipped. New orders and preparation are managed in Orders.</p>
 </section>
 <!-- ADMIN PRODUCTS -->
 
@@ -4184,7 +4180,7 @@ function renderRecentOrders() {
 
 
 /* Courier Shipping V50 - uses the existing authenticated order status API */
-let courierTabV50="new";
+let courierTabV50="ready";
 const courierSelectedIdsV50=new Set();
 function courierOrdersV50(){return orders.filter(o=>o.courier==="J&T Express"&&o.status!=="Cancelled");}
 function courierStageV50(o){
@@ -4215,27 +4211,29 @@ function selectedCourierOrdersV50(){
 function renderCourierShippingV50(){
  const list=document.getElementById("courierListV50"),countsBox=document.getElementById("courierCountsV50");
  if(!list||!countsBox)return;
- const all=courierOrdersV50(),counts={new:0,preparing:0,ready:0,shipped:0};
- all.forEach(o=>counts[courierStageV50(o)]++);
+ const all=courierOrdersV50();
+ const ready=all.filter(o=>o.status==="Ready to Ship"&&o.payment_status==="Paid");
+ const shipped=all.filter(o=>["Shipped","Out for Delivery","Delivered","Order Received"].includes(o.status));
  for(const id of [...courierSelectedIdsV50]){
-  if(!all.some(o=>String(o.id)===id&&o.status==="Ready to Ship"&&o.payment_status==="Paid"))courierSelectedIdsV50.delete(id);
+  if(!ready.some(o=>String(o.id)===id))courierSelectedIdsV50.delete(id);
  }
- countsBox.innerHTML=Object.entries(counts).map(pair=>'<div><strong>'+pair[1]+'</strong><small>'+({new:"New Orders",preparing:"Preparing",ready:"Ready to Ship",shipped:"Shipped"}[pair[0]])+'</small></div>').join("");
+ countsBox.innerHTML='<div><strong>'+ready.length+'</strong><small>Ready to Ship</small></div><div><strong>'+shipped.length+'</strong><small>Shipping History</small></div>';
  document.querySelectorAll("[data-courier-tab]").forEach(btn=>btn.classList.toggle("active",btn.dataset.courierTab===courierTabV50));
  const q=(document.getElementById("courierSearchV50")?.value||"").toLowerCase();
- const shown=all.filter(o=>(courierTabV50==="all"||courierStageV50(o)===courierTabV50)&&(!q||String(o.id).toLowerCase().includes(q)||String(o.customerName||"").toLowerCase().includes(q)));
- document.getElementById("courierSelectedV50").textContent=courierSelectedIdsV50.size+" ready order(s) selected";
- if(!shown.length){list.innerHTML='<div class="courier-empty-v50">No orders in this section yet.</div>';return;}
+ const shown=(courierTabV50==="shipped"?shipped:ready).filter(o=>!q||String(o.id).toLowerCase().includes(q)||String(o.customerName||"").toLowerCase().includes(q));
+ const count=document.getElementById("courierSelectedV50");count.textContent=courierTabV50==="shipped"?"Previously dispatched orders":courierSelectedIdsV50.size+" selected";
+ const toolbar=document.querySelector(".courier-toolbar-v50");
+ if(toolbar)toolbar.classList.toggle("courier-history-v51",courierTabV50==="shipped");
+ if(!shown.length){list.innerHTML='<div class="courier-empty-v50">'+(courierTabV50==="shipped"?"No shipped orders yet.":"No packages ready for courier yet. Prepare and mark orders Ready to Ship in Orders.")+'</div>';return;}
  list.innerHTML=shown.map(o=>{
-  const id=escapeHTML(o.id),stage=courierStageV50(o),next=courierNextV50(o);
-  const ready=o.status==="Ready to Ship"&&o.payment_status==="Paid";
+  const id=escapeHTML(o.id),isReady=courierTabV50==="ready";
   const items=(o.items||[]).map(i=>escapeHTML(i.name)+" × "+Number(i.quantity)).join(", ");
-  const checkbox=ready?'<label><input type="checkbox" '+(courierSelectedIdsV50.has(String(o.id))?"checked":"")+' onchange="selectCourierV50(&quot;'+id+'&quot;,this.checked)"> Select for Print / Copy</label>':"";
-  const action=next?'<button class="primary-btn" onclick="advanceCourierV50(&quot;'+id+'&quot;,&quot;'+escapeHTML(next[0])+'&quot;)">'+escapeHTML(next[1])+'</button>':"";
-  const hint=stage==="new"&&o.payment_status!=="Paid"?'<small>Verify payment in Orders first.</small>':"";
-  return '<article class="courier-order-v50"><div class="courier-head-v50"><div><strong>'+id+'</strong><small>Ordered: '+escapeHTML(courierDateV50(o.date))+'</small></div><span class="courier-badge-v50 stage-'+stage+'">'+({new:"New Order",preparing:"Preparing",ready:"Ready to Ship",shipped:"Shipped"}[stage])+'</span></div>'+
-  '<div class="courier-info-v50"><div><strong>'+escapeHTML(o.customerName||"")+'</strong><p>'+escapeHTML(o.phone||"")+'</p><p>'+escapeHTML(o.address||"")+'</p></div><div><strong>Products</strong><p>'+items+'</p><p>Payment: '+escapeHTML(o.payment_status||"Pending")+'</p></div></div>'+
-  '<div class="courier-actions-v50">'+checkbox+'<button class="action-btn view-btn" onclick="viewOrder(&quot;'+id+'&quot;)">View Order</button>'+action+hint+'</div></article>';
+  const checkbox=isReady?'<label class="courier-check-v51"><input type="checkbox" '+(courierSelectedIdsV50.has(String(o.id))?"checked":"")+' onchange="selectCourierV50(&quot;'+id+'&quot;,this.checked)"> Select</label>':"";
+  const action=isReady?'<button class="primary-btn" onclick="advanceCourierV50(&quot;'+id+'&quot;,&quot;Shipped&quot;)">Mark as Handed to Courier</button>':"";
+  const badge=isReady?"Ready to Ship":escapeHTML(o.status);
+  return '<article class="courier-order-v50 courier-compact-v51"><div class="courier-head-v50">'+checkbox+'<div class="courier-identity-v51"><strong>'+id+'</strong><small>'+escapeHTML(courierDateV50(o.date))+'</small></div><span class="courier-badge-v50 '+(isReady?"stage-ready":"stage-shipped")+'">'+badge+'</span></div>'+
+  '<div class="courier-brief-v51"><div><strong>'+escapeHTML(o.customerName||"")+'</strong><small>'+escapeHTML(o.phone||"")+'</small><small>'+escapeHTML(o.address||"")+'</small></div><div><strong>'+items+'</strong><small>Payment: '+escapeHTML(o.payment_status||"Pending")+'</small></div></div>'+
+  '<div class="courier-actions-v50"><button class="action-btn view-btn" onclick="viewOrder(&quot;'+id+'&quot;)">View Details</button>'+action+'</div></article>';
  }).join("");
 }
 async function advanceCourierV50(id,status){
@@ -11746,4 +11744,20 @@ body.dark-mode .checkout-address-edit-v49{color:#b5e8fa;border-color:#578da3}
 .courier-info-v50{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:15px 0}.courier-info-v50 p{color:#5f7884;margin:6px 0;overflow-wrap:anywhere}.courier-actions-v50{border-top:1px solid #e2edf1;padding-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.courier-actions-v50 label{margin-right:auto;font-size:13px;font-weight:700}.courier-actions-v50 small{color:#8b724c}.courier-empty-v50{text-align:center;padding:30px;border:1px dashed #c0d9e4;border-radius:13px}
 body.dark-mode .courier-counts-v50>div,body.dark-mode .courier-order-v50{background:#183c50;border-color:#47748a}body.dark-mode .courier-guide-v50{background:#183c50;border-color:#47748a;color:#d3eef7}body.dark-mode .courier-counts-v50 strong,body.dark-mode .courier-head-v50 small,body.dark-mode .courier-info-v50 p{color:#d3eef7}body.dark-mode .courier-tabs-v50 button:not(.active){color:#d3eef7}
 @media(max-width:680px){.courier-counts-v50{grid-template-columns:1fr 1fr}.courier-info-v50{grid-template-columns:1fr}}
+</style>
+
+<style id="courier-clean-workspace-v51">
+#admin-courier-shipping .courier-counts-v50{grid-template-columns:repeat(2,minmax(0,1fr));max-width:650px}
+#admin-courier-shipping .courier-tabs-v50{border-bottom:1px solid #d4e7ee;padding-bottom:12px}
+#admin-courier-shipping .courier-toolbar-v50{background:rgba(93,174,201,.08);padding:12px;border-radius:12px}
+#admin-courier-shipping .courier-toolbar-v50.courier-history-v51>button,#admin-courier-shipping .courier-toolbar-v50.courier-history-v51>span{display:none}
+#admin-courier-shipping .courier-compact-v51{padding:15px}
+#admin-courier-shipping .courier-head-v50{align-items:center;justify-content:flex-start}
+#admin-courier-shipping .courier-check-v51{display:flex;align-items:center;gap:6px;margin-right:6px;font-size:13px;font-weight:700}
+#admin-courier-shipping .courier-identity-v51{flex:1;min-width:120px}
+#admin-courier-shipping .courier-brief-v51{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin:12px 0}
+#admin-courier-shipping .courier-brief-v51 strong{display:block;font-size:14px;overflow-wrap:anywhere}
+#admin-courier-shipping .courier-brief-v51 small{display:block;color:#667f8d;margin-top:5px;overflow-wrap:anywhere}
+#admin-courier-shipping .courier-actions-v50{justify-content:flex-end}
+@media(max-width:680px){#admin-courier-shipping .courier-brief-v51{grid-template-columns:1fr}#admin-courier-shipping .courier-toolbar-v50 input{flex-basis:100%}}
 </style>
