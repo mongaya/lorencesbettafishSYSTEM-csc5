@@ -16,7 +16,7 @@ $flow=$flows[$o["courier"]]??null;if(!$flow)respond(false,"Unsupported courier."
 // Payment-first orders become Confirmed immediately after verification.
  // The existing courier-specific fulfillment flow continues from Confirmed.
 $current=array_search($o["status"],$flow,true);$next=array_search($status,$flow,true);
-if($current===false||$next===false||$next!==$current+1)respond(false,"Status must follow the order process one step at a time.",[],409);
+if($current===false||$next===false||!($next===$current+1||($o["courier"]==="J&T Express"&&$status==="Ready to Ship"&&in_array($o["status"],["Confirmed","Preparing"],true))))respond(false,"Status must follow the order process one step at a time.",[],409);
 if($o["status"]==="Cancelled")respond(false,"Cancelled orders cannot be processed.",[],409);
 if($o["status"]==="Awaiting Payment")respond(false,"Use Verify Payment after the customer submits payment.",[],409);
 if($o["payment_status"]!=="Paid"&&$next>=array_search("Confirmed",$flow,true))respond(false,"Payment must be verified before fulfillment can continue.",[],409);
