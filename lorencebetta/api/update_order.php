@@ -4,6 +4,9 @@ require_once __DIR__ . "/auth.php";
 require_admin_session($conn);
 require_once "db.php";require_once "stock_reservations.php";ensure_order_flow_columns($conn);
 $data=json_input();$orderId=trim($data["orderId"]??"");$status=trim($data["status"]??"");
+$trackingNumber=trim((string)($data["trackingNumber"]??""));
+$trackingUrl=trim((string)($data["trackingUrl"]??""));
+if($trackingUrl!==""&&(!filter_var($trackingUrl,FILTER_VALIDATE_URL)||!in_array(strtolower((string)parse_url($trackingUrl,PHP_URL_SCHEME)),["https","http"],true)))respond(false,"Enter a valid http(s) tracking link.",[],400);
 if($orderId===""||$status==="")respond(false,"Order and next status are required.",[],400);
 $q=$conn->prepare("SELECT id,status,courier,payment_status,tracking_url,tracking_number FROM orders WHERE order_code=? LIMIT 1");
 $q->bind_param("s",$orderId);$q->execute();$o=stmt_fetch_assoc_compat($q);if(!$o)respond(false,"Order not found.",[],404);
@@ -23,6 +26,15 @@ if($o["payment_status"]!=="Paid"&&$next>=array_search("Confirmed",$flow,true))re
 $hasTracking=trim((string)$o["tracking_url"])!==""||trim((string)$o["tracking_number"])!=="";
 if($o["courier"]==="Lalamove"&&$status==="Lalamove Booked"&&!$hasTracking)respond(false,"Add a tracking number or tracking link before marking the Lalamove booking complete.",[],409);
 if($o["courier"]==="J&T Express"&&$status==="Out for Delivery"&&!$hasTracking)respond(false,"Add a J&T tracking number or tracking link before marking the order Out for Delivery.",[],409);
-$stmt=$conn->prepare("UPDATE orders SET status=?,updated_at=NOW() WHERE order_code=?");$stmt->bind_param("ss",$status,$orderId);$stmt->execute();
+if($o["courier"]==="J&T Express"&&$status==="Shipped"){
+ $number=$trackingNumber!==""?$trackingNumber:trim((string)$o["tracking_number"]);
+ $url=$trackingUrl!==""?$trackingUrl:trim((string)$o["tracking_url"]);
+ if($number===""&&$url==="")respond(false,"Add a tracking number or link before handing the parcel to the courier.",[],409);
+ $stmt=$conn->prepare("UPDATE orders SET status=?,tracking_number=?,tracking_url=?,updated_at=NOW() WHERE order_code=?");
+ $stmt->bind_param("ssss",$status,$number,$url,$orderId);
+}else{
+ $stmt=$conn->prepare("UPDATE orders SET status=?,updated_at=NOW() WHERE order_code=?");$stmt->bind_param("ss",$status,$orderId);
+}
+$stmt->execute();
 log_order_status($conn,(int)$o["id"],$status);respond(true,"Order moved to ".$status.".");
 ?>
