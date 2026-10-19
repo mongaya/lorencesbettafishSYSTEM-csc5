@@ -32,7 +32,16 @@ async function order(reference,receiptVariant=0){
   assert.equal(Number(sql("SELECT stock FROM products WHERE product_code='P001'")),before,'Stock must not deduct before approval');
   await call('admin','mark_payment.php',{json:{orderId:one.order_id}});
   customer=await call('buyer','orders.php');found=customer.orders.find(o=>o.id===one.order_id);
-  assert.equal(found.status,'Confirmed');assert.equal(found.payment_status,'Paid');
+  assert.equal(found.status,'Ready to Ship');assert.equal(found.payment_status,'Paid');
+  let trackingRequired=false;
+  try{await call('admin','update_order.php',{json:{orderId:one.order_id,status:'Shipped'}})}catch(e){trackingRequired=String(e.message).includes('tracking number or link')}
+  assert.ok(trackingRequired,'J&T handover must require tracking');
+  await call('admin','update_order.php',{json:{orderId:one.order_id,status:'Shipped',trackingNumber:'JT-TEST-123'}});
+  customer=await call('buyer','orders.php');found=customer.orders.find(o=>o.id===one.order_id);
+  assert.equal(found.status,'Shipped');assert.equal(found.tracking_number,'JT-TEST-123');
+  await call('buyer','receive_order.php',{json:{username:'testbuyer',orderId:one.order_id}});
+  customer=await call('buyer','orders.php');found=customer.orders.find(o=>o.id===one.order_id);
+  assert.equal(found.status,'Order Received');
   assert.equal(Number(sql("SELECT stock FROM products WHERE product_code='P001'")),before-1);
   // Duplicate reference must identify the existing order to its owner, never create another order.
   const countBefore=Number(sql("SELECT COUNT(*) FROM orders WHERE payment_reference='TEST-APPROVE-001'"));
