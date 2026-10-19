@@ -2077,7 +2077,7 @@ body:not(.dark-mode) .hero-kicker{
                 <span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M4 6.5 12 3l8 3.5v11L12 21l-8-3.5zM4 6.5l8 3.5 8-3.5M12 10v11"/></svg></span> Orders
             </button>
 
-            <button class="nav-btn" onclick="showAdminPage('courier-shipping',this)"><span class="nav-icon">🚚</span> Courier Shipping</button>
+            <button class="nav-btn" onclick="showAdminPage('courier-shipping',this)"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></span> Shipping Management</button>
 
             <button
                 class="nav-btn"
@@ -2198,10 +2198,10 @@ body:not(.dark-mode) .hero-kicker{
 
                 <div class="page-title">
 
-                    <h2> Order Management</h2>
+                    <h2>Orders &amp; Payments</h2>
 
                     <p>
-                        View and update customer orders.
+                        Review customer orders, confirm shipping fees, and verify payments. Manage J&amp;T dispatch in Shipping Management.
                     </p>
 
                 </div>
@@ -2237,19 +2237,19 @@ body:not(.dark-mode) .hero-kicker{
 
 
             <section id="admin-courier-shipping" class="page courier-v53">
-<div class="page-title"><h2>🚚 Courier Shipping</h2><p>Manage shipping, print waybills, and update tracking details.</p></div>
+<div class="page-title"><h2><svg class="ui-icon" viewBox="0 0 24 24"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg> Shipping Management</h2><p>Manage shipping, print waybills, and update tracking details.</p></div>
 <div class="courier-layout-v53">
 <div class="courier-main-v53">
 <div id="courierCountsV50" class="courier-counts-v50 courier-stats-v53"></div>
 <div class="courier-board-v53">
-<div class="courier-board-head-v53"><div><h3 id="courierBoardTitleV53">To Ship</h3><p id="courierBoardHintV53">Add tracking details and hand parcels to the courier.</p></div><input id="courierSearchV50" type="search" placeholder="⌕ Search orders..." oninput="renderCourierShippingV50()"></div>
+<div class="courier-board-head-v53"><div><h3 id="courierBoardTitleV53">To Ship</h3><p id="courierBoardHintV53">Add tracking details and hand parcels to the courier.</p></div><input id="courierSearchV50" type="search" placeholder="Search orders..." oninput="renderCourierShippingV50()"></div>
 <div id="courierListV50" class="courier-list-v50"></div>
-<div class="courier-toolbar-v50 courier-footer-v53"><span id="courierSelectedV50">0 selected</span><button class="action-btn view-btn" onclick="copyCourierV50()">▢ Copy Selected</button><button class="primary-btn" onclick="printCourierV50()">▣ Print Selected</button></div>
+<div class="courier-toolbar-v50 courier-footer-v53"><span id="courierSelectedV50">0 selected</span><button class="action-btn view-btn" onclick="copyCourierV50()">Copy Selected</button><button class="primary-btn" onclick="printCourierV50()">Print Selected</button></div>
 </div>
 </div>
-<aside class="courier-side-v53" id="courierSideV53"><div class="courier-side-placeholder-v53"><span>📦</span><h3>Order Details</h3><p>Select an order to view customer, items, payment, and tracking details.</p></div></aside>
+<aside class="courier-side-v53" id="courierSideV53"><div class="courier-side-placeholder-v53"><span><svg class="ui-icon" viewBox="0 0 24 24"><path d="M4 6.5 12 3l8 3.5v11L12 21l-8-3.5zM4 6.5l8 3.5 8-3.5M12 10v11"/></svg></span><h3>Shipment Details</h3><p>Select an order to view customer, items, payment, and tracking details.</p></div></aside>
 </div>
-<p class="muted courier-footnote-v53">J&amp;T Express only. Orders are verified in Orders; courier handover is managed here. Printing does not change the status.</p>
+<p class="muted courier-footnote-v53">J&amp;T Express only. Verify payments in Orders &amp; Payments; manage shipping here. Printing does not change the status.</p>
 </section>
 <!-- ADMIN PRODUCTS -->
 
@@ -4219,11 +4219,11 @@ function courierDetailsV53(o){
  const id=escapeHTML(o.id),ready=o.status==="Ready to Ship",items=(o.items||[]).map(i=>'<div class="courier-item-v53"><strong>'+escapeHTML(i.name)+'</strong><span>Qty: '+Number(i.quantity)+'</span></div>').join("");
  const delivered=["Shipped","Out for Delivery","Delivered"].includes(o.status),completed=o.status==="Order Received";
  side.innerHTML='<div class="courier-side-title-v53"><h3>Order Details</h3><span>#'+id+'</span></div>'+
- '<div class="courier-side-section-v53"><h4>♙ Customer Information</h4><div class="courier-info-v53"><div><small>Name</small><strong>'+escapeHTML(o.customerName||"")+'</strong></div><div><small>Phone</small><strong>'+escapeHTML(o.phone||"")+'</strong></div><div class="courier-wide-v53"><small>Address</small><strong>'+escapeHTML(o.address||"")+'</strong></div></div></div>'+
- '<div class="courier-side-section-v53"><h4>▤ Order Items</h4>'+items+'<div class="courier-total-v53"><span>Order Total</span><strong>₱'+Number(o.total||0).toFixed(2)+'</strong></div></div>'+
- '<div class="courier-side-section-v53"><h4>▣ Payment Information</h4><div class="courier-info-v53"><div><small>Payment Method</small><strong>'+escapeHTML(o.payment||"")+'</strong></div><div><small>Payment Status</small><strong>'+escapeHTML(o.payment_status||"")+'</strong></div></div><div class="courier-paid-v53">✓ Payment Verified</div></div>'+
- '<div class="courier-side-section-v53"><h4>🚚 Shipping Details</h4><small>J&T Express · '+(ready?"To Ship":completed?"Completed":"To Receive")+'</small>'+
- (ready?'<label class="courier-field-v53">Tracking Number<input id="courierTrackingNumberV53" maxlength="120" placeholder="Enter J&T tracking number" value="'+escapeHTML(o.tracking_number||"")+'"></label><label class="courier-field-v53">Tracking Link (optional)<input id="courierTrackingUrlV53" type="url" placeholder="https://..." value="'+escapeHTML(o.tracking_url||"")+'"></label><button class="primary-btn courier-ship-btn-v53" onclick="courierHandoverV53(&quot;'+id+'&quot;)">🚚 Mark as Handed to Courier</button><p class="courier-help-v53">After confirmation, the customer sees To Receive and tracking details.</p>':
+ '<div class="courier-side-section-v53"><h4>Customer Information</h4><div class="courier-info-v53"><div><small>Name</small><strong>'+escapeHTML(o.customerName||"")+'</strong></div><div><small>Phone</small><strong>'+escapeHTML(o.phone||"")+'</strong></div><div class="courier-wide-v53"><small>Address</small><strong>'+escapeHTML(o.address||"")+'</strong></div></div></div>'+
+ '<div class="courier-side-section-v53"><h4>Order Items</h4>'+items+'<div class="courier-total-v53"><span>Order Total</span><strong>₱'+Number(o.total||0).toFixed(2)+'</strong></div></div>'+
+ '<div class="courier-side-section-v53"><h4>Payment Information</h4><div class="courier-info-v53"><div><small>Payment Method</small><strong>'+escapeHTML(o.payment||"")+'</strong></div><div><small>Payment Status</small><strong>'+escapeHTML(o.payment_status||"")+'</strong></div></div><div class="courier-paid-v53">Payment Verified</div></div>'+
+ '<div class="courier-side-section-v53"><h4>Shipping Details</h4><small>J&T Express · '+(ready?"To Ship":completed?"Completed":"To Receive")+'</small>'+
+ (ready?'<label class="courier-field-v53">Tracking Number<input id="courierTrackingNumberV53" maxlength="120" placeholder="Enter J&T tracking number" value="'+escapeHTML(o.tracking_number||"")+'"></label><label class="courier-field-v53">Tracking Link (optional)<input id="courierTrackingUrlV53" type="url" placeholder="https://..." value="'+escapeHTML(o.tracking_url||"")+'"></label><button class="primary-btn courier-ship-btn-v53" onclick="courierHandoverV53(&quot;'+id+'&quot;)">Mark as Handed to Courier</button><p class="courier-help-v53">After confirmation, the customer sees To Receive and tracking details.</p>':
  '<div class="courier-tracking-read-v53"><small>Tracking Number</small><strong>'+escapeHTML(o.tracking_number||"Not provided")+'</strong>'+(o.tracking_url&&/^https?:\/\//i.test(o.tracking_url)?'<a href="'+escapeHTML(o.tracking_url)+'" target="_blank" rel="noopener noreferrer">Track Package ↗</a>':"")+'</div>')+'</div>';
 }
 async function courierHandoverV53(id){
@@ -4238,7 +4238,7 @@ function renderCourierShippingV50(){
  const list=document.getElementById("courierListV50"),countsBox=document.getElementById("courierCountsV50");if(!list||!countsBox)return;
  const all=courierOrdersV50(),ready=all.filter(o=>o.status==="Ready to Ship"&&o.payment_status==="Paid"),shipped=all.filter(o=>["Shipped","Out for Delivery","Delivered","Order Received"].includes(o.status));
  for(const id of [...courierSelectedIdsV50])if(!ready.some(o=>String(o.id)===id))courierSelectedIdsV50.delete(id);
- countsBox.innerHTML='<button class="courier-stat-v53 '+(courierTabV50==="ready"?"active":"")+'" onclick="setCourierTabV50(&quot;ready&quot;)"><span>📦</span><div><strong>To Ship <em>'+ready.length+'</em></strong><small>Print details and hand over to courier</small></div></button><button class="courier-stat-v53 '+(courierTabV50==="shipped"?"active":"")+'" onclick="setCourierTabV50(&quot;shipped&quot;)"><span>🚚</span><div><strong>To Receive / Shipped <em>'+shipped.length+'</em></strong><small>Tracking and delivery history</small></div></button>';
+ countsBox.innerHTML='<button class="courier-stat-v53 '+(courierTabV50==="ready"?"active":"")+'" onclick="setCourierTabV50(&quot;ready&quot;)"><span><svg class="ui-icon" viewBox="0 0 24 24"><path d="M4 6.5 12 3l8 3.5v11L12 21l-8-3.5zM4 6.5l8 3.5 8-3.5M12 10v11"/></svg></span><div><strong>To Ship <em>'+ready.length+'</em></strong><small>Print details and hand over to courier</small></div></button><button class="courier-stat-v53 '+(courierTabV50==="shipped"?"active":"")+'" onclick="setCourierTabV50(&quot;shipped&quot;)"><span><svg class="ui-icon" viewBox="0 0 24 24"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></span><div><strong>To Receive / Shipped <em>'+shipped.length+'</em></strong><small>Tracking and delivery history</small></div></button>';
  const history=courierTabV50==="shipped",q=(document.getElementById("courierSearchV50")?.value||"").toLowerCase(),shown=(history?shipped:ready).filter(o=>!q||String(o.id).toLowerCase().includes(q)||String(o.customerName||"").toLowerCase().includes(q));
  document.getElementById("courierBoardTitleV53").textContent=history?"To Receive / Shipping History":"To Ship";
  document.getElementById("courierBoardHintV53").textContent=history?"Packages handed to courier, with tracking details.":"Orders ready for shipping. Add tracking details and confirm courier handover.";
@@ -5405,7 +5405,7 @@ viewOrder=function(orderId){
  _verifiedViewOrder(orderId);
  const o=orders.find(x=>String(x.id)===String(orderId)),details=document.getElementById("orderDetails");if(!o||!details)return;
  details.querySelectorAll(".next-step-box").forEach(x=>x.remove());
- const next=o.courier==="J&T Express"&&["Confirmed","Preparing"].includes(o.status)?"Ready to Ship":nextSmartStatus(o),box=document.createElement("div");box.className="next-step-box";
+ const next=o.courier==="J&T Express"?null:nextSmartStatus(o),box=document.createElement("div");box.className="next-step-box";
  let body="";
  if(o.status==="Pending Shipping Fee")body=`<h4>Next Step: Set Shipping Fee</h4><p>Customer payment stays locked until the delivery fee is confirmed.</p>`;
  else if(o.status==="Awaiting Payment"&&o.payment_status==="Payment Submitted")body=`<h4>Action Required: Verify Payment</h4><p>Check the reference number and uploaded receipt before confirming.</p><button class="primary-btn" onclick="markPaymentPaid('${escapeHTML(o.id)}')">Verify Payment</button>`;
@@ -5414,7 +5414,7 @@ viewOrder=function(orderId){
  else if(["Order Received","Picked Up","Cancelled"].includes(o.status))body=`<h4>${escapeHTML(o.status)}</h4><p>No further order-status action is required.</p>`;
  else if(o.courier==="Lalamove"&&next==="Lalamove Booked"&&!o.tracking_url)body=`<h4>Next Step: Add Lalamove Tracking</h4><p>Save the Lalamove tracking link before marking the booking complete.</p>`;
  else if(o.courier==="J&T Express"&&["Shipped","Out for Delivery"].includes(o.status))body=`<h4>To Receive</h4><p>Package handed to courier. Waiting for delivery and customer confirmation.</p>`;
- else if(o.courier==="J&T Express"&&o.status==="Ready to Ship")body=`<h4>To Ship</h4><p>Use Courier Shipping to print the shipping label and mark handover.</p>`;
+ else if(o.courier==="J&T Express"&&o.payment_status==="Paid")body=`<h4>Payment Verified</h4><p>Shipping and tracking are managed in Shipping Management.</p>`;
  else if(next)body=`<h4>Next Step: ${escapeHTML(next)}</h4><p>The system follows the order process one step at a time and does not allow backward status changes.</p><button class="primary-btn" onclick="updateOrderStatus('${escapeHTML(o.id)}','${escapeHTML(next)}')">${o.courier==="J&T Express"&&next==="Ready to Ship"?"Move to To Ship":"Mark as "+escapeHTML(next)}</button>`;
  box.innerHTML=body;details.prepend(box);
 };
@@ -5430,7 +5430,7 @@ renderAdminOrders=function(){
  const tbody=document.getElementById("adminOrdersTable"); if(!tbody)return;
  if(!orders.length){tbody.innerHTML=`<tr><td colspan="10" style="text-align:center;padding:35px">No orders yet.</td></tr>`;return}
  tbody.innerHTML=orders.map(o=>{
-   const next=o.courier==="J&T Express"&&["Confirmed","Preparing"].includes(o.status)?"Ready to Ship":nextSmartStatus(o);
+   const next=o.courier==="J&T Express"?null:nextSmartStatus(o);
    let action="";
    if(o.status==="Pending Shipping Fee" && o.payment_status!=="Payment Submitted") action=`<strong>Set Shipping Fee</strong><div class="admin-manage-hint">Open Manage to continue</div>`;
    else if(o.payment_status==="Payment Submitted") action=`<strong>Verify Payment</strong><div class="admin-manage-hint">Payment proof submitted</div>`;
@@ -5439,7 +5439,7 @@ renderAdminOrders=function(){
    else if(o.status==="Delivered") action=`<strong>Delivered</strong><div class="admin-manage-hint">Waiting for Order Received</div>`;
    else if(["Order Received","Picked Up","Cancelled"].includes(o.status)) action=`<strong>${escapeHTML(o.status)}</strong><div class="admin-manage-hint">No next status</div>`;
    else if(o.courier==="J&T Express"&&["Shipped","Out for Delivery"].includes(o.status)) action=`<strong>To Receive</strong><div class="admin-manage-hint">With courier</div>`;
-   else if(o.courier==="J&T Express"&&o.status==="Ready to Ship") action=`<strong>To Ship</strong><div class="admin-manage-hint">Open Courier Shipping</div>`;
+   else if(o.courier==="J&T Express"&&o.payment_status==="Paid") action=`<strong>Payment Verified</strong><div class="admin-manage-hint">Manage in Shipping Management</div>`;
    else if(next) action=`<strong>Next: ${escapeHTML(next)}</strong><div class="admin-manage-hint">Open Manage to continue</div>`;
    return `<tr>
     <td><strong>${escapeHTML(o.id)}</strong></td>
@@ -5451,7 +5451,7 @@ renderAdminOrders=function(){
     <td>${escapeHTML(o.courier||"")}</td>
     <td>${escapeHTML(o.payment_status||"")}</td>
     <td>${action}</td>
-    <td><button class="action-btn view-btn" onclick="viewOrder('${escapeHTML(o.id)}')">Manage</button></td>
+    <td><button class="action-btn view-btn" onclick="viewOrder('${escapeHTML(o.id)}')">${o.courier==="J&T Express"?"Review Payment":"Manage"}</button></td>
    </tr>`;
  }).join("");
 };
@@ -11810,4 +11810,17 @@ body.dark-mode .courier-counts-v50>div,body.dark-mode .courier-order-v50{backgro
 .courier-side-section-v53{padding:16px 20px;border-bottom:1px solid #e4eff4}.courier-side-section-v53 h4{margin:0 0 14px;font-size:15px}.courier-info-v53{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.courier-info-v53 small,.courier-tracking-read-v53 small{display:block;color:#7790a1;font-size:11px;margin-bottom:5px}.courier-info-v53 strong{font-size:13px;overflow-wrap:anywhere}.courier-wide-v53{grid-column:1/-1}.courier-item-v53{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #edf3f7;font-size:13px}.courier-item-v53 span{color:#69869a}.courier-total-v53{display:flex;justify-content:space-between;padding-top:14px;font-size:15px}.courier-paid-v53{background:#e5f8ec;color:#16834c;border-radius:8px;padding:12px;margin-top:12px;font-weight:700;font-size:13px}
 .courier-field-v53{display:block;font-size:12px;font-weight:700;margin-top:13px}.courier-field-v53 input{display:block;width:100%;margin-top:7px;padding:11px;border:1px solid #c8dce8;border-radius:8px;box-sizing:border-box}.courier-ship-btn-v53{width:100%;margin-top:15px;padding:13px}.courier-help-v53{font-size:11px;color:#6d8798;text-align:center;line-height:1.5}.courier-tracking-read-v53 strong{display:block;overflow-wrap:anywhere}.courier-tracking-read-v53 a{display:inline-block;margin-top:9px}.courier-side-placeholder-v53{text-align:center;padding:75px 24px;color:#7a90a0}.courier-side-placeholder-v53 span{font-size:38px}.courier-footnote-v53{margin-top:14px}
 @media(max-width:1120px){.courier-layout-v53{grid-template-columns:1fr}.courier-side-v53{position:static;max-height:none}}@media(max-width:620px){.courier-v53 .courier-stats-v53{grid-template-columns:1fr}.courier-board-head-v53{flex-wrap:wrap}.courier-board-head-v53 input{max-width:none;width:100%}}
+</style>
+<style id="shipping-management-polish-v55">
+#admin-courier-shipping .page-title h2{display:flex;align-items:center;gap:12px}
+#admin-courier-shipping .page-title h2 svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#admin-courier-shipping .courier-stat-v53>span{display:flex;align-items:center;justify-content:center;background:#e8f5fb;border-radius:10px;min-width:44px;height:44px}
+#admin-courier-shipping .courier-stat-v53>span svg{width:23px;height:23px;fill:none;stroke:#1388b7;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#admin-courier-shipping .courier-side-placeholder-v53>span{display:inline-flex;background:#eaf5fa;padding:16px;border-radius:50%}
+#admin-courier-shipping .courier-side-placeholder-v53>span svg{width:30px;height:30px;fill:none;stroke:#1388b7;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#admin-courier-shipping .courier-board-v53{width:100%}
+#admin-courier-shipping .courier-layout-v53{grid-template-columns:minmax(0,1.7fr) minmax(330px,1fr)}
+#admin-courier-shipping .courier-table-v53{min-width:650px}
+#admin-courier-shipping .courier-table-v53 .primary-btn{min-width:105px}
+@media(max-width:1250px){#admin-courier-shipping .courier-layout-v53{grid-template-columns:1fr}#admin-courier-shipping .courier-side-v53{position:static;max-height:none}}
 </style>
