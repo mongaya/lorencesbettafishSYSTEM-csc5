@@ -2077,6 +2077,8 @@ body:not(.dark-mode) .hero-kicker{
                 <span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M4 6.5 12 3l8 3.5v11L12 21l-8-3.5zM4 6.5l8 3.5 8-3.5M12 10v11"/></svg></span> Orders
             </button>
 
+            <button class="nav-btn" onclick="showAdminPage('courier-shipping',this)"><span class="nav-icon">🚚</span> Courier Shipping</button>
+
             <button
                 class="nav-btn"
                 onclick="showAdminPage('products',this)"
@@ -2234,7 +2236,27 @@ body:not(.dark-mode) .hero-kicker{
             </section>
 
 
-            <!-- ADMIN PRODUCTS -->
+            <section id="admin-courier-shipping" class="page">
+<div class="page-title"><h2>Courier Shipping</h2><p>Track J&amp;T Express orders from New to Shipped.</p></div>
+<div class="courier-guide-v50">New Order → Preparing → Ready to Ship → Shipped</div>
+<div id="courierCountsV50" class="courier-counts-v50"></div>
+<div class="courier-tabs-v50">
+<button data-courier-tab="new" onclick="setCourierTabV50('new')">New Orders</button>
+<button data-courier-tab="preparing" onclick="setCourierTabV50('preparing')">Preparing</button>
+<button data-courier-tab="ready" onclick="setCourierTabV50('ready')">Ready to Ship</button>
+<button data-courier-tab="shipped" onclick="setCourierTabV50('shipped')">Shipped</button>
+<button data-courier-tab="all" onclick="setCourierTabV50('all')">All</button>
+</div>
+<div class="courier-toolbar-v50">
+<input id="courierSearchV50" type="search" placeholder="Search orders or customers" oninput="renderCourierShippingV50()">
+<span id="courierSelectedV50">0 selected</span>
+<button class="action-btn view-btn" onclick="copyCourierV50()">Copy Selected</button>
+<button class="primary-btn" onclick="printCourierV50()">Print Selected</button>
+</div>
+<div id="courierListV50" class="courier-list-v50"></div>
+<p class="muted">Print and Copy do not change order status. Confirm handover only after the courier receives the parcel.</p>
+</section>
+<!-- ADMIN PRODUCTS -->
 
             <section id="admin-products" class="page">
 
@@ -2915,6 +2937,7 @@ async function openAdmin() {
 
     renderAdminDashboard();
     renderAdminOrders();
+    renderCourierShippingV50();
     renderAdminProducts();
     renderAdminCategoryManager();
     renderPaymentSettings();
@@ -4030,6 +4053,7 @@ function showAdminPage(page, button) {
 
     if (page === "dashboard") renderAdminDashboard();
     if (page === "orders") renderAdminOrders();
+    if (page === "courier-shipping") renderCourierShippingV50();
     if (page === "products") {
         renderAdminProducts();
         renderAdminCategoryManager();
@@ -4158,6 +4182,91 @@ function renderRecentOrders() {
     `).join("");
 }
 
+
+/* Courier Shipping V50 - uses the existing authenticated order status API */
+let courierTabV50="new";
+const courierSelectedIdsV50=new Set();
+function courierOrdersV50(){return orders.filter(o=>o.courier==="J&T Express"&&o.status!=="Cancelled");}
+function courierStageV50(o){
+ if(["Pending Shipping Fee","Awaiting Payment","Pending","Confirmed"].includes(o.status))return "new";
+ if(o.status==="Preparing")return "preparing";
+ if(o.status==="Ready to Ship")return "ready";
+ return "shipped";
+}
+function courierDateV50(value){
+ const d=new Date(String(value||"").replace(" ","T"));
+ return Number.isNaN(d.getTime())?String(value||"Date unavailable"):d.toLocaleString("en-PH",{dateStyle:"medium",timeStyle:"short"});
+}
+function courierNextV50(o){
+ if(o.payment_status!=="Paid")return null;
+ if(o.status==="Confirmed")return ["Preparing","Start Preparing"];
+ if(o.status==="Preparing")return ["Ready to Ship","Mark Ready to Ship"];
+ if(o.status==="Ready to Ship")return ["Shipped","Mark as Handed to Courier"];
+ return null;
+}
+function setCourierTabV50(tab){courierTabV50=tab;renderCourierShippingV50();}
+function selectCourierV50(id,checked){
+ if(checked)courierSelectedIdsV50.add(String(id));else courierSelectedIdsV50.delete(String(id));
+ renderCourierShippingV50();
+}
+function selectedCourierOrdersV50(){
+ return courierOrdersV50().filter(o=>o.status==="Ready to Ship"&&o.payment_status==="Paid"&&courierSelectedIdsV50.has(String(o.id)));
+}
+function renderCourierShippingV50(){
+ const list=document.getElementById("courierListV50"),countsBox=document.getElementById("courierCountsV50");
+ if(!list||!countsBox)return;
+ const all=courierOrdersV50(),counts={new:0,preparing:0,ready:0,shipped:0};
+ all.forEach(o=>counts[courierStageV50(o)]++);
+ for(const id of [...courierSelectedIdsV50]){
+  if(!all.some(o=>String(o.id)===id&&o.status==="Ready to Ship"&&o.payment_status==="Paid"))courierSelectedIdsV50.delete(id);
+ }
+ countsBox.innerHTML=Object.entries(counts).map(pair=>'<div><strong>'+pair[1]+'</strong><small>'+({new:"New Orders",preparing:"Preparing",ready:"Ready to Ship",shipped:"Shipped"}[pair[0]])+'</small></div>').join("");
+ document.querySelectorAll("[data-courier-tab]").forEach(btn=>btn.classList.toggle("active",btn.dataset.courierTab===courierTabV50));
+ const q=(document.getElementById("courierSearchV50")?.value||"").toLowerCase();
+ const shown=all.filter(o=>(courierTabV50==="all"||courierStageV50(o)===courierTabV50)&&(!q||String(o.id).toLowerCase().includes(q)||String(o.customerName||"").toLowerCase().includes(q)));
+ document.getElementById("courierSelectedV50").textContent=courierSelectedIdsV50.size+" ready order(s) selected";
+ if(!shown.length){list.innerHTML='<div class="courier-empty-v50">No orders in this section yet.</div>';return;}
+ list.innerHTML=shown.map(o=>{
+  const id=escapeHTML(o.id),stage=courierStageV50(o),next=courierNextV50(o);
+  const ready=o.status==="Ready to Ship"&&o.payment_status==="Paid";
+  const items=(o.items||[]).map(i=>escapeHTML(i.name)+" × "+Number(i.quantity)).join(", ");
+  const checkbox=ready?'<label><input type="checkbox" '+(courierSelectedIdsV50.has(String(o.id))?"checked":"")+' onchange="selectCourierV50(&quot;'+id+'&quot;,this.checked)"> Select for Print / Copy</label>':"";
+  const action=next?'<button class="primary-btn" onclick="advanceCourierV50(&quot;'+id+'&quot;,&quot;'+escapeHTML(next[0])+'&quot;)">'+escapeHTML(next[1])+'</button>':"";
+  const hint=stage==="new"&&o.payment_status!=="Paid"?'<small>Verify payment in Orders first.</small>':"";
+  return '<article class="courier-order-v50"><div class="courier-head-v50"><div><strong>'+id+'</strong><small>Ordered: '+escapeHTML(courierDateV50(o.date))+'</small></div><span class="courier-badge-v50 stage-'+stage+'">'+({new:"New Order",preparing:"Preparing",ready:"Ready to Ship",shipped:"Shipped"}[stage])+'</span></div>'+
+  '<div class="courier-info-v50"><div><strong>'+escapeHTML(o.customerName||"")+'</strong><p>'+escapeHTML(o.phone||"")+'</p><p>'+escapeHTML(o.address||"")+'</p></div><div><strong>Products</strong><p>'+items+'</p><p>Payment: '+escapeHTML(o.payment_status||"Pending")+'</p></div></div>'+
+  '<div class="courier-actions-v50">'+checkbox+'<button class="action-btn view-btn" onclick="viewOrder(&quot;'+id+'&quot;)">View Order</button>'+action+hint+'</div></article>';
+ }).join("");
+}
+async function advanceCourierV50(id,status){
+ const o=courierOrdersV50().find(x=>String(x.id)===String(id)),next=o&&courierNextV50(o);
+ if(!next||next[0]!==status)return showToast("Order is not ready for this step.");
+ const prompt=status==="Shipped"?"Has this package actually been handed to J&T Express? This will mark the order Shipped.":"Move order "+id+" to "+status+"?";
+ if(confirm(prompt))await updateOrderStatus(id,status);
+}
+function courierTextV50(list){
+ return "LORENCE'S BETTA FISH - COURIER SHIPPING LIST\nCourier: J&T Express\nGenerated: "+new Date().toLocaleString("en-PH")+"\n\n"+list.map((o,i)=>[
+  (i+1)+". Order: "+o.id,"Order Date & Time: "+courierDateV50(o.date),
+  "Customer: "+(o.customerName||""),"Phone: "+(o.phone||""),"Address: "+(o.address||""),
+  "Products: "+(o.items||[]).map(item=>item.name+" x "+Number(item.quantity)).join(", "),
+  "Payment: "+(o.payment_status||""),"Shipping Fee: "+(o.shipping_confirmed?"PHP "+Number(o.shipping).toFixed(2):"Pending"),
+  "LIVE FISH - HANDLE WITH CARE"
+ ].join("\n")).join("\n\n-----------------\n\n");
+}
+async function copyCourierV50(){
+ const list=selectedCourierOrdersV50();if(!list.length)return showToast("Select Ready to Ship orders first.");
+ try{await navigator.clipboard.writeText(courierTextV50(list));showToast("Shipping details copied. Status unchanged.");}
+ catch(e){showToast("Unable to copy. Please allow clipboard access.");}
+}
+function printCourierV50(){
+ const list=selectedCourierOrdersV50();if(!list.length)return showToast("Select Ready to Ship orders first.");
+ const popup=window.open("","_blank");if(!popup)return showToast("Allow popups to print shipping details.");
+ const safe=escapeHTML(courierTextV50(list));
+ popup.document.open();
+ popup.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Courier Shipping List</title><style>body{font:14px Arial,sans-serif;margin:30px}h2{margin-bottom:5px}pre{font:13px/1.5 Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}.note{font-weight:bold}@media print{@page{margin:15mm}}</style></head><body><h2>Lorence&#39;s Betta Fish</h2><h3>Courier Shipping List</h3><pre>'+safe+'</pre><p class="note">Confirm the courier accepts live fish before handover.</p></body></html>');
+ popup.document.close();popup.focus();popup.print();
+}
+
 /* =========================================================
    ADMIN ORDER MANAGEMENT
 ========================================================= */
@@ -4215,6 +4324,7 @@ async function updateOrderStatus(orderId, status) {
         renderAdminOrders();
         renderAdminDashboard();
         renderCustomerOrders();
+        renderCourierShippingV50();
 
         showToast("Order status updated.");
     } catch (err) {
@@ -11624,4 +11734,16 @@ body.dark-mode .address-delete-v48{color:#ffd1d9!important;border-color:#aa6a77!
 .checkout-address-edit-v49:hover{background:#e8f6fc}
 body.dark-mode .checkout-address-edit-v49{color:#b5e8fa;border-color:#578da3}
 @media(max-width:550px){.checkout-address-edit-v49{margin-left:28px}}
+</style>
+
+<style id="courier-shipping-v50">
+.courier-guide-v50{padding:13px;background:#edfaff;border:1px solid #c5e6f0;border-radius:12px;margin-bottom:15px;color:#176783;font-weight:700}
+.courier-counts-v50{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.courier-counts-v50>div{background:white;border:1px solid #d4e8ef;border-radius:13px;padding:15px;display:grid;gap:5px}.courier-counts-v50 strong{font-size:25px;color:#146e89}.courier-counts-v50 small{color:#5e7b87}
+.courier-tabs-v50{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.courier-tabs-v50 button{border:1px solid #a9d3e1;background:transparent;color:#18708b;border-radius:10px;padding:10px;cursor:pointer;font-weight:700}.courier-tabs-v50 button.active{background:#0886ab;color:#fff}
+.courier-toolbar-v50{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}.courier-toolbar-v50 input{flex:1;min-width:180px}.courier-toolbar-v50 span{font-size:12px;color:#567989}
+.courier-list-v50{display:grid;gap:13px}.courier-order-v50{border:1px solid #d7e7ef;border-radius:15px;background:white;padding:17px}.courier-head-v50{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.courier-head-v50 small{display:block;color:#667f8d;margin-top:5px}
+.courier-badge-v50{padding:5px 10px;border-radius:999px;font-weight:700;font-size:12px}.stage-new{background:#e3f3ff;color:#14658c}.stage-preparing{background:#fff1d3;color:#885a0a}.stage-ready{background:#ddf6e5;color:#216c43}.stage-shipped{background:#e5eaf4;color:#475a87}
+.courier-info-v50{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:15px 0}.courier-info-v50 p{color:#5f7884;margin:6px 0;overflow-wrap:anywhere}.courier-actions-v50{border-top:1px solid #e2edf1;padding-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.courier-actions-v50 label{margin-right:auto;font-size:13px;font-weight:700}.courier-actions-v50 small{color:#8b724c}.courier-empty-v50{text-align:center;padding:30px;border:1px dashed #c0d9e4;border-radius:13px}
+body.dark-mode .courier-counts-v50>div,body.dark-mode .courier-order-v50{background:#183c50;border-color:#47748a}body.dark-mode .courier-guide-v50{background:#183c50;border-color:#47748a;color:#d3eef7}body.dark-mode .courier-counts-v50 strong,body.dark-mode .courier-head-v50 small,body.dark-mode .courier-info-v50 p{color:#d3eef7}body.dark-mode .courier-tabs-v50 button:not(.active){color:#d3eef7}
+@media(max-width:680px){.courier-counts-v50{grid-template-columns:1fr 1fr}.courier-info-v50{grid-template-columns:1fr}}
 </style>
