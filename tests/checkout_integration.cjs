@@ -104,7 +104,7 @@ async function order(reference,receiptVariant=0){
   customer=await call('buyer','orders.php');
   found=customer.orders.find(o=>o.id===two.order_id);
   assert.equal(found.payment_status,'Paid');
-  assert.equal(found.status,'Confirmed');
+  assert.equal(found.status,'Ready to Ship');
   assert.equal(Number(sql("SELECT stock FROM products WHERE product_code='P001'")),before-2,'Corrected order stock deducted exactly once');
   // Concurrent submissions against one rejected order: only one may be accepted.
   const raceCreated=await order('TEST-RACE-ORDER-006',1);
