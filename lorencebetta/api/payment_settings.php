@@ -1,5 +1,6 @@
 <?php
 require_once "db.php";
+require_once __DIR__ . "/product_helpers.php";
 
 $conn->query("CREATE TABLE IF NOT EXISTS shop_settings (setting_key VARCHAR(80) PRIMARY KEY, setting_value TEXT NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
@@ -73,6 +74,7 @@ if($method!=="GCash") {
     if($name===""||!preg_match('/^[0-9]{6,25}$/',$number))respond(false,"Enter an account name and valid bank account number (6-25 digits).",[],400);
     $prefix=strtolower(str_replace(" ","_",$method))."_";
     $values=[$prefix."account_name"=>$name,$prefix."account_number"=>$number];
+    if(isset($_POST["qr_image_base64"])) $values[$prefix."qr_image"]=save_admin_base64_image($_POST["qr_image_base64"], "payments", strtolower($method));
     $file=$_FILES["qr_image"]??null;
     if($file && $file["error"]!==UPLOAD_ERR_NO_FILE) {
         if($file["error"]!==UPLOAD_ERR_OK||$file["size"]>5*1024*1024)respond(false,"QR image upload failed or exceeds 5MB.",[],400);
@@ -97,6 +99,7 @@ $gcashNumber = trim($_POST["gcash_number"] ?? "");
 if ($merchantName === "" || !preg_match('/^09[0-9]{9}$/', $gcashNumber)) respond(false, "Enter a valid account name and 11-digit GCash number.", [], 400);
 
 $values = ["merchant_name" => $merchantName, "gcash_number" => $gcashNumber];
+if (isset($_POST["qr_image_base64"])) $values["qr_image"] = save_admin_base64_image($_POST["qr_image_base64"], "payments", "gcash");
 $file = $_FILES["qr_image"] ?? null;
 if ($file && $file["error"] !== UPLOAD_ERR_NO_FILE) {
     if ($file["error"] !== UPLOAD_ERR_OK || $file["size"] > 5 * 1024 * 1024) respond(false, "QR image upload failed or exceeds 5MB.", [], 400);
