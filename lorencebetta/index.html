@@ -2077,6 +2077,8 @@ body:not(.dark-mode) .hero-kicker{
                 <span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M4 6.5 12 3l8 3.5v11L12 21l-8-3.5zM4 6.5l8 3.5 8-3.5M12 10v11"/></svg></span> Orders
             </button>
 
+            <button class="nav-btn" onclick="showAdminPage('cancellations',this)"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 9h8M8 13h6"/><path d="M17 17l2 2 3-4"/></svg></span> Cancellation &amp; Refunds</button>
+
             <button class="nav-btn" onclick="showAdminPage('courier-shipping',this)"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></span> Shipping Management</button>
 
             <button
@@ -2235,6 +2237,8 @@ body:not(.dark-mode) .hero-kicker{
 
             </section>
 
+
+            <section id="admin-cancellations" class="page"><div class="page-title"><h2>Cancellation &amp; Refunds</h2><p>Review customer cancellation requests and manage GCash refunds.</p></div><div id="cancel-stats-v66" class="cancel-stats-v66"></div><div id="cancel-tabs-v66" class="cancel-tabs-v66"></div><div id="cancellation-manager-v66" class="cancel-manager-v66"></div></section>
 
             <section id="admin-courier-shipping" class="page courier-v53 shipping-v56">
 <div class="page-title"><h2><svg viewBox="0 0 24 24"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg> Shipping Management</h2><p>Manage shipments, tracking, and deliveries for J&amp;T Express orders.</p></div>
@@ -12109,5 +12113,5 @@ timelineHTML=function(o){
 };
 </script>
 
-<link rel="stylesheet" href="cancellation_v65.css">
-<script src="cancellation_v65.js"></script>
+<link rel="stylesheet" href="cancellation_v65.css?v=66">
+<script src="cancellation_v65.js?v=66"></script>
