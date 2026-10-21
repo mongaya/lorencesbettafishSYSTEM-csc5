@@ -4296,7 +4296,42 @@ function printCourierV50(){
  const popup=window.open("","_blank");if(!popup)return showToast("Allow popups to print shipping details.");
  const safe=escapeHTML(courierTextV50(list));
  popup.document.open();
- popup.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Courier Shipping List</title><style>body{font:14px Arial,sans-serif;margin:30px}h2{margin-bottom:5px}pre{font:13px/1.5 Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}.note{font-weight:bold}@media print{@page{margin:15mm}}</style></head><body><h2>Lorence&#39;s Betta Fish</h2><h3>Courier Shipping List</h3><pre>'+safe+'</pre><p class="note">Confirm the courier accepts live fish before handover.</p></body></html>');
+ popup.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Courier Shipping List</title><style>body{font:14px Arial,sans-serif;margin:30px}h2{margin-bottom:5px}pre{font:13px/1.5 Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}.note{font-weight:bold}@media print{@page{margin:15mm}}</style></head><body><h2>Lorence&#39;s Betta Fish</h2><h3>Courier Shipping List</h3><pre>'+safe+'</pre><p class="note">Confirm the courier accepts live fish before handover.</p>
+<script id="payment-final-workflow-v60">
+(function(){
+ const previous=viewOrder;
+ viewOrder=function(orderId){
+   previous(orderId);
+   const o=(orders||[]).find(x=>String(x.id)===String(orderId));
+   const d=document.getElementById("orderDetails");
+   if(!o||!d)return;
+   const panel=d.querySelector(".admin-action-panel-v2");
+   if(!panel)return;
+   const p=String(o.payment_status||"").toLowerCase();
+   if(p==="paid"||p==="verified")return;
+   const proof=o.payment_screenshot||"";
+   const submitted=p==="payment submitted";
+   const attempt=Number(o.payment_attempt_count||0);
+   const corrected=!!o.payment_correction_requested;
+   panel.innerHTML='<section class="payment-readonly-v59"><h4>'+ (corrected?'Pending Verification':'Payment Review') +'</h4>'+
+     '<div class="payment-field"><span>Payment Method</span><strong>'+escapeHTML(o.payment||"—")+'</strong></div>'+
+     '<div class="payment-field"><span>Subtotal</span><strong>₱'+Number(o.subtotal||0).toFixed(2)+'</strong></div>'+
+     '<div class="payment-field"><span>Automatic Shipping Fee</span><strong>₱'+Number(o.shipping||0).toFixed(2)+'</strong></div>'+
+     '<div class="payment-field"><span>Total</span><strong>₱'+Number(o.total||0).toFixed(2)+'</strong></div>'+
+     '<div class="payment-field"><span>Payment Attempt</span><strong>'+attempt+' / 2</strong></div>'+
+     '<div class="payment-field"><span>Reference</span><strong>'+escapeHTML(o.payment_reference||"Not submitted")+'</strong></div>'+
+     (o.payment_rejection_reason?'<p class="payment-note">Correction reason: '+escapeHTML(o.payment_rejection_reason)+'</p>':'')+
+     (proof?'<p><a href="'+escapeHTML(proof)+'" target="_blank" rel="noopener">View Uploaded Payment Proof</a></p>':'<p class="payment-note">Waiting for payment proof.</p>')+
+     (submitted?'<div class="payment-actions"><button class="primary-btn" id="paymentVerifyV60">Verify Payment</button><button class="danger-solid-btn" id="paymentRejectV60">'+(attempt>=2?'Reject & Cancel Order':'Request Correction')+'</button></div>':'<p class="payment-note">Waiting for customer submission.</p>')+
+     '</section>';
+   const verify=panel.querySelector("#paymentVerifyV60");
+   const reject=panel.querySelector("#paymentRejectV60");
+   if(verify)verify.addEventListener("click",()=>markPaymentPaid(String(o.id)));
+   if(reject)reject.addEventListener("click",()=>requestNewPaymentProof(String(o.id)));
+ };
+})();
+</script>
+</body></html>');
  popup.document.close();popup.focus();popup.print();
 }
 
@@ -10299,7 +10334,7 @@ body.dark-mode .payment-date-v58,body.dark .payment-date-v58,[data-theme="dark"]
     const st=String(o.status||"").trim().toLowerCase();
     if(st==="cancelled"||st==="canceled")return "other";
     if(p==="paid"||p==="verified")return "verified";
-    if(p==="payment needs correction"||p==="rejected"||p==="payment rejected")return "pending";
+    if(o.payment_correction_requested||p==="payment needs correction"||p==="rejected"||p==="payment rejected")return "pending";
     // New and first-time submitted payments remain under New Orders.
     return "new";
   }
@@ -10316,7 +10351,7 @@ body.dark-mode .payment-date-v58,body.dark .payment-date-v58,[data-theme="dark"]
     const wrap=host.querySelector(".admin-customer-groups");
     if(!wrap)return;
     const all=orders||[];
-    const categories=[["new","New Orders","shopping-bag"],["pending","Pending Payment","clock"],["verified","Verified Payments","check-circle"]];
+    const categories=[["new","New Orders","shopping-bag"],["pending","Pending Verification","clock"],["verified","Verified Payments","check-circle"]];
     let cards=host.querySelector(".payment-summary-v58");
     if(!cards){cards=document.createElement("div");cards.className="payment-summary-v58";host.insertBefore(cards,host.firstChild)}
     cards.innerHTML=categories.map(([key,label])=>'<button type="button" class="payment-card-v58 '+(active===key?'active':'')+'" data-payment-filter="'+key+'" aria-pressed="'+(active===key)+'"><span>'+label+'</span><strong>'+all.filter(o=>category(o)===key).length+'</strong><span>View '+label.toLowerCase()+'</span></button>').join("");
@@ -10371,7 +10406,7 @@ body.dark-mode .payment-readonly-v59 h4,body.dark .payment-readonly-v59 h4,[data
        '<p class="payment-note">Payment verified. Shipping and delivery updates are managed only in Shipping Management.</p>'+
        (o.payment_screenshot?'<div class="payment-actions"><button type="button" class="action-btn view-btn" id="verifiedReceiptV59">View / Print Payment Receipt</button></div>':'<p class="payment-note">No payment receipt is available for this order.</p>')+'</div>';
      const btn=panel.querySelector("#verifiedReceiptV59");
-     if(btn)btn.addEventListener("click",()=>viewReceipt(String(o.id),false));
+     if(btn)btn.addEventListener("click",()=>viewReceipt(String(o.id),true));
    }else if(correction||p==="payment submitted"){
      const history=Array.isArray(o.payment_attempts)?o.payment_attempts:Array.isArray(o.payment_history)?o.payment_history:null;
      const section=document.createElement("section");
