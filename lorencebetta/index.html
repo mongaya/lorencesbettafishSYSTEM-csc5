@@ -10295,11 +10295,12 @@ body.dark-mode .payment-date-v58,body.dark .payment-date-v58,[data-theme="dark"]
 <script id="payment-workspace-v58-script">
 (function(){
   function category(o){
-    const p=String(o.payment_status||"").toLowerCase(),st=String(o.status||"").toLowerCase();
+    const p=String(o.payment_status||"").trim().toLowerCase();
+    const st=String(o.status||"").trim().toLowerCase();
+    if(st==="cancelled"||st==="canceled")return "other";
     if(p==="paid"||p==="verified")return "verified";
     if(p==="payment needs correction"||p==="rejected"||p==="payment rejected")return "pending";
-    // A submitted receipt remains a new order until an admin verifies it.
-    if(st==="cancelled"||st==="order received"||st==="delivered"||st==="shipped")return "other";
+    // New and first-time submitted payments remain under New Orders.
     return "new";
   }
   let active="new";
