@@ -2325,7 +2325,6 @@ body:not(.dark-mode) .hero-kicker{
                 <div class="customer-metrics-v84">
                     <div class="customer-metric-v84 total"><span class="customer-metric-icon-v84">♙</span><div><span>Total Customers</span><strong id="customerTotalV84">0</strong></div></div>
                     <div class="customer-metric-v84 active"><span class="customer-metric-icon-v84">✓</span><div><span>Active Accounts</span><strong id="customerActiveV84">0</strong></div></div>
-                    <div class="customer-metric-v84 warned"><span class="customer-metric-icon-v84">!</span><div><span>Warned Accounts</span><strong id="customerWarnedV84">0</strong></div></div>
                     <div class="customer-metric-v84 restricted"><span class="customer-metric-icon-v84">⊘</span><div><span>Restricted Accounts</span><strong id="customerRestrictedV84">0</strong></div></div>
                 </div>
                 <div class="customer-search-v84"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg><input id="customerSearchV84" type="search" placeholder="Search name, username, or email..." aria-label="Search customers" oninput="renderCustomers()"></div>
@@ -4733,7 +4732,6 @@ function renderCustomers(){
  document.getElementById("customerTotalV84").textContent=all.length;
  // Account restriction and warning counts require server-backed enforcement.
  document.getElementById("customerActiveV84").textContent=all.length;
- document.getElementById("customerWarnedV84").textContent="—";
  document.getElementById("customerRestrictedV84").textContent="—";
  tbody.innerHTML=filtered.length?filtered.map(user=>{
    const name=String(user.username||"");
@@ -9363,7 +9361,7 @@ body.dark-mode #admin-products .product-stock-count-v83.stock-empty-v83{color:#f
 </style>
 <style id="customer-management-v84-style">
 #admin-customers .page-title{margin-bottom:22px}
-.customer-metrics-v84{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.customer-metrics-v84{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:20px}
 .customer-metric-v84{display:flex;gap:14px;align-items:center;padding:19px 17px;border:1px solid;border-radius:13px;min-height:98px}
 .customer-metric-v84>div{display:grid;gap:4px}.customer-metric-v84>div span{font-size:13px}.customer-metric-v84 strong{font-size:27px}
 .customer-metric-icon-v84{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-size:25px;font-weight:700}
