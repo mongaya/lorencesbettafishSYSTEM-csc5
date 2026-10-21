@@ -1,0 +1,1 @@
+(function(){const old=renderAdminDashboard;renderAdminDashboard=function(){old();};})();
