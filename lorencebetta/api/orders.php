@@ -53,6 +53,8 @@ $sql = "
         o.payment_reference,
         o.payment_screenshot,
         o.payment_rejection_reason,
+        o.payment_attempt_count,
+        o.payment_correction_requested,
         o.reservation_expires_at,
         CASE WHEN o.reservation_expires_at IS NULL THEN NULL ELSE GREATEST(TIMESTAMPDIFF(SECOND, NOW(), o.reservation_expires_at),0) END AS payment_seconds_remaining,
         o.stock_deducted,
@@ -122,6 +124,9 @@ foreach ($orderRows as $row) {
     $hist=$conn->prepare("SELECT status,DATE_FORMAT(changed_at, '%Y-%m-%d %H:%i:%s') changed_at FROM order_status_history WHERE order_id=? ORDER BY id ASC");
     $hist->bind_param("i",$orderId);$hist->execute();$history=stmt_fetch_all_assoc_compat($hist);$hist->close();
 
+    $attemptStmt=$conn->prepare("SELECT attempt_number,payment_reference,payment_screenshot,status,rejection_reason,submitted_at,reviewed_at FROM payment_attempts WHERE order_id=? ORDER BY attempt_number ASC");
+    $attemptStmt->bind_param("i",$orderId);$attemptStmt->execute();
+    $paymentAttempts=stmt_fetch_all_assoc_compat($attemptStmt);$attemptStmt->close();
     $orders[] = [
         "id" => $row["order_code"],
         "username" => $row["username"],
@@ -141,6 +146,9 @@ foreach ($orderRows as $row) {
         "payment_reference" => $row["payment_reference"],
         "payment_screenshot" => $row["payment_screenshot"],
         "payment_rejection_reason" => $row["payment_rejection_reason"],
+        "payment_attempt_count" => (int)$row["payment_attempt_count"],
+        "payment_correction_requested" => (bool)$row["payment_correction_requested"],
+        "payment_attempts" => $paymentAttempts,
         "reservation_expires_at" => $row["reservation_expires_at"],
         "payment_seconds_remaining" => $row["payment_seconds_remaining"] === null ? null : (int)$row["payment_seconds_remaining"],
         "stock_deducted" => (bool)$row["stock_deducted"],
