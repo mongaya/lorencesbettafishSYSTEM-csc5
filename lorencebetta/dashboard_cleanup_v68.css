@@ -22,7 +22,7 @@ body.dark-mode #admin-dashboard .dash-action-v68:hover{background:#25516a;border
 /* v69: hide panels at stylesheet level because legacy renderers recreate them after dashboard refresh.
    Keep their DOM nodes available to legacy JS that writes into these IDs. */
 #admin-dashboard #dashLowerV9,
-#admin-dashboard .card:has(> #recentOrders),
+#admin-dashboard .card:has(#recentOrders),
 #admin-dashboard .pro-panel-v27:has(#proStatusV27),
 #admin-dashboard .pro-panel-v27:has(#proRecentV27){
   display:none!important;
