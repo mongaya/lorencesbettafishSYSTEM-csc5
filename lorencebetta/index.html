@@ -4331,8 +4331,7 @@ function printCourierV50(){
  const popup=window.open("","_blank");if(!popup)return showToast("Allow popups to print shipping details.");
  const safe=escapeHTML(courierTextV50(list));
  popup.document.open();
- popup.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Courier Shipping List</title><style>body{font:14px Arial,sans-serif;margin:30px}h2{margin-bottom:5px}pre{font:13px/1.5 Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}.note{font-weight:bold}@media print{@page{margin:15mm}}</style></head><body><h2>Lorence&#39;s Betta Fish</h2><h3>Courier Shipping List</h3><pre>'+safe+'</pre><p class="note">Confirm the courier accepts live fish before handover.</p>
-</body></html>');
+ popup.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Courier Shipping List</title><style>body{font:14px Arial,sans-serif;margin:30px}h2{margin-bottom:5px}pre{font:13px/1.5 Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}.note{font-weight:bold}@media print{@page{margin:15mm}}</style></head><body><h2>Lorence&#39;s Betta Fish</h2><h3>Courier Shipping List</h3><pre>'+safe+'</pre><p class="note">Confirm the courier accepts live fish before handover.</p></body></html>');
  popup.document.close();popup.focus();popup.print();
 }
 
