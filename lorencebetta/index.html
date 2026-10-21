@@ -10337,6 +10337,53 @@ body.dark-mode .payment-date-v58,body.dark .payment-date-v58,[data-theme="dark"]
   renderAdminOrders=function(){old();render()};
 })();
 </script>
+
+<style id="payment-details-v59-style">
+.payment-readonly-v59{background:#f3fafc;border:1px solid #d1e6ee;border-radius:13px;padding:18px;margin:12px 0}
+.payment-readonly-v59 h4{margin:0 0 12px;color:#15506a}
+.payment-readonly-v59 .payment-field{display:flex;justify-content:space-between;gap:12px;margin:9px 0;overflow-wrap:anywhere}
+.payment-readonly-v59 .payment-note{margin:12px 0;color:#597b8a}
+.payment-readonly-v59 .payment-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:15px}
+body.dark-mode .payment-readonly-v59,body.dark .payment-readonly-v59,[data-theme="dark"] .payment-readonly-v59{background:#193846;border-color:#396273;color:#ecf8fc}
+body.dark-mode .payment-readonly-v59 h4,body.dark .payment-readonly-v59 h4,[data-theme="dark"] .payment-readonly-v59 h4{color:#ecf8fc}
+</style>
+<script id="payment-details-v59-script">
+(function(){
+ const original=viewOrder;
+ viewOrder=function(orderId){
+   original(orderId);
+   const o=(orders||[]).find(x=>String(x.id)===String(orderId));
+   const d=document.getElementById("orderDetails");
+   if(!o||!d)return;
+   const p=String(o.payment_status||"").toLowerCase();
+   const verified=p==="paid"||p==="verified";
+   const correction=p==="payment needs correction";
+   const panel=d.querySelector(".admin-action-panel-v2");
+   if(!panel)return;
+   if(verified){
+     // Payment management is read-only; courier fulfillment belongs to Shipping Management.
+     panel.innerHTML='<div class="payment-readonly-v59"><h4>Payment Verified</h4>'+
+       '<div class="payment-field"><span>Payment Method</span><strong>'+escapeHTML(o.payment_method||o.payment||"—")+'</strong></div>'+
+       '<div class="payment-field"><span>Reference Number</span><strong>'+escapeHTML(o.payment_reference||"—")+'</strong></div>'+
+       '<div class="payment-field"><span>Amount</span><strong>₱'+Number(o.total||0).toFixed(2)+'</strong></div>'+
+       '<p class="payment-note">Payment verified. Shipping and delivery updates are managed only in Shipping Management.</p>'+
+       (o.payment_screenshot?'<div class="payment-actions"><button type="button" class="action-btn view-btn" id="verifiedReceiptV59">View / Print Payment Receipt</button></div>':'<p class="payment-note">No payment receipt is available for this order.</p>')+'</div>';
+     const btn=panel.querySelector("#verifiedReceiptV59");
+     if(btn)btn.addEventListener("click",()=>viewReceipt(String(o.id),false));
+   }else if(correction||p==="payment submitted"){
+     const history=Array.isArray(o.payment_attempts)?o.payment_attempts:Array.isArray(o.payment_history)?o.payment_history:null;
+     const section=document.createElement("section");
+     section.className="payment-readonly-v59";
+     section.innerHTML='<h4>Payment Submission Review</h4>'+
+       '<p class="payment-note">'+(correction?'A correction was requested. The customer can submit updated proof for this same order.':'Review the latest submitted payment proof before verification.')+'</p>'+
+       (correction&&o.payment_rejection_reason?'<p><strong>Correction reason:</strong> '+escapeHTML(o.payment_rejection_reason)+'</p>':'')+
+       '<h4>Payment Attempt History</h4>'+
+       (history&&history.length?history.map((a,i)=>'<div class="payment-field"><span>Attempt '+(i+1)+'</span><span>'+escapeHTML(String(a.submitted_at||a.created_at||a.date||"Date unavailable"))+' · '+escapeHTML(String(a.status||"Submitted"))+'</span></div>').join(""):'<p class="payment-note">Previous attempts are not available in the current order data. Existing submissions are not reconstructed or invented.</p>');
+     panel.appendChild(section);
+   }
+ };
+})();
+</script>
 </body>
 </html>
 
