@@ -32,8 +32,12 @@ try {
      $items=$conn->prepare('SELECT product_id,quantity FROM order_items WHERE order_id=?');
      $items->bind_param('i',$o['id']);$items->execute();$rows=stmt_fetch_all_assoc_compat($items);$items->close();
      foreach($rows as $item){
-       $u=$conn->prepare("UPDATE products SET stock=stock+?,status='available',updated_at=NOW() WHERE id=?");
-       $u->bind_param('ii',$item['quantity'],$item['product_id']);$u->execute();$u->close();
+       $quantity=(int)$item['quantity'];$productId=(int)$item['product_id'];
+       if($quantity<1) throw new Exception('Invalid item quantity for stock restoration.');
+       $u=$conn->prepare("UPDATE products SET stock=stock+?,status=CASE WHEN stock+?>0 THEN 'available' ELSE 'out_of_stock' END,updated_at=NOW() WHERE id=?");
+       $u->bind_param('iii',$quantity,$quantity,$productId);
+       if(!$u->execute()||$u->affected_rows!==1) throw new Exception('Unable to restore product stock.');
+       $u->close();
      }
    }
    $q=$conn->prepare("UPDATE orders SET status='Cancelled',stock_deducted=0,reservation_expires_at=NULL,updated_at=NOW() WHERE id=?");
