@@ -9368,7 +9368,7 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
     </div>
     <div class="pro-main-v27">
       <section class="pro-panel-v27"><div class="pro-panel-title-v27"><div><h3>Sales Overview</h3></div><div class="pro-range-v27"><button onclick="setProRangeV27(7,this)">7 Days</button><button class="active" onclick="setProRangeV27(30,this)">30 Days</button><button onclick="setProRangeV27(365,this)">12 Months</button></div></div><div id="proChartV27" class="pro-chart-v27"></div></section>
-      <section class="pro-panel-v27"><div class="pro-panel-title-v27"><div><h3>Requires Attention</h3><p>Items that need an admin action</p></div></div><div id="proAttentionV27" class="pro-attention-v27"></div></section>
+      <section class="pro-panel-v27"><div class="pro-panel-title-v27"><div><h3>Notifications</h3><p>New orders and cancellation requests</p></div></div><div id="proAttentionV27" class="pro-attention-v27"></div></section>
     </div>
     <section class="pro-panel-v27" style="margin-bottom:16px"><div class="pro-panel-title-v27"><div><h3>Order Status Overview</h3><p>Current fulfillment workload</p></div></div><div id="proStatusV27" class="pro-status-v27"></div></section>
     <section class="pro-panel-v27"><div class="pro-panel-title-v27"><div><h3>Recent Orders</h3><p>Latest customer transactions</p></div><button class="pro-view-v27" onclick="showAdminPage('orders')">View All Orders</button></div><div class="pro-table-scroll-v27"><table class="pro-table-v27"><thead><tr><th>Order ID</th><th>Customer</th><th>Courier</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody id="proRecentV27"></tbody></table></div></section>
@@ -9420,14 +9420,17 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
    document.getElementById("proPaidV27").textContent=paidOrders.length;
    document.getElementById("proPendingV27").textContent=attention.length;
 
-   const count=(fn)=>scoped.filter(fn).length;
-   const att=[
-    ["Payment proofs to verify",count(o=>o.payment_status==="Payment Submitted")],
-    ["Shipping fees to confirm",count(o=>o.status==="Pending Shipping Fee")],
-    ["Orders ready for shipment",count(o=>o.status==="Ready to Ship")],
-    ["Orders ready for pickup",count(o=>o.status==="Ready for Pickup")]
-   ];
-   document.getElementById("proAttentionV27").innerHTML=att.map((x,i)=>`<div class="pro-attention-item-v27" onclick="showAdminPage('orders')"><div class="pro-attention-dot-v27">${i+1}</div><div><b>${x[1]}</b><span>${x[0]}</span></div><strong>›</strong></div>`).join("");
+   // Keep the agreed two notification types even when the legacy chart refreshes.
+   const fresh=orders.filter(o=>o.status!=="Cancelled"&&!o.cancellation&&o.payment_status==="Payment Submitted").length;
+   const cancellations=orders.filter(o=>o.cancellation?.status==="Pending Review").length;
+   document.getElementById("proPendingV27").textContent=fresh;
+   const notificationPanel=document.getElementById("proAttentionV27");
+   const notificationHeader=notificationPanel.closest(".pro-panel-v27");
+   const notificationTitle=notificationHeader?.querySelector("h3");
+   const notificationSubtitle=notificationHeader?.querySelector(".pro-panel-title-v27 p");
+   if(notificationTitle)notificationTitle.textContent="Notifications";
+   if(notificationSubtitle)notificationSubtitle.textContent="New orders and cancellation requests";
+   notificationPanel.innerHTML=[["New Orders",fresh,"orders","new"],["Cancellation Requests",cancellations,"cancellations","cancel"]].map(([name,n,page,type])=>'<button type="button" class="dash-note-v71 '+type+'" data-dash-page="'+page+'"><span class="dash-note-icon-v71" aria-hidden="true"></span><span class="dash-note-label-v71"><strong>'+name+'</strong><small>'+n+' awaiting review</small></span><b>'+n+'</b><span aria-hidden="true">›</span></button>').join("");
 
    const sts=[["New Orders",null],["Payment Review",null],["Confirmed","Confirmed"],["Preparing","Preparing"],["Ready to Ship","Ready to Ship"],["Shipped","Shipped"],["Out for Delivery","Out for Delivery"],["Delivered","Delivered"],["Ready for Pickup","Ready for Pickup"],["Completed",["Order Received","Picked Up"]],["Cancelled","Cancelled"]];
    document.getElementById("proStatusV27").innerHTML=sts.map(([label,val])=>`<div class="pro-status-item-v27"><b>${label==="New Orders"?count(o=>o.is_new):label==="Payment Review"?count(o=>o.payment_status==="Payment Submitted"):count(o=>Array.isArray(val)?val.includes(o.status):o.status===val)}</b><span>${label}</span></div>`).join("");
