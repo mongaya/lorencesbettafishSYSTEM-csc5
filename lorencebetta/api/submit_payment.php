@@ -81,10 +81,10 @@ $stmt=$conn->prepare("UPDATE orders o JOIN users u ON u.id=o.user_id
  WHERE o.order_code=? AND u.username=? AND o.payment_method IN ('GCash','MariBank','AUB')
    AND o.shipping_confirmed_at IS NOT NULL AND o.status='Awaiting Payment' AND o.stock_deducted=0
    AND o.payment_status IN ('Unpaid','Payment Needs Correction') AND o.payment_attempt_count<2");
-if(!$stmt){@unlink($folder.DIRECTORY_SEPARATOR.$filename);respond(false,"Unable to prepare payment save.",[],500);}
+if(!$stmt){$conn->rollback();@unlink($folder.DIRECTORY_SEPARATOR.$filename);respond(false,"Unable to prepare payment save.",[],500);}
 $stmt->bind_param("ssss",$reference,$path,$orderId,$username);
-if(!$stmt->execute()){@unlink($folder.DIRECTORY_SEPARATOR.$filename);respond(false,"Unable to save payment submission.",[],500);}
-if($stmt->affected_rows<1){@unlink($folder.DIRECTORY_SEPARATOR.$filename);respond(false,"Payment cannot be submitted for this order right now.",[],409);}
+if(!$stmt->execute()){$conn->rollback();@unlink($folder.DIRECTORY_SEPARATOR.$filename);respond(false,"Unable to save payment submission.",[],500);}
+if($stmt->affected_rows<1){$conn->rollback();@unlink($folder.DIRECTORY_SEPARATOR.$filename);respond(false,"Payment cannot be submitted for this order right now.",[],409);}
 $stmt->close();
 $history=$conn->prepare("INSERT INTO payment_attempts(order_id,attempt_number,payment_reference,payment_screenshot,status) VALUES(?,?,?,?,'Submitted')");
 if(!$history){$conn->rollback();@unlink($folder.DIRECTORY_SEPARATOR.$filename);respond(false,"Unable to save payment history.",[],500);}
