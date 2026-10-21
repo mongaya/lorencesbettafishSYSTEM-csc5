@@ -18,3 +18,12 @@
 #admin-dashboard .dash-action-v68>strong{font-size:18px}
 body.dark-mode #admin-dashboard .dash-action-v68{background:#193749;color:#e4f3fb;border-color:#416276}
 body.dark-mode #admin-dashboard .dash-action-v68:hover{background:#25516a;border-color:#4bb5d8}
+
+/* v69: hide panels at stylesheet level because legacy renderers recreate them after dashboard refresh.
+   Keep their DOM nodes available to legacy JS that writes into these IDs. */
+#admin-dashboard #dashLowerV9,
+#admin-dashboard .card:has(> #recentOrders),
+#admin-dashboard .pro-panel-v27:has(#proStatusV27),
+#admin-dashboard .pro-panel-v27:has(#proRecentV27){
+  display:none!important;
+}
