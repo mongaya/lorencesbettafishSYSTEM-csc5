@@ -16,6 +16,11 @@ try {
   if((int)$o["stock_deducted"]!==0) throw new Exception("This order has already had stock deducted and cannot be rejected here.");
   $id=(int)$o["id"];
   $attempt=max(1,(int)$o["payment_attempt_count"]);
+  if((int)$o["payment_attempt_count"]===0){
+    $seed=$conn->prepare("INSERT INTO payment_attempts(order_id,attempt_number,payment_reference,payment_screenshot,status) VALUES(?,1,?,?,'Submitted') ON DUPLICATE KEY UPDATE id=id");
+    $seed->bind_param("iss",$id,$o["payment_reference"],$o["payment_screenshot"]);$seed->execute();$seed->close();
+    $sync=$conn->prepare("UPDATE orders SET payment_attempt_count=1 WHERE id=?");$sync->bind_param("i",$id);$sync->execute();$sync->close();
+  }
   $history=$conn->prepare("UPDATE payment_attempts SET status='Rejected',rejection_reason=?,reviewed_at=NOW() WHERE order_id=? AND attempt_number=?");
   $history->bind_param("sii",$reason,$id,$attempt);$history->execute();$history->close();
   if($attempt>=2){
