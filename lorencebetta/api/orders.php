@@ -2,9 +2,11 @@
 
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/stock_reservations.php";
+require_once __DIR__ . "/cancellation_schema.php";
 require_once __DIR__ . "/auth.php";
 $viewer=require_user_session($conn);
 ensure_order_flow_columns($conn);
+ensure_cancellation_requests($conn);
 release_expired_reservations($conn);
 
 $column = $conn->query("SHOW COLUMNS FROM orders LIKE 'payment_screenshot'");
@@ -127,7 +129,10 @@ foreach ($orderRows as $row) {
     $attemptStmt=$conn->prepare("SELECT attempt_number,payment_reference,payment_screenshot,status,rejection_reason,submitted_at,reviewed_at FROM payment_attempts WHERE order_id=? ORDER BY attempt_number ASC");
     $attemptStmt->bind_param("i",$orderId);$attemptStmt->execute();
     $paymentAttempts=stmt_fetch_all_assoc_compat($attemptStmt);$attemptStmt->close();
+    $cancellationStmt=$conn->prepare("SELECT reason,explanation,status,admin_reason,refund_reference,refund_proof,refund_amount,requested_at,reviewed_at,refunded_at FROM cancellation_requests WHERE order_id=? LIMIT 1");
+    $cancellationStmt->bind_param("i",$orderId);$cancellationStmt->execute();$cancellation=stmt_fetch_assoc_compat($cancellationStmt);$cancellationStmt->close();
     $orders[] = [
+        "cancellation" => $cancellation ?: null,
         "id" => $row["order_code"],
         "username" => $row["username"],
         "customerName" => $row["customer_name"],
