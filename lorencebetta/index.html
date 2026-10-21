@@ -9363,7 +9363,7 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
 .pro-chart-legend-v78 .sales{background:#27a9d4}
 .pro-chart-legend-v78 .ship{background:#31c5df}
 </style>
-<script id="professional-dashboard-v27-script">
+<style id="reportStylesV81">.pro-summary-tabs-v81{display:flex;gap:5px;background:var(--pro-surface-2);border-radius:11px;padding:4px;flex-wrap:wrap}.pro-summary-tabs-v81 button{border:0;background:transparent;padding:10px 13px;color:var(--pro-muted);border-radius:9px;font-weight:700;cursor:pointer}.pro-summary-tabs-v81 button.active{background:var(--pro-accent);color:white}.report-overlay-v81{position:fixed;inset:0;z-index:99999;background:#001a2c99;display:grid;place-items:center;padding:15px}.report-dialog-v81{width:min(420px,100%);background:var(--pro-surface,#fff);color:var(--pro-ink,#123);border-radius:14px;padding:24px;display:grid;gap:12px;box-shadow:0 12px 45px #0004}.report-dialog-v81 h3,.report-dialog-v81 p{margin:0}.report-dialog-v81 label{display:block}.report-dialog-v81 select{padding:11px;border-radius:8px;border:1px solid #bbb}.report-dialog-v81 footer{display:flex;justify-content:flex-end;gap:10px;margin-top:10px}.report-dialog-v81 footer button{padding:10px 14px;border-radius:8px;cursor:pointer;border:1px solid #ccd}.report-dialog-v81 #reportPrintV81{background:#20a6d1;color:white;border-color:#20a6d1}</style><script id="professional-dashboard-v27-script">
 (function(){
  const money=n=>"₱"+Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
  const paid=o=>String(o.payment_status||"").toLowerCase()==="paid";
@@ -9377,10 +9377,9 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
     <div class="pro-head-v27">
       <div><h2>Dashboard</h2></div>
       <div class="pro-tools-v27">
-        <select id="proPeriodV27" class="pro-select-v27" onchange="renderAdminDashboard()">
-          <option value="30">Last 30 Days</option><option value="7">Last 7 Days</option><option value="365">This Year</option>
-        </select>
-        <button class="pro-print-v27" onclick="printSalesReportV6()">Print Report</button>
+        <div class="pro-summary-tabs-v81"><button type="button" onclick="setSummaryV81('today',this)">Today</button><button type="button" onclick="setSummaryV81('week',this)">This Week</button><button type="button" class="active" onclick="setSummaryV81('month',this)">This Month</button></div>
+        <input type="hidden" id="proPeriodV27" value="month">
+        <button class="pro-print-v27" type="button" onclick="openReportV81()">Print Report</button>
       </div>
     </div>
     <div class="pro-kpis-v27">
@@ -9390,17 +9389,49 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
       <div class="pro-kpi-v27"><div class="pro-kpi-top-v27"><span>Pending Actions</span><i class="pro-kpi-icon-v27"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i></div><strong id="proPendingV27">0</strong></div>
     </div>
     <div class="pro-main-v27">
-      <section class="pro-panel-v27"><div class="pro-panel-title-v27"><div><h3>Sales Overview</h3></div><div class="pro-range-v27"><button onclick="setProRangeV27(7,this)">7 Days</button><button class="active" onclick="setProRangeV27(30,this)">30 Days</button><button onclick="setProRangeV27(365,this)">12 Months</button></div></div><div id="proChartV27" class="pro-chart-v27"></div></section>
+      <section class="pro-panel-v27"><div class="pro-panel-title-v27"><div><h3>Sales Overview</h3></div><div class="pro-range-v27"><button class="active" data-days="7" onclick="setProRangeV27(7,this)">7 Days</button><button data-days="30" onclick="setProRangeV27(30,this)">30 Days</button><button data-days="365" onclick="setProRangeV27(365,this)">12 Months</button></div></div><div id="proChartV27" class="pro-chart-v27"></div></section>
       <section class="pro-panel-v27"><div class="pro-panel-title-v27"><div><h3>Notifications</h3></div></div><div id="proAttentionV27" class="pro-attention-v27"></div></section>
     </div>
     <section class="pro-panel-v27" style="margin-bottom:16px"><div class="pro-panel-title-v27"><div><h3>Order Status Overview</h3></div></div><div id="proStatusV27" class="pro-status-v27"></div></section>
     <section class="pro-panel-v27"><div class="pro-panel-title-v27"><div><h3>Recent Orders</h3></div><button class="pro-view-v27" onclick="showAdminPage('orders')">View All Orders</button></div><div class="pro-table-scroll-v27"><table class="pro-table-v27"><thead><tr><th>Order ID</th><th>Customer</th><th>Courier</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody id="proRecentV27"></tbody></table></div></section>
    </div>`;
  }
+ window.setSummaryV81=function(period,btn){
+   document.getElementById("proPeriodV27").value=period;
+   document.querySelectorAll(".pro-summary-tabs-v81 button").forEach(b=>b.classList.remove("active"));
+   btn.classList.add("active");renderAdminDashboard();
+ };
+ window.openReportV81=function(){
+   const existing=document.getElementById("reportV81");if(existing)existing.remove();
+   const el=document.createElement("div");el.id="reportV81";el.className="report-overlay-v81";
+   el.innerHTML='<div class="report-dialog-v81" role="dialog" aria-modal="true"><h3>Print Report</h3><p>Select Date Range</p><select id="reportPeriodV81"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option></select><p>Report Content</p><label><input type="checkbox" value="sales" checked> Product Sales</label><label><input type="checkbox" value="shipping" checked> Shipping Collected</label><label><input type="checkbox" value="paid" checked> Paid Orders</label><footer><button id="reportCancelV81">Cancel</button><button id="reportPrintV81">Print Report</button></footer></div>';
+   document.body.appendChild(el);
+   el.querySelector("#reportPeriodV81").value=document.getElementById("proPeriodV27").value;
+   el.querySelector("#reportCancelV81").onclick=()=>el.remove();
+   el.onclick=e=>{if(e.target===el)el.remove();};
+   el.querySelector("#reportPrintV81").onclick=()=>{
+     const period=el.querySelector("#reportPeriodV81").value;
+     const now=new Date(),start=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+     if(period==="week")start.setDate(start.getDate()-(start.getDay()+6)%7);
+     if(period==="month")start.setDate(1);
+     const end=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
+     const all=Array.isArray(window.orders)?window.orders:orders||[];
+     const paidOrders=all.filter(o=>{const d=new Date(o.date||o.created_at||0);return d>=start&&d<end&&paid(o)&&notCancelled(o);});
+     const selected=Array.from(el.querySelectorAll('input[type="checkbox"]:checked')).map(x=>x.value);
+     if(!selected.length){alert("Select report content.");return;}
+     const sales=paidOrders.reduce((n,o)=>n+Number(o.subtotal||0),0),shipping=paidOrders.reduce((n,o)=>n+Number(o.shipping||0),0);
+     const entries=[["sales","Product Sales",money(sales)],["shipping","Shipping Collected",money(shipping)],["paid","Paid Orders",paidOrders.length]];
+     const content=entries.filter(e=>selected.includes(e[0])).map(e=>'<tr><td>'+e[1]+'</td><th>'+e[2]+'</th></tr>').join("");
+     const popup=window.open("","_blank");if(!popup){alert("Please allow pop-ups to print.");return;}
+     popup.document.write('<!doctype html><html><head><title>BettaTrack Sales Report</title><style>body{font-family:Arial;padding:35px;color:#10374d}table{width:100%;border-collapse:collapse}td,th{padding:16px;border-bottom:1px solid #ddd;text-align:left}</style></head><body><h1>BettaTrack Sales Report</h1><p>'+period.toUpperCase()+' · '+start.toLocaleDateString()+' - '+now.toLocaleDateString()+'</p><table>'+content+'</table></body></html>');
+     popup.document.close();popup.focus();popup.print();el.remove();
+   };
+ };
  window.setProRangeV27=function(days,btn){
-   const s=document.getElementById("proPeriodV27");if(s)s.value=String(days);
-   document.querySelectorAll(".pro-range-v27 button").forEach(b=>b.classList.remove("active"));if(btn)btn.classList.add("active");
-   renderAdminDashboard();
+   document.querySelectorAll(".pro-range-v27 button").forEach(b=>b.classList.remove("active"));
+   if(btn)btn.classList.add("active");
+   const all=Array.isArray(window.orders)?window.orders:orders||[];
+   drawChartV27(all,days);
  };
 
  function drawChartV27(list,days){
@@ -9488,9 +9519,16 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
  function renderProV27(){
    if(!document.getElementById("proSalesV27")) setupProDashboardV27();
    const all=Array.isArray(window.orders)?window.orders:orders||[];
-   const days=Number(document.getElementById("proPeriodV27")?.value||30);
-   const cutoff=new Date();cutoff.setDate(cutoff.getDate()-days);
-   const scoped=all.filter(o=>new Date(o.date||o.created_at||0)>=cutoff);
+   const period=document.getElementById("proPeriodV27")?.value||"month";
+   const now=new Date();
+   const start=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+   if(period==="week") start.setDate(start.getDate()-(start.getDay()+6)%7);
+   else if(period==="month") start.setDate(1);
+   const end=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
+   const scoped=all.filter(o=>{
+     const date=new Date(o.date||o.created_at||0);
+     return Number.isFinite(date.getTime())&&date>=start&&date<end;
+   });
    const paidOrders=scoped.filter(o=>paid(o)&&notCancelled(o));
    const sales=paidOrders.reduce((s,o)=>s+Number(o.subtotal||0),0);
    const shipping=paidOrders.reduce((s,o)=>s+Number(o.shipping||0),0);
@@ -9518,7 +9556,9 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
 
    const recent=[...all].sort((a,b)=>Number(!!b.is_new)-Number(!!a.is_new)||new Date(b.created_at||b.date||0)-new Date(a.created_at||a.date||0)).slice(0,6);
    document.getElementById("proRecentV27").innerHTML=recent.length?recent.map(o=>`<tr><td>${esc(o.id||o.order_code||"")}${o.is_new?' <span style="color:#d63b55;font-weight:800">NEW</span>':""}</td><td>${esc(o.customer_name||o.name||o.username||"")}</td><td>${esc(o.courier||"—")}</td><td>${money(o.total)}</td><td>${esc(o.payment_method||"—")}</td><td><span class="pro-status-pill-v27">${esc(o.status||"—")}</span></td><td>${esc(o.date||o.created_at||"—")}</td><td><button class="pro-view-v27" onclick="viewOrder('${esc(o.id||o.order_code||"")}')">View</button></td></tr>`).join(""):`<tr><td colspan="8">No orders yet.</td></tr>`;
-   drawChartV27(scoped,days);
+   // The Sales Overview has its own independent date-range buttons.
+   const chartDays=Number(document.querySelector(".pro-range-v27 button.active")?.getAttribute("data-days")||7);
+   drawChartV27(all,chartDays);
  }
 
  setupProDashboardV27();
