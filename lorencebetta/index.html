@@ -2691,8 +2691,14 @@ async function apiRequest(endpoint, options = {}) {
         try {
             data = JSON.parse(text);
         } catch {
-            console.error("Invalid API response:", text);
-            throw new Error("Server returned an invalid response.");
+            console.error("Non-JSON API response:", {endpoint, status: response.status, body: text.slice(0, 300)});
+            if (response.status === 403) {
+                throw new Error("Server blocked this request (HTTP 403). Payment changes were not saved. Please check InfinityFree security restrictions.");
+            }
+            if (!response.ok) {
+                throw new Error("Server error (HTTP " + response.status + "). Changes were not saved.");
+            }
+            throw new Error("Server returned an invalid response. Changes were not saved.");
         }
 
         if (!response.ok || data.success === false) {
