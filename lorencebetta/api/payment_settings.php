@@ -22,7 +22,15 @@ function read_bank_settings($conn, $bank) {
     return $settings;
 }
 function all_payment_settings($conn) {
-    return ["GCash"=>read_gcash_settings($conn),"MariBank"=>read_bank_settings($conn,"MariBank"),"AUB"=>read_bank_settings($conn,"AUB")];
+    $methods=["GCash"=>read_gcash_settings($conn),"MariBank"=>read_bank_settings($conn,"MariBank"),"AUB"=>read_bank_settings($conn,"AUB")];
+    $row=$conn->query("SELECT setting_value FROM shop_settings WHERE setting_key='custom_payment_methods' LIMIT 1");
+    $names=$row&&($r=$row->fetch_assoc())?json_decode($r["setting_value"],true):[];
+    if(!is_array($names))$names=[];
+    foreach($names as $name){if(!is_string($name)||!preg_match('/^[A-Za-z][A-Za-z0-9 ]{1,39}$/',$name))continue;$methods[$name]=read_bank_settings($conn,str_replace(" ","_",$name));}
+    $flags=$conn->query("SELECT setting_key,setting_value FROM shop_settings WHERE setting_key LIKE 'payment_enabled_%'");
+    $enabled=[];if($flags)while($r=$flags->fetch_assoc())$enabled[substr($r["setting_key"],16)]=$r["setting_value"]==="1";
+    foreach($methods as $name=>&$config){$key=strtolower(str_replace(" ","_",$name));$config["active"]=$enabled[$key]??(in_array($name,["GCash","MariBank","AUB"],true));}unset($config);
+    return $methods;
 }
 
 if ($_SERVER["REQUEST_METHOD"] !== "GET") {
@@ -31,12 +39,39 @@ if ($_SERVER["REQUEST_METHOD"] !== "GET") {
 }
 if ($_SERVER["REQUEST_METHOD"] === "GET") respond(true, "", ["settings" => read_gcash_settings($conn),"methods"=>all_payment_settings($conn)]);
 $method=trim($_POST["method"]??"GCash");
-if(!in_array($method,["GCash","MariBank","AUB"],true))respond(false,"Unsupported payment method.",[],400);
+if(!preg_match('/^[A-Za-z][A-Za-z0-9 ]{1,39}$/',$method))respond(false,"Invalid payment method name.",[],400);
+$methods=all_payment_settings($conn);
+if(isset($_POST["active"])){
+    if(!isset($methods[$method]))respond(false,"Unknown payment method.",[],404);
+    $active=$_POST["active"]==="1"?"1":"0";
+    if($active==="1"){
+        $x=$methods[$method];
+        if(empty($x["account_name"])&&empty($x["merchant_name"]))respond(false,"Account details required.",[],400);
+        if(empty($x["account_number"])&&empty($x["gcash_number"]))respond(false,"Account number required.",[],400);
+        if(empty($x["qr_image"]))respond(false,"QR code required.",[],400);
+    }
+    $key="payment_enabled_".strtolower(str_replace(" ","_",$method));
+    $stmt=$conn->prepare("INSERT INTO shop_settings (setting_key,setting_value) VALUES (?,?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)");
+    $stmt->bind_param("ss",$key,$active);$stmt->execute();$stmt->close();
+    respond(true,"Payment method updated.",["methods"=>all_payment_settings($conn)]);
+}
+if(!isset($methods[$method])){
+    $row=$conn->query("SELECT setting_value FROM shop_settings WHERE setting_key='custom_payment_methods' LIMIT 1");
+    $names=$row&&($r=$row->fetch_assoc())?json_decode($r["setting_value"],true):[];
+    if(!is_array($names))$names=[];
+    if(count($names)>=20)respond(false,"Payment method limit reached.",[],400);
+    foreach(array_keys($methods) as $existing){if(strcasecmp($existing,$method)===0)respond(false,"Payment method already exists.",[],409);}
+    $names[]=$method;$json=json_encode($names);
+    $stmt=$conn->prepare("INSERT INTO shop_settings (setting_key,setting_value) VALUES ('custom_payment_methods',?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)");
+    $stmt->bind_param("s",$json);$stmt->execute();$stmt->close();
+}
+
+
 if($method!=="GCash") {
     $name=trim($_POST["account_name"]??"");
     $number=trim($_POST["account_number"]??"");
     if($name===""||!preg_match('/^[0-9]{6,25}$/',$number))respond(false,"Enter an account name and valid bank account number (6-25 digits).",[],400);
-    $prefix=strtolower($method)."_";
+    $prefix=strtolower(str_replace(" ","_",$method))."_";
     $values=[$prefix."account_name"=>$name,$prefix."account_number"=>$number];
     $file=$_FILES["qr_image"]??null;
     if($file && $file["error"]!==UPLOAD_ERR_NO_FILE) {
