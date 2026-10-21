@@ -40,7 +40,7 @@ if ($name === "" || $category === "" || $price < 0 || $stock < 0) {
     respond(false, "Please enter valid product information.", [], 400);
 }
 
-$imagePath = save_product_image($_FILES["image"] ?? null);
+$imagePath = isset($_POST["image_base64"]) ? save_admin_base64_image($_POST["image_base64"], "products", "betta") : save_product_image($_FILES["image"] ?? null);
 
 if (!$imagePath) {
     respond(false, "Please choose a product picture.", [], 400);

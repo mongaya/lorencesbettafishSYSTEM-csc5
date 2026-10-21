@@ -3806,6 +3806,10 @@ function previewPaymentQrV90(){
  if(!/^image\/(png|jpeg|webp)$/.test(file.type)||file.size>5*1024*1024){document.getElementById("paymentQrV89").value="";showToast("Choose a PNG, JPG or WebP image under 5 MB.");return;}
  const reader=new FileReader();reader.onload=()=>{preview.innerHTML='<img src="'+reader.result+'" alt="QR code preview">';};reader.readAsDataURL(file);
 }
+function imageDataUrlForAdminV95(file){
+ if(!/^image\/(jpeg|png|webp)$/.test(file.type)||file.size>5*1024*1024)throw new Error("Choose a JPG, PNG or WebP image under 5 MB.");
+ return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error("Could not read image."));reader.readAsDataURL(file);});
+}
 async function savePaymentV89(){
  const name=document.getElementById("paymentMethodNameV89").value.trim(),account=document.getElementById("paymentAccountNameV89").value.trim(),number=document.getElementById("paymentAccountNumberV89").value.trim(),file=document.getElementById("paymentQrV89").files[0];
  if(!/^[A-Za-z][A-Za-z0-9 ]{1,39}$/.test(name))return showToast("Enter a valid payment method name (2–40 characters).");
@@ -3813,12 +3817,13 @@ async function savePaymentV89(){
  if(!account||!number)return showToast("Enter account name and number.");
  if(!/^\d{6,25}$/.test(number)||(name==="GCash"&&!/^09\d{9}$/.test(number)))return showToast("Invalid account number.");
  if(!file&&!paymentSettings[name]?.qr_image)return showToast("Upload a QR code.");
- const form=new FormData();form.append("method",name);form.append(name==="GCash"?"merchant_name":"account_name",account);form.append(name==="GCash"?"gcash_number":"account_number",number);if(file)form.append("qr_image",file);
- try{const d=await apiRequest("payment_method_save.php",{method:"POST",body:form});paymentSettings=d.methods||paymentSettings;closePaymentEditorV89();renderPaymentSettings();renderCheckoutMethodsV89();showToast("Payment method saved.");}catch(e){showToast(e.message);}
+ const fields={method:name,[name==="GCash"?"merchant_name":"account_name"]:account,[name==="GCash"?"gcash_number":"account_number"]:number};
+ if(file)fields.qr_image_base64=await imageDataUrlForAdminV95(file);
+ try{const d=await apiRequest("payment_method_save.php",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams(fields).toString()});paymentSettings=d.methods||paymentSettings;closePaymentEditorV89();renderPaymentSettings();renderCheckoutMethodsV89();showToast("Payment method saved.");}catch(e){showToast(e.message);}
 }
 async function togglePaymentV89(name,active){
- const form=new FormData();form.append("method",name);form.append("active",active?"1":"0");
- try{const d=await apiRequest("payment_method_save.php",{method:"POST",body:form});paymentSettings=d.methods||paymentSettings;renderPaymentSettings();renderCheckoutMethodsV89();}catch(e){showToast(e.message);renderPaymentSettings();}
+ const fields=new URLSearchParams({method:name,active:active?"1":"0"});
+ try{const d=await apiRequest("payment_method_save.php",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:fields.toString()});paymentSettings=d.methods||paymentSettings;renderPaymentSettings();renderCheckoutMethodsV89();}catch(e){showToast(e.message);renderPaymentSettings();}
 }
 /* =========================================================
    PROFILE
@@ -4717,9 +4722,12 @@ async function saveProduct() {
             ? "update_product.php"
             : "add_product.php";
 
+        const fields=new URLSearchParams();
+        for(const [key,value] of formData.entries())if(!(value instanceof File))fields.append(key,value);
+        if(imageFile)fields.append("image_base64",await imageDataUrlForAdminV95(imageFile));
         await apiRequest(endpoint, {
-            method: "POST",
-            body: formData
+            method: "POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},
+            body: fields.toString()
         });
 
         await loadProducts();
@@ -4933,7 +4941,7 @@ async function saveStockOnly() {
         formData.append("price", Number(product.price));
         formData.append("stock", stock);
         formData.append("description", product.description || "");
-        await apiRequest("update_product.php", {method:"POST", body:formData});
+        await apiRequest("update_product.php", {method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams(formData).toString()});
         await loadProducts();
         closeStockOnlyModal();
         renderAdminProducts();
@@ -6509,11 +6517,11 @@ async function loadProductsFastV7(force=false){
  productStateV7("Loading products…","Please wait while we load the available products.");
  try{
    let response;
-   try{response=await fetchWithTimeoutV7(API_BASE+"products.php",{headers:{"Accept":"application/json"}},7000)}
+   try{response=await fetchWithTimeoutV7(API+"products.php",{headers:{"Accept":"application/json"}},7000)}
    catch(firstErr){
      // One short retry helps with occasional InfinityFree cold/transient responses.
      await new Promise(r=>setTimeout(r,500));
-     response=await fetchWithTimeoutV7(API_BASE+"products.php",{headers:{"Accept":"application/json"}},7000);
+     response=await fetchWithTimeoutV7(API+"products.php",{headers:{"Accept":"application/json"}},7000);
    }
    if(token!==productLoadTokenV7)return;
    if(!response.ok)throw new Error("Server returned "+response.status);
@@ -7284,7 +7292,7 @@ loadProductsFastV7=async function(force=false){
    let response;
    for(let attempt=0;attempt<2;attempt++){
      try{
-       response=await fetchWithTimeoutV7(API_BASE+"products.php",{headers:{"Accept":"application/json"}},18000);
+       response=await fetchWithTimeoutV7(API+"products.php",{headers:{"Accept":"application/json"}},18000);
        if(response.ok)break;
        if(response.status<500)break;
      }catch(e){if(attempt===1)throw e}
