@@ -10295,10 +10295,12 @@ body.dark-mode .payment-date-v58,body.dark .payment-date-v58,[data-theme="dark"]
 <script id="payment-workspace-v58-script">
 (function(){
   function category(o){
-    const p=String(o.payment_status||"").toLowerCase(),st=String(o.status||"").toLowerCase();
+    const p=String(o.payment_status||"").trim().toLowerCase();
+    const st=String(o.status||"").trim().toLowerCase();
+    if(st==="cancelled"||st==="canceled")return "other";
     if(p==="paid"||p==="verified")return "verified";
-    if(p==="payment submitted"||p==="payment needs correction")return "pending";
-    if(st==="cancelled"||st==="order received"||st==="delivered"||st==="shipped")return "other";
+    if(o.payment_correction_requested||p==="payment needs correction"||p==="rejected"||p==="payment rejected")return "pending";
+    // New and first-time submitted payments remain under New Orders.
     return "new";
   }
   let active="new";
@@ -10327,7 +10329,7 @@ body.dark-mode .payment-date-v58,body.dark .payment-date-v58,[data-theme="dark"]
       list.sort((a,b)=>String(b.created_at||b.date||"").localeCompare(String(a.created_at||a.date||"")));
       const first=list[0],user=adminCustomerUsername(first);
       return '<section class="admin-customer-group"><div class="admin-customer-head"><div><h3>'+escapeHTML(adminCustomerLabel(first))+'</h3><p>'+(user?'Account: @'+escapeHTML(user):'Customer account')+'</p></div><span class="admin-customer-count">'+list.length+' Order(s)</span></div>'+
-      list.map(o=>'<div class="admin-order-row-v2"><div><small>ORDER</small><strong>'+escapeHTML(o.id)+'</strong><div class="payment-date-v58">Ordered: '+escapeHTML(formatDate(o))+'</div></div><div><small>COURIER</small><strong>'+escapeHTML(o.courier||"—")+'</strong></div><div><small>TOTAL</small><strong>'+(o.shipping_confirmed===false||o.shipping_confirmed===0?'Pending':'₱'+Number(o.total||0).toFixed(2))+'</strong></div><div><small>PAYMENT</small><strong>'+escapeHTML(o.payment_status||"Awaiting Payment")+'</strong></div><button class="action-btn view-btn" data-payment-order="'+escapeHTML(o.id)+'">'+(active==="pending"?"Review Payment":"View Order")+'</button></div>').join("")+'</section>'
+      list.map(o=>'<div class="admin-order-row-v2"><div><small>ORDER</small><strong>'+escapeHTML(o.id)+'</strong><div class="payment-date-v58">Ordered: '+escapeHTML(formatDate(o))+'</div></div><div><small>COURIER</small><strong>'+escapeHTML(o.courier||"—")+'</strong></div><div><small>TOTAL</small><strong>'+(o.shipping_confirmed===false||o.shipping_confirmed===0?'Pending':'₱'+Number(o.total||0).toFixed(2))+'</strong></div><div><small>PAYMENT</small><strong>'+escapeHTML(o.payment_status||"Awaiting Payment")+'</strong></div><button class="action-btn view-btn" data-payment-order="'+escapeHTML(o.id)+'">'+(active==="pending"?"View Correction":active==="verified"?"View Order":"Review Order")+'</button></div>').join("")+'</section>'
     }).join("")||'<div class="card"><p class="muted">No orders in this category.</p></div>';
     wrap.querySelectorAll("[data-payment-order]").forEach(b=>b.addEventListener("click",()=>viewOrder(b.dataset.paymentOrder)));
     const oldSelect=host.querySelector(".admin-order-search-v2 select");if(oldSelect)oldSelect.style.display="none";
@@ -10369,7 +10371,7 @@ body.dark-mode .payment-readonly-v59 h4,body.dark .payment-readonly-v59 h4,[data
        '<p class="payment-note">Payment verified. Shipping and delivery updates are managed only in Shipping Management.</p>'+
        (o.payment_screenshot?'<div class="payment-actions"><button type="button" class="action-btn view-btn" id="verifiedReceiptV59">View / Print Payment Receipt</button></div>':'<p class="payment-note">No payment receipt is available for this order.</p>')+'</div>';
      const btn=panel.querySelector("#verifiedReceiptV59");
-     if(btn)btn.addEventListener("click",()=>viewReceipt(String(o.id),false));
+     if(btn)btn.addEventListener("click",()=>viewReceipt(String(o.id),true));
    }else if(correction||p==="payment submitted"){
      const history=Array.isArray(o.payment_attempts)?o.payment_attempts:Array.isArray(o.payment_history)?o.payment_history:null;
      const section=document.createElement("section");
@@ -10381,6 +10383,40 @@ body.dark-mode .payment-readonly-v59 h4,body.dark .payment-readonly-v59 h4,[data
        (history&&history.length?history.map((a,i)=>'<div class="payment-field"><span>Attempt '+(i+1)+'</span><span>'+escapeHTML(String(a.submitted_at||a.created_at||a.date||"Date unavailable"))+' · '+escapeHTML(String(a.status||"Submitted"))+'</span></div>').join(""):'<p class="payment-note">Previous attempts are not available in the current order data. Existing submissions are not reconstructed or invented.</p>');
      panel.appendChild(section);
    }
+ };
+})();
+</script>
+<script id="payment-final-workflow-v60">
+(function(){
+ const previous=viewOrder;
+ viewOrder=function(orderId){
+   previous(orderId);
+   const o=(orders||[]).find(x=>String(x.id)===String(orderId));
+   const d=document.getElementById("orderDetails");
+   if(!o||!d)return;
+   const panel=d.querySelector(".admin-action-panel-v2");
+   if(!panel)return;
+   const p=String(o.payment_status||"").toLowerCase();
+   if(p==="paid"||p==="verified")return;
+   const proof=o.payment_screenshot||"";
+   const submitted=p==="payment submitted";
+   const attempt=Number(o.payment_attempt_count||0);
+   const corrected=!!o.payment_correction_requested;
+   panel.innerHTML='<section class="payment-readonly-v59"><h4>'+ (corrected?'Pending Verification':'Payment Review') +'</h4>'+
+     '<div class="payment-field"><span>Payment Method</span><strong>'+escapeHTML(o.payment||"—")+'</strong></div>'+
+     '<div class="payment-field"><span>Subtotal</span><strong>₱'+Number(o.subtotal||0).toFixed(2)+'</strong></div>'+
+     '<div class="payment-field"><span>Automatic Shipping Fee</span><strong>₱'+Number(o.shipping||0).toFixed(2)+'</strong></div>'+
+     '<div class="payment-field"><span>Total</span><strong>₱'+Number(o.total||0).toFixed(2)+'</strong></div>'+
+     '<div class="payment-field"><span>Payment Attempt</span><strong>'+attempt+' / 2</strong></div>'+
+     '<div class="payment-field"><span>Reference</span><strong>'+escapeHTML(o.payment_reference||"Not submitted")+'</strong></div>'+
+     (o.payment_rejection_reason?'<p class="payment-note">Correction reason: '+escapeHTML(o.payment_rejection_reason)+'</p>':'')+
+     (proof?'<p><a href="'+escapeHTML(proof)+'" target="_blank" rel="noopener">View Uploaded Payment Proof</a></p>':'<p class="payment-note">Waiting for payment proof.</p>')+
+     (submitted?'<div class="payment-actions"><button class="primary-btn" id="paymentVerifyV60">Verify Payment</button><button class="danger-solid-btn" id="paymentRejectV60">'+(attempt>=2?'Reject & Cancel Order':'Request Correction')+'</button></div>':'<p class="payment-note">Waiting for customer submission.</p>')+
+     '</section>';
+   const verify=panel.querySelector("#paymentVerifyV60");
+   const reject=panel.querySelector("#paymentRejectV60");
+   if(verify)verify.addEventListener("click",()=>markPaymentPaid(String(o.id)));
+   if(reject)reject.addEventListener("click",()=>requestNewPaymentProof(String(o.id)));
  };
 })();
 </script>
