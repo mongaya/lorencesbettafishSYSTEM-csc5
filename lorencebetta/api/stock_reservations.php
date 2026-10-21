@@ -5,7 +5,9 @@ function ensure_order_flow_columns($conn){
         "stock_deducted"=>"TINYINT(1) NOT NULL DEFAULT 1",
         "payment_rejection_reason"=>"VARCHAR(500) NULL",
         "admin_seen_at"=>"DATETIME NULL",
-        "tracking_number"=>"VARCHAR(120) NULL"
+        "tracking_number"=>"VARCHAR(120) NULL",
+        "payment_attempt_count"=>"TINYINT UNSIGNED NOT NULL DEFAULT 0",
+        "payment_correction_requested"=>"TINYINT(1) NOT NULL DEFAULT 0"
     ];
     foreach($cols as $name=>$definition){
         $q=$conn->query("SHOW COLUMNS FROM orders LIKE '".$conn->real_escape_string($name)."'");
@@ -13,6 +15,19 @@ function ensure_order_flow_columns($conn){
             if(!$conn->query("ALTER TABLE orders ADD COLUMN `$name` $definition")) throw new Exception("Unable to prepare order flow.");
         }
     }
+    if(!$conn->query("CREATE TABLE IF NOT EXISTS payment_attempts (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        order_id INT NOT NULL,
+        attempt_number TINYINT UNSIGNED NOT NULL,
+        payment_reference VARCHAR(255) NOT NULL,
+        payment_screenshot VARCHAR(255) NOT NULL,
+        status VARCHAR(30) NOT NULL DEFAULT 'Submitted',
+        rejection_reason VARCHAR(500) NULL,
+        submitted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        reviewed_at DATETIME NULL,
+        UNIQUE KEY unique_order_attempt(order_id,attempt_number),
+        INDEX(order_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4")) throw new Exception("Unable to prepare payment attempts.");
     if(!$conn->query("CREATE TABLE IF NOT EXISTS order_status_history (
         id INT AUTO_INCREMENT PRIMARY KEY,
         order_id INT NOT NULL,
