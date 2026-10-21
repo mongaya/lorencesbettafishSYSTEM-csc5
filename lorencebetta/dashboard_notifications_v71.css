@@ -1,0 +1,25 @@
+#admin-dashboard .pro-main-v27{grid-template-columns:minmax(0,1fr)}
+#admin-dashboard .pro-main-v27>.pro-panel-v27{min-width:0}
+#admin-dashboard .pro-main-v27>.pro-panel-v27:nth-child(2){margin-top:0}
+#admin-dashboard .pro-kpi-v27{border-top:3px solid #199dc7;background:var(--pro-surface)}
+#admin-dashboard .pro-kpi-v27:nth-child(2){border-top-color:#0cae9a}
+#admin-dashboard .pro-kpi-v27:nth-child(3){border-top-color:#6567d6}
+#admin-dashboard .pro-kpi-v27:nth-child(4){border-top-color:#d88a24}
+#admin-dashboard .dash-note-v71{appearance:none;width:100%;display:flex;align-items:center;gap:15px;padding:13px 15px;text-align:left;border:1px solid var(--pro-line,#d8e6ef);background:var(--pro-surface,#fff);color:var(--pro-ink,#173b4e);cursor:pointer;font:inherit}
+#admin-dashboard .dash-note-v71:first-child{border-radius:12px 12px 0 0}
+#admin-dashboard .dash-note-v71:last-child{border-radius:0 0 12px 12px;border-top:0}
+#admin-dashboard .dash-note-v71:hover{background:var(--pro-surface-2,#eef7fb)}
+#admin-dashboard .dash-note-v71:focus-visible{outline:3px solid #199dc7;outline-offset:2px}
+#admin-dashboard .dash-note-icon-v71{width:43px;height:43px;border-radius:11px;display:grid;place-items:center;flex-shrink:0;background:#e0f3fd}
+#admin-dashboard .dash-note-icon-v71:before{content:'▣';font-size:24px;color:#138fc6}
+#admin-dashboard .dash-note-v71.cancel .dash-note-icon-v71{background:#fee7e7}
+#admin-dashboard .dash-note-v71.cancel .dash-note-icon-v71:before{content:'↶';color:#d35252}
+#admin-dashboard .dash-note-label-v71{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0}
+#admin-dashboard .dash-note-label-v71 strong{font-size:14px}
+#admin-dashboard .dash-note-label-v71 small{font-size:12px;color:var(--pro-muted,#668092)}
+#admin-dashboard .dash-note-v71 b{background:#d9f1ff;color:#086c9a;padding:7px 12px;border-radius:9px;font-size:14px}
+#admin-dashboard .dash-note-v71.cancel b{background:#fee5e5;color:#b33d3d}
+#admin-dashboard .dash-new-v71{cursor:pointer}
+@media(max-width:680px){#admin-dashboard .pro-kpis-v27{grid-template-columns:repeat(2,minmax(0,1fr))}#admin-dashboard .dash-note-v71{gap:10px;padding:11px}}
+body.dark-mode #admin-dashboard .dash-note-v71{background:#193749;color:#e4f3fb;border-color:#416276}
+body.dark-mode #admin-dashboard .dash-note-v71:hover{background:#25516a}
