@@ -2,10 +2,11 @@
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/auth.php";
 require_admin_session($conn);
-require_once "db.php";require_once "stock_reservations.php";ensure_order_flow_columns($conn);
+require_once "db.php";require_once "stock_reservations.php";ensure_order_flow_columns($conn);require_once __DIR__."/cancellation_schema.php";ensure_cancellation_requests($conn);
 $data=json_input();$orderId=trim($data["orderId"]??"");if($orderId==="")respond(false,"Order ID is required.",[],400);
 $conn->begin_transaction();
 try{$q=$conn->prepare("SELECT id,status,courier,payment_status,payment_reference,payment_screenshot,stock_deducted,payment_attempt_count FROM orders WHERE order_code=? FOR UPDATE");$q->bind_param("s",$orderId);$q->execute();$o=stmt_fetch_assoc_compat($q);if(!$o)throw new Exception("Order not found.");
+$hold=$conn->prepare("SELECT id FROM cancellation_requests WHERE order_id=? AND status='Pending Review' LIMIT 1");$hold->bind_param("i",$o["id"]);$hold->execute();$pending=stmt_fetch_assoc_compat($hold);$hold->close();if($pending)throw new Exception("Cancellation request is pending admin review.");
 if($o["status"]==="Cancelled")throw new Exception("Cancelled orders cannot be approved.");
 if($o["payment_status"]==="Paid"){$conn->commit();respond(true,"Payment is already verified.");}
 if($o["payment_status"]!=="Payment Submitted"||trim((string)$o["payment_reference"])===""||trim((string)$o["payment_screenshot"])==="")throw new Exception("Payment cannot be confirmed until the customer submits a reference number and payment receipt.");
