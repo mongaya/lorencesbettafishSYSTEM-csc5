@@ -1,1 +1,1 @@
-(function(){const old=renderAdminDashboard;renderAdminDashboard=function(){old();};})();
+(function(){const old=renderAdminDashboard;renderAdminDashboard=function(){old();console.log('dashboard v71');};})();
