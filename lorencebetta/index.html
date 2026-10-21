@@ -3758,7 +3758,7 @@ function orderHTML(order) {
         <aside class="order-side-column">
           <div class="order-side-card"><h4>Order Summary</h4><div class="summary-row"><span>Subtotal</span><strong>₱${Number(order.subtotal||0).toFixed(2)}</strong></div><div class="summary-row"><span>Shipping</span><strong>${order.shipping_confirmed?'₱'+Number(order.shipping).toFixed(2):'Pending'}</strong></div><div class="summary-row"><span>Total</span><strong>${order.shipping_confirmed?'₱'+Number(order.total).toFixed(2):'Pending final total'}</strong></div></div>
           <div class="order-side-card"><h4>Delivery</h4><p><strong>${escapeHTML(order.courier||"Not specified")}</strong></p>${String(order.courier||"").trim().toLowerCase()==="lalamove"&&order.payment_status==="Paid"&&order.status!=="Cancelled"?`<div class="lalamove-customer-tracking-v20"><strong>Lalamove Tracking</strong>${order.tracking_number?`<p>Booking / Tracking No.: <strong>${escapeHTML(order.tracking_number)}</strong></p>`:""}${order.tracking_url&&/^https?:\/\//i.test(order.tracking_url)?`<a class="primary-btn" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:9px" href="${escapeHTML(order.tracking_url)}" target="_blank" rel="noopener noreferrer">Track Delivery ↗</a>`:""}${!order.tracking_url&&!order.tracking_number?`<p class="payment-note">Tracking details will appear here after the admin books your Lalamove delivery.</p>`:""}</div>`:""}<button class="action-btn view-btn" style="margin-top:10px" onclick="showCustomerPage('chat');loadCustomerChat()">Chat with Admin</button></div>
-          <div class="order-side-card"><h4>Payment</h4><p>${escapeHTML(order.payment)}</p><p class="payment-note">Status: <strong>${escapeHTML(order.payment_status==="Payment Submitted"?"Payment Submitted — Waiting for Admin Verification":order.payment_status==="Paid"?"Payment Verified":order.payment_status||"Waiting for shipping fee")}</strong></p>${["Paid","Payment Submitted"].includes(order.payment_status)&&order.payment_screenshot?`<button class="action-btn view-btn" onclick="viewReceipt('${escapeHTML(order.id)}',false)">View Receipt</button>`:""}</div>
+          <div class="order-side-card"><h4>Payment</h4><p>${escapeHTML(order.payment)}</p><p class="payment-note">Status: <strong>${escapeHTML(order.payment_status==="Payment Submitted"?"Payment Submitted — Waiting for Admin Verification":order.payment_status==="Paid"?"Payment Verified":order.payment_status||"Waiting for shipping fee")}</strong></p>${order.payment_status==="Paid"&&order.payment_screenshot?`<button class="action-btn view-btn" onclick="viewReceipt('${escapeHTML(order.id)}',false)">View Receipt</button>`:""}</div>
           ${order.status==="Delivered"?`<div class="order-side-card receive-card"><h4>Package delivered?</h4><p class="payment-note">Confirm only after you have received and checked your order.</p><button class="primary-btn" onclick="confirmOrderReceived('${escapeHTML(order.id)}')">Order Received</button></div>`:""}
           ${order.status==="Cancelled"?`<div class="order-side-card"><h4>Cancellation Note</h4><p class="payment-note">${escapeHTML(order.payment_rejection_reason||"Order cancelled. Please contact the shop for details.")}</p></div>`:""}
           <div class="order-side-card"><h4>Delivery Address</h4><p class="payment-note">${escapeHTML(order.address)}</p></div>
@@ -5290,37 +5290,32 @@ if (new URLSearchParams(location.search).get("reset")) {
 </style>
 <script>
 /* One consolidated customer-order workflow. No renderer wrappers. */
-function smartOrderFlow(order){
- if(order.payment_reference && ["Payment Submitted","Paid"].includes(order.payment_status)) return order.courier==="Pick Up"?["Payment Submitted","Payment Verified","Preparing","Ready for Pickup","Completed"]:order.courier==="J&T Express"?["Payment Submitted","Payment Verified","To Ship","To Receive","Completed"]:["Payment Submitted","Payment Verified","Preparing","Ready to Ship","Shipped","Out for Delivery","Completed"];
- if(order.courier==="Pick Up") return ["Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Picked Up"];
- if(order.courier==="J&T Express") return ["Pending Shipping Fee","Awaiting Payment","Confirmed","Ready to Ship","Shipped","Order Received"];
- if(order.courier==="Lalamove") return ["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready for Delivery","Lalamove Booked","Out for Delivery","Delivered","Order Received"];
- return ["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received"];
-}
+/* Customer tabs follow payment approval and courier handover, not internal admin stages. */
 function smartOrderBucket(order){
- if(order.status==="Cancelled") return "Cancelled";
- if(order.payment_status==="Payment Submitted") return "Payment Submitted";
- if(order.payment_status==="Payment Needs Correction") return "To Pay";
- if(["Pending Shipping Fee","Awaiting Payment"].includes(order.status)) return "To Pay";
- if(order.courier==="J&T Express"&&["Confirmed","Preparing","Ready to Ship"].includes(order.status))return "To Ship";
- if(["Confirmed","Preparing","Ready for Delivery","Ready to Ship","Lalamove Booked"].includes(order.status)) return "To Prepare";
- if(["Ready for Pickup","Shipped","Out for Delivery","Delivered"].includes(order.status)) return "To Receive";
- if(["Delivered","Order Received","Picked Up"].includes(order.status)) return "Completed";
- return "To Prepare";
+ const status=String(order.status||"");
+ const payment=String(order.payment_status||"");
+ if(status==="Cancelled")return "Cancelled";
+ if(["Order Received","Picked Up"].includes(status))return "Completed";
+ if(["Shipped","Out for Delivery","Delivered","Lalamove Booked"].includes(status))return "To Receive";
+ if(payment==="Paid")return "To Ship";
+ return "To Pay";
 }
-customerOrderFilter="Payment Submitted";
+function smartOrderFlow(order){
+ return ["To Pay","To Ship","To Receive","Completed"];
+}
+customerOrderFilter="To Pay";
 renderOrderStatusTabs=function(allOrders){
- const el=document.getElementById("orderStatusTabs"); if(!el)return;
- const tabs=["Payment Submitted","To Pay","To Ship","To Prepare","To Receive","Completed","Cancelled"].filter(t=>t!=="To Pay"||allOrders.some(o=>smartOrderBucket(o)==="To Pay"));
- if(!tabs.includes(customerOrderFilter)) customerOrderFilter="Payment Submitted";
+ const el=document.getElementById("orderStatusTabs");if(!el)return;
+ const tabs=["To Pay","To Ship","To Receive","Completed","Cancelled"];
+ if(!tabs.includes(customerOrderFilter))customerOrderFilter="To Pay";
  el.innerHTML=tabs.map(t=>`<button class="order-status-tab ${customerOrderFilter===t?'active':''}" onclick="setCustomerOrderFilter('${t}')">${t} <b>${allOrders.filter(o=>smartOrderBucket(o)===t).length}</b></button>`).join("");
 };
 setCustomerOrderFilter=function(status){customerOrderFilter=status;renderCustomerOrders();};
 
 orderHTML=function(order){
- const statuses=smartOrderFlow(order), payFirst=!!order.payment_reference&&["Payment Submitted","Paid"].includes(order.payment_status), currentStage=payFirst?(order.payment_status==="Payment Submitted"?"Payment Submitted":["Pending","Confirmed"].includes(order.status)?"Payment Verified":["Picked Up","Order Received","Delivered"].includes(order.status)?"Completed":order.status):order.status, currentIndex=statuses.indexOf(currentStage);
- const displayStage=order.courier==="J&T Express"?(order.status==="Order Received"?"Completed":["Shipped","Out for Delivery","Delivered"].includes(order.status)?"To Receive":order.payment_status==="Paid"?"To Ship":order.payment_status==="Payment Submitted"?"Payment Submitted":currentStage):currentStage;
- const activeIndex=order.courier==="J&T Express"?statuses.indexOf(displayStage):currentIndex;
+ const statuses=smartOrderFlow(order);
+ const displayStage=smartOrderBucket(order);
+ const activeIndex=statuses.indexOf(displayStage);
  const progress=statuses.map((status,index)=>{const done=order.status!=="Cancelled"&&index<=activeIndex;return `<div class="progress-step ${done?'done':''}"><div class="progress-dot">${done?'✓':index+1}</div>${escapeHTML(status)}</div>`}).join("");
  const items=(order.items||[]).map(item=>{const product=products.find(p=>Number(p.db_id)===Number(item.productId));const reviewReady=["Delivered","Order Received","Picked Up"].includes(order.status)&&product;const reviewed=product?alreadyReviewed(product):false;return `<div class="order-item-row">${item.image?`<img src="${escapeHTML(item.image)}" alt="${escapeHTML(item.name)}">`:`<div></div>`}<div><div class="order-item-name">${escapeHTML(item.name)}</div><div class="order-item-sub">Qty ${Number(item.quantity)} · ₱${Number(item.price).toFixed(2)}</div></div><div>${reviewReady?`<button class="action-btn view-btn" onclick="openProductDetail('${escapeHTML(product.id)}')">${reviewed?"View Rating":"Rate Product"}</button>`:""}</div></div>`}).join("");
  const paymentAction=order.status!=="Cancelled"&&["GCash","MariBank","AUB"].includes(order.payment)&&order.shipping_confirmed&&!["Paid","Payment Submitted"].includes(order.payment_status)?paymentActionHTML(order):"";
