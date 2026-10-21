@@ -11,11 +11,10 @@
       const all=Array.isArray(orders)?orders:[];
       const pending=all.filter(o=>o.cancellation?.status==='Pending Review').length;
       const refunds=all.filter(o=>o.cancellation?.status==='Refund Pending').length;
-      const needs=all.filter(o=>o.payment_status==='Payment Submitted'&&o.cancellation?.status!=='Pending Review'&&o.status!=='Cancelled').length;
-      const fees=all.filter(o=>o.status==='Pending Shipping Fee'&&!o.cancellation).length;
-      const ready=all.filter(o=>o.status==='Ready to Ship'&&!o.cancellation).length;
-      const pickup=all.filter(o=>o.status==='Ready for Pickup'&&!o.cancellation).length;
-      const actions=[['Payment proofs to verify',needs,'orders'],['Shipping fees to confirm',fees,'orders'],['Orders ready for shipment',ready,'courier-shipping'],['Orders ready for pickup',pickup,'courier-shipping'],['Cancellation requests',pending,'cancellations'],['GCash refunds to process',refunds,'cancellations']];
+      const activeOrder=o=>o.status!=='Cancelled'&&o.cancellation?.status!=='Pending Review'&&o.cancellation?.status!=='Refund Pending'&&o.cancellation?.status!=='Refunded'&&o.cancellation?.status!=='Approved';
+      const needs=all.filter(o=>activeOrder(o)&&o.payment_status==='Payment Submitted').length;
+      const ready=all.filter(o=>activeOrder(o)&&o.payment_status==='Paid'&&!['Shipped','Out for Delivery','Delivered','Order Received','Picked Up','Lalamove Booked'].includes(o.status)&&!o.tracking_number&&!o.tracking_url).length;
+      const actions=[['Payment Verification',needs,'orders'],['Ready for Shipment',ready,'courier-shipping'],['Cancellation Requests',pending,'cancellations'],['Pending Refunds',refunds,'cancellations']];
       const active=actions.reduce((sum,a)=>sum+a[1],0);
       const total=document.getElementById('proPendingV27');if(total)total.textContent=String(active);
       const escape=typeof escapeHTML==='function'?escapeHTML:(v=>String(v));
