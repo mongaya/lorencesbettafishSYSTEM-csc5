@@ -10,12 +10,23 @@ $reason=trim((string)($d["reason"]??""));
 if($code===""||$reason===""||mb_strlen($reason)>500) respond(false,"Order ID and rejection reason (up to 500 characters) are required.",[],400);
 $conn->begin_transaction();
 try {
-  $q=$conn->prepare("SELECT id,status,payment_status,stock_deducted FROM orders WHERE order_code=? FOR UPDATE");
+  $q=$conn->prepare("SELECT id,status,payment_status,stock_deducted,payment_attempt_count,payment_reference,payment_screenshot FROM orders WHERE order_code=? FOR UPDATE");
   $q->bind_param("s",$code);$q->execute();$o=stmt_fetch_assoc_compat($q);$q->close();
   if(!$o||$o["status"]==="Cancelled"||$o["payment_status"]!=="Payment Submitted") throw new Exception("Only submitted, unverified payments can be rejected.");
   if((int)$o["stock_deducted"]!==0) throw new Exception("This order has already had stock deducted and cannot be rejected here.");
   $id=(int)$o["id"];
-  $u=$conn->prepare("UPDATE orders SET status='Awaiting Payment',payment_status='Payment Needs Correction',payment_rejection_reason=?,reservation_expires_at=NULL,updated_at=NOW() WHERE id=? AND stock_deducted=0 AND payment_status='Payment Submitted'");
+  $attempt=max(1,(int)$o["payment_attempt_count"]);
+  $history=$conn->prepare("UPDATE payment_attempts SET status='Rejected',rejection_reason=?,reviewed_at=NOW() WHERE order_id=? AND attempt_number=?");
+  $history->bind_param("sii",$reason,$id,$attempt);$history->execute();$history->close();
+  if($attempt>=2){
+    $u=$conn->prepare("UPDATE orders SET status='Cancelled',payment_status='Payment Rejected',payment_rejection_reason=?,payment_correction_requested=1,reservation_expires_at=NULL,updated_at=NOW() WHERE id=? AND stock_deducted=0 AND payment_status='Payment Submitted'");
+    $u->bind_param("si",$reason,$id);$u->execute();
+    if($u->affected_rows!==1)throw new Exception("Order state changed. Refresh and retry.");
+    log_order_status($conn,$id,"Cancelled");
+    $conn->commit();
+    respond(true,"Second payment proof rejected. Order cancelled; reserved inventory is released.");
+  }
+  $u=$conn->prepare("UPDATE orders SET status='Awaiting Payment',payment_status='Payment Needs Correction',payment_rejection_reason=?,payment_correction_requested=1,reservation_expires_at=NULL,updated_at=NOW() WHERE id=? AND stock_deducted=0 AND payment_status='Payment Submitted'");
   $u->bind_param("si",$reason,$id);$u->execute();
   if($u->affected_rows!==1) throw new Exception("Order state changed. Refresh and retry.");
   $u->close();
