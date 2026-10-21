@@ -9363,7 +9363,7 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
 .pro-chart-legend-v78 .sales{background:#27a9d4}
 .pro-chart-legend-v78 .ship{background:#31c5df}
 </style>
-<script id="professional-dashboard-v27-script">
+<style id="reportStylesV81">.pro-summary-tabs-v81{display:flex;gap:5px;background:var(--pro-surface-2);border-radius:11px;padding:4px;flex-wrap:wrap}.pro-summary-tabs-v81 button{border:0;background:transparent;padding:10px 13px;color:var(--pro-muted);border-radius:9px;font-weight:700;cursor:pointer}.pro-summary-tabs-v81 button.active{background:var(--pro-accent);color:white}.report-overlay-v81{position:fixed;inset:0;z-index:99999;background:#001a2c99;display:grid;place-items:center;padding:15px}.report-dialog-v81{width:min(420px,100%);background:var(--pro-surface,#fff);color:var(--pro-ink,#123);border-radius:14px;padding:24px;display:grid;gap:12px;box-shadow:0 12px 45px #0004}.report-dialog-v81 h3,.report-dialog-v81 p{margin:0}.report-dialog-v81 label{display:block}.report-dialog-v81 select{padding:11px;border-radius:8px;border:1px solid #bbb}.report-dialog-v81 footer{display:flex;justify-content:flex-end;gap:10px;margin-top:10px}.report-dialog-v81 footer button{padding:10px 14px;border-radius:8px;cursor:pointer;border:1px solid #ccd}.report-dialog-v81 #reportPrintV81{background:#20a6d1;color:white;border-color:#20a6d1}</style><script id="professional-dashboard-v27-script">
 (function(){
  const money=n=>"₱"+Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
  const paid=o=>String(o.payment_status||"").toLowerCase()==="paid";
@@ -9377,10 +9377,9 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
     <div class="pro-head-v27">
       <div><h2>Dashboard</h2></div>
       <div class="pro-tools-v27">
-        <select id="proPeriodV27" class="pro-select-v27" aria-label="Dashboard sales period" onchange="renderAdminDashboard()">
-          <option value="today">Today</option><option value="week">This Week</option><option value="month" selected>This Month</option>
-        </select>
-        <button class="pro-print-v27" onclick="printSalesReportV6()">Print Report</button>
+        <div class="pro-summary-tabs-v81"><button type="button" onclick="setSummaryV81('today',this)">Today</button><button type="button" onclick="setSummaryV81('week',this)">This Week</button><button type="button" class="active" onclick="setSummaryV81('month',this)">This Month</button></div>
+        <input type="hidden" id="proPeriodV27" value="month">
+        <button class="pro-print-v27" type="button" onclick="openReportV81()">Print Report</button>
       </div>
     </div>
     <div class="pro-kpis-v27">
@@ -9397,6 +9396,37 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
     <section class="pro-panel-v27"><div class="pro-panel-title-v27"><div><h3>Recent Orders</h3></div><button class="pro-view-v27" onclick="showAdminPage('orders')">View All Orders</button></div><div class="pro-table-scroll-v27"><table class="pro-table-v27"><thead><tr><th>Order ID</th><th>Customer</th><th>Courier</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody id="proRecentV27"></tbody></table></div></section>
    </div>`;
  }
+ window.setSummaryV81=function(period,btn){
+   document.getElementById("proPeriodV27").value=period;
+   document.querySelectorAll(".pro-summary-tabs-v81 button").forEach(b=>b.classList.remove("active"));
+   btn.classList.add("active");renderAdminDashboard();
+ };
+ window.openReportV81=function(){
+   const existing=document.getElementById("reportV81");if(existing)existing.remove();
+   const el=document.createElement("div");el.id="reportV81";el.className="report-overlay-v81";
+   el.innerHTML='<div class="report-dialog-v81" role="dialog" aria-modal="true"><h3>Print Report</h3><p>Select Date Range</p><select id="reportPeriodV81"><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option></select><p>Report Content</p><label><input type="checkbox" value="sales" checked> Product Sales</label><label><input type="checkbox" value="shipping" checked> Shipping Collected</label><label><input type="checkbox" value="paid" checked> Paid Orders</label><footer><button id="reportCancelV81">Cancel</button><button id="reportPrintV81">Print Report</button></footer></div>';
+   document.body.appendChild(el);
+   el.querySelector("#reportPeriodV81").value=document.getElementById("proPeriodV27").value;
+   el.querySelector("#reportCancelV81").onclick=()=>el.remove();
+   el.onclick=e=>{if(e.target===el)el.remove();};
+   el.querySelector("#reportPrintV81").onclick=()=>{
+     const period=el.querySelector("#reportPeriodV81").value;
+     const now=new Date(),start=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+     if(period==="week")start.setDate(start.getDate()-(start.getDay()+6)%7);
+     if(period==="month")start.setDate(1);
+     const end=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
+     const all=Array.isArray(window.orders)?window.orders:orders||[];
+     const paidOrders=all.filter(o=>{const d=new Date(o.date||o.created_at||0);return d>=start&&d<end&&paid(o)&&notCancelled(o);});
+     const selected=Array.from(el.querySelectorAll('input[type="checkbox"]:checked')).map(x=>x.value);
+     if(!selected.length){alert("Select report content.");return;}
+     const sales=paidOrders.reduce((n,o)=>n+Number(o.subtotal||0),0),shipping=paidOrders.reduce((n,o)=>n+Number(o.shipping||0),0);
+     const entries=[["sales","Product Sales",money(sales)],["shipping","Shipping Collected",money(shipping)],["paid","Paid Orders",paidOrders.length]];
+     const content=entries.filter(e=>selected.includes(e[0])).map(e=>'<tr><td>'+e[1]+'</td><th>'+e[2]+'</th></tr>').join("");
+     const popup=window.open("","_blank");if(!popup){alert("Please allow pop-ups to print.");return;}
+     popup.document.write('<!doctype html><html><head><title>BettaTrack Sales Report</title><style>body{font-family:Arial;padding:35px;color:#10374d}table{width:100%;border-collapse:collapse}td,th{padding:16px;border-bottom:1px solid #ddd;text-align:left}</style></head><body><h1>BettaTrack Sales Report</h1><p>'+period.toUpperCase()+' · '+start.toLocaleDateString()+' - '+now.toLocaleDateString()+'</p><table>'+content+'</table></body></html>');
+     popup.document.close();popup.focus();popup.print();el.remove();
+   };
+ };
  window.setProRangeV27=function(days,btn){
    document.querySelectorAll(".pro-range-v27 button").forEach(b=>b.classList.remove("active"));
    if(btn)btn.classList.add("active");
