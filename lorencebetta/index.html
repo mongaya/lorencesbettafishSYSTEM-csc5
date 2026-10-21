@@ -3797,7 +3797,7 @@ function updatePaymentPreviewV90(){
 function previewPaymentQrV90(){
  const file=document.getElementById("paymentQrV89").files[0],preview=document.getElementById("paymentQrPreviewV89");
  if(!file)return;
- if(!/^image\\/(png|jpeg|webp)$/.test(file.type)||file.size>5*1024*1024){document.getElementById("paymentQrV89").value="";showToast("Choose a PNG, JPG or WebP image under 5 MB.");return;}
+ if(!/^image\/(png|jpeg|webp)$/.test(file.type)||file.size>5*1024*1024){document.getElementById("paymentQrV89").value="";showToast("Choose a PNG, JPG or WebP image under 5 MB.");return;}
  const reader=new FileReader();reader.onload=()=>{preview.innerHTML='<img src="'+reader.result+'" alt="QR code preview">';};reader.readAsDataURL(file);
 }
 async function savePaymentV89(){
