@@ -2,7 +2,7 @@
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/auth.php";
 require_once "db.php";require_once "stock_reservations.php";
-ensure_order_flow_columns($conn);release_expired_reservations($conn);
+ensure_order_flow_columns($conn);require_once __DIR__."/cancellation_schema.php";ensure_cancellation_requests($conn);release_expired_reservations($conn);
 $username=trim($_POST["username"]??"");
 require_customer_owner($conn,$username);$orderId=trim($_POST["orderId"]??"");$reference=trim($_POST["reference"]??"");$file=$_FILES["screenshot"]??null;
 if($username===""||$orderId===""||$reference==="")respond(false,"Reference number is required.",[],400);
@@ -16,6 +16,7 @@ if(!$check)respond(false,"Unable to prepare payment submission.",[],500);
 $check->bind_param("ss",$orderId,$username);
 if(!$check->execute())respond(false,"Unable to load order for payment.",[],500);
 $order=stmt_fetch_assoc_compat($check);$check->close();
+if($order){$hold=$conn->prepare("SELECT id FROM cancellation_requests WHERE order_id=? AND status='Pending Review' LIMIT 1");$hold->bind_param("i",$order["id"]);$hold->execute();$pending=stmt_fetch_assoc_compat($hold);$hold->close();if($pending)respond(false,"Cancellation request is pending admin review.",[],409);}
 if($order&&(int)$order["payment_attempt_count"]>=2)respond(false,"Maximum two payment attempts reached. Contact the shop.",[],409);
 if(!$order||$order["status"]!=="Awaiting Payment"||!in_array($order["payment_status"],["Unpaid","Payment Needs Correction"],true))
     respond(false,"Payment cannot be submitted for this order right now.",[],409);

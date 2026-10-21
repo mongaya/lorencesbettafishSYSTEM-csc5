@@ -1,0 +1,34 @@
+(function(){
+function esc(s){return escapeHTML(String(s??''))}
+function eligible(o){return ['To Pay','To Ship'].includes(smartOrderBucket(o))&&!o.cancellation&&!o.tracking_number&&!o.tracking_url}
+function info(o){
+ const c=o.cancellation;if(!c)return eligible(o)?'<div class="cancel-v65"><button class="action-btn" onclick="openCancellationV65('+JSON.stringify(o.id)+')">Request Cancellation</button></div>':'';
+ let note='<div class="cancel-v65"><strong>Cancellation: '+esc(c.status)+'</strong><p>Reason: '+esc(c.reason)+'</p><p>'+esc(c.explanation)+'</p>';
+ if(c.admin_reason)note+='<p>Admin response: '+esc(c.admin_reason)+'</p>';
+ if(c.status==='Refund Pending')note+='<p>Your cancellation was approved. GCash refund proof is pending.</p>';
+ if(c.status==='Refunded')note+='<p>Refund reference: <strong>'+esc(c.refund_reference)+'</strong></p>'+(c.refund_proof?'<a href="'+esc(c.refund_proof)+'" target="_blank" rel="noopener noreferrer">View refund screenshot</a>':'');
+ return note+'</div>';
+}
+const oldOrderHTML=orderHTML;
+orderHTML=function(o){const html=oldOrderHTML(o);const extra=info(o);return extra?html.replace('</aside></div></div>','<div class="order-side-card">'+extra+'</div></aside></div></div>'):html};
+window.openCancellationV65=function(id){
+ const o=orders.find(x=>String(x.id)===String(id));if(!o||!eligible(o))return showToast('This order is not eligible for cancellation.');
+ const modal=document.createElement('div');modal.className='cancel-modal-v65';modal.innerHTML='<div class="cancel-dialog-v65"><h2>Request Cancellation</h2><p>Order '+esc(id)+'</p><label>Reason</label><select id="cancel-reason-v65"><option>Changed my mind</option><option>Ordered wrong item</option><option>Incorrect delivery details</option><option>Processing delay</option><option>Other</option></select><label>Explain your reason (minimum 10 characters)</label><textarea id="cancel-explanation-v65" rows="4" maxlength="1000" placeholder="Please explain why you want to cancel."></textarea><p class="payment-note">Your request requires admin review. Shipping and payment verification will be held while pending.</p><div class="cancel-actions-v65"><button class="action-btn" id="cancel-close-v65">Back</button><button class="primary-btn" id="cancel-send-v65">Submit Request</button></div></div>';
+ document.body.appendChild(modal);modal.querySelector('#cancel-close-v65').onclick=()=>modal.remove();
+ modal.querySelector('#cancel-send-v65').onclick=async()=>{const reason=modal.querySelector('#cancel-reason-v65').value,explanation=modal.querySelector('#cancel-explanation-v65').value.trim();if(explanation.length<10)return showToast('Please provide at least 10 characters.');const btn=modal.querySelector('#cancel-send-v65');btn.disabled=true;try{await apiRequest('request_cancellation.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:id,reason,explanation})});modal.remove();await loadOrders();renderCustomerOrders();showToast('Cancellation request submitted.');}catch(e){showToast(e.message);btn.disabled=false}};
+};
+const originalAdmin=renderAdminOrders;
+renderAdminOrders=function(){originalAdmin();const t=document.getElementById('adminOrdersTable');if(!t)return;Array.from(t.querySelectorAll('tr')).forEach(tr=>{const id=tr.querySelector('td strong')?.textContent;const o=orders.find(x=>String(x.id)===id);if(o?.cancellation){const td=tr.lastElementChild;td.insertAdjacentHTML('beforeend','<button class="action-btn view-btn" style="margin-top:6px" onclick="openCancellationAdminV65('+JSON.stringify(o.id)+')">Cancellation: '+esc(o.cancellation.status)+'</button>')}})};
+window.openCancellationAdminV65=function(id){
+ const o=orders.find(x=>String(x.id)===String(id));if(!o?.cancellation)return;const c=o.cancellation;
+ const modal=document.createElement('div');modal.className='cancel-modal-v65';
+ let body='<h2>Cancellation & Refunds</h2><p><strong>Order '+esc(id)+'</strong> — '+esc(c.status)+'</p><p>Customer: '+esc(o.customerName)+'</p><p>Reason: '+esc(c.reason)+'</p><p>'+esc(c.explanation)+'</p><p>Payment: '+esc(o.payment_status)+' · ₱'+Number(o.total).toFixed(2)+'</p>';
+ if(c.status==='Pending Review')body+='<label>Admin note / rejection reason</label><textarea id="cancel-admin-note-v65" rows="3" maxlength="1000"></textarea><div class="cancel-actions-v65"><button class="action-btn" data-action="reject">Reject</button><button class="primary-btn" data-action="approve">Approve</button></div>';
+ if(c.status==='Refund Pending')body+='<p>Send the refund through GCash first, then upload proof.</p><label>GCash refund reference</label><input id="refund-ref-v65" placeholder="Transaction reference"><label>Refund screenshot</label><input id="refund-proof-v65" type="file" accept="image/png,image/jpeg,image/webp"><button class="primary-btn" id="refund-send-v65">Record Refund</button>';
+ if(c.admin_reason)body+='<p>Admin note: '+esc(c.admin_reason)+'</p>';
+ if(c.refund_proof)body+='<p>Refund reference: '+esc(c.refund_reference)+'</p><a target="_blank" rel="noopener noreferrer" href="'+esc(c.refund_proof)+'">View refund screenshot</a>';
+ modal.innerHTML='<div class="cancel-dialog-v65">'+body+'<div class="cancel-actions-v65"><button class="action-btn" id="cancel-admin-close-v65">Close</button></div></div>';document.body.appendChild(modal);modal.querySelector('#cancel-admin-close-v65').onclick=()=>modal.remove();
+ modal.querySelectorAll('[data-action]').forEach(btn=>btn.onclick=async()=>{const action=btn.dataset.action,note=modal.querySelector('#cancel-admin-note-v65').value.trim();if(action==='reject'&&note.length<5)return showToast('Explain why the request was rejected.');btn.disabled=true;try{await apiRequest('review_cancellation.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:id,action,note})});modal.remove();await loadOrders();renderAdminOrders();renderAdminDashboard();showToast('Cancellation reviewed.')}catch(e){showToast(e.message);btn.disabled=false}});
+ const refund=modal.querySelector('#refund-send-v65');if(refund)refund.onclick=async()=>{const ref=modal.querySelector('#refund-ref-v65').value.trim(),file=modal.querySelector('#refund-proof-v65').files[0];if(ref.length<6||!file)return showToast('Enter GCash reference and upload screenshot.');if(!confirm('Confirm the GCash refund has already been sent?'))return;const fd=new FormData();fd.append('orderId',id);fd.append('reference',ref);fd.append('proof',file);refund.disabled=true;try{await apiRequest('record_refund.php',{method:'POST',body:fd});modal.remove();await loadOrders();renderAdminOrders();renderAdminDashboard();showToast('Refund proof saved.')}catch(e){showToast(e.message);refund.disabled=false}};
+};
+})();
