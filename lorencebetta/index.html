@@ -4210,7 +4210,7 @@ function selectedCourierOrdersV50(){
 }
 let courierFocusedV53="";
 function courierFocusV53(id){courierFocusedV53=String(id);renderCourierShippingV50();}
-function courierAllToggleV53(checked){const q=(document.getElementById("courierSearchV50")?.value||"").toLowerCase();courierOrdersV50().filter(o=>o.status==="Ready to Ship"&&o.payment_status==="Paid"&&(!q||String(o.id).toLowerCase().includes(q)||String(o.customerName||"").toLowerCase().includes(q))).forEach(o=>{if(checked)courierSelectedIdsV50.add(String(o.id));else courierSelectedIdsV50.delete(String(o.id));});renderCourierShippingV50();}
+function courierAllToggleV53(checked){const q=(document.getElementById("courierSearchV50")?.value||"").toLowerCase();courierOrdersV50().filter(o=>o.status==="Ready to Ship"&&o.payment_status==="Paid"&&(!q||[o.id,o.customerName,o.tracking_number,o.address].some(v=>String(v||"").toLowerCase().includes(q)))).forEach(o=>{if(checked)courierSelectedIdsV50.add(String(o.id));else courierSelectedIdsV50.delete(String(o.id));});renderCourierShippingV50();}
 function courierDetailsV53(o){
  const side=document.getElementById("courierSideV53");if(!side)return;
  if(!o){side.innerHTML='<div class="courier-side-placeholder-v53"><h3>Order Details</h3><p>Select an order to see its details.</p></div>';return;}
