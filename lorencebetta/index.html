@@ -2234,7 +2234,7 @@ body:not(.dark-mode) .hero-kicker{
             </section>
 
 
-            <section id="admin-cancellations" class="page"><div class="page-title"><h2>Cancellation &amp; Refunds</h2><p>Review customer cancellation requests and manage GCash refunds.</p></div><div id="cancel-stats-v66" class="cancel-stats-v66"></div><div id="cancellation-manager-v66" class="cancel-manager-v66"></div></section>
+            <section id="admin-cancellations" class="page"><div class="page-title"><h2>Cancellation &amp; Refunds</h2></div><div id="cancel-stats-v66" class="cancel-stats-v66"></div><div id="cancellation-manager-v66" class="cancel-manager-v66"></div></section>
 
             <section id="admin-courier-shipping" class="page courier-v53 shipping-v56">
 <div class="page-title"><h2><svg viewBox="0 0 24 24"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg> Shipping Management</h2><p>Manage shipments, tracking, and deliveries for J&amp;T Express orders.</p></div>
@@ -12254,6 +12254,26 @@ timelineHTML=function(o){
 </script>
 
 <link rel="stylesheet" href="cancellation_v65.css?v=67">
+<style id="cancel-summary-polish-v82">
+#admin-cancellations .cancel-stats-v66{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:18px 0 20px}
+#admin-cancellations .cancel-stat-card-v67{min-height:132px;padding:19px 22px;border:1px solid #cde2ed;border-top:3px solid;border-radius:15px;display:flex;flex-direction:column;justify-content:space-between;align-items:stretch;gap:12px;text-align:left;cursor:pointer;transition:box-shadow .15s,border-color .15s}
+#admin-cancellations .cancel-stat-card-v67 strong{font-size:28px;line-height:1.1}
+#admin-cancellations .cancel-stat-head-v82{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px;font-weight:700}
+#admin-cancellations .cancel-stat-icon-v82{width:42px;height:42px;display:grid;place-items:center;border-radius:11px;flex-shrink:0}
+#admin-cancellations .cancel-stat-icon-v82 svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#admin-cancellations .cancel-stat-card-v67.cancel-pending-v82{background:#eff9fe;color:#09678c;border-top-color:#20a7d2}
+#admin-cancellations .cancel-pending-v82 .cancel-stat-icon-v82{background:#d9f0fb;color:#0a94be}
+#admin-cancellations .cancel-stat-card-v67.cancel-refund-v82{background:#fffaf0;color:#92620e;border-top-color:#e5a42b}
+#admin-cancellations .cancel-refund-v82 .cancel-stat-icon-v82{background:#ffedc7;color:#b78013}
+#admin-cancellations .cancel-stat-card-v67.cancel-resolved-v82{background:#f0fcf7;color:#137952;border-top-color:#22ab76}
+#admin-cancellations .cancel-resolved-v82 .cancel-stat-icon-v82{background:#d8f5e7;color:#188b5d}
+#admin-cancellations .cancel-stat-card-v67.selected{border-width:2px;border-top-width:3px;box-shadow:0 0 0 2px rgba(20,157,195,.12)}
+#admin-cancellations .cancel-stat-card-v67:focus-visible{outline:3px solid #1ba7d0;outline-offset:2px}
+body.dark-mode #admin-cancellations .cancel-pending-v82,body.dark #admin-cancellations .cancel-pending-v82{background:#143849;color:#b9e9ff;border-color:#2388ae}
+body.dark-mode #admin-cancellations .cancel-refund-v82,body.dark #admin-cancellations .cancel-refund-v82{background:#40351e;color:#ffe1a2;border-color:#b4832c}
+body.dark-mode #admin-cancellations .cancel-resolved-v82,body.dark #admin-cancellations .cancel-resolved-v82{background:#153d32;color:#b2f0d5;border-color:#2f9c71}
+@media(max-width:650px){#admin-cancellations .cancel-stats-v66{grid-template-columns:1fr}#admin-cancellations .cancel-stat-card-v67{min-height:95px}}
+</style>
 <script src="cancellation_v65.js?v=67"></script>
 
 <link rel="stylesheet" href="dashboard_cleanup_v68.css?v=70">
