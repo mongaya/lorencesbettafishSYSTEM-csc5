@@ -2,7 +2,7 @@
 require_once __DIR__ . "/db.php";
 require_once __DIR__ . "/auth.php";
 require_admin_session($conn);
-require_once "db.php";require_once "stock_reservations.php";ensure_order_flow_columns($conn);
+require_once "db.php";require_once "stock_reservations.php";ensure_order_flow_columns($conn);require_once __DIR__."/cancellation_schema.php";ensure_cancellation_requests($conn);
 $data=json_input();$orderId=trim($data["orderId"]??"");$status=trim($data["status"]??"");
 $trackingNumber=trim((string)($data["trackingNumber"]??""));
 $trackingUrl=trim((string)($data["trackingUrl"]??""));
@@ -16,6 +16,7 @@ $flows=[
  "J&T Express"=>["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received"]
 ];
 $flow=$flows[$o["courier"]]??null;if(!$flow)respond(false,"Unsupported courier.",[],400);
+$hold=$conn->prepare("SELECT id FROM cancellation_requests WHERE order_id=? AND status='Pending Review' LIMIT 1");$hold->bind_param("i",$o["id"]);$hold->execute();$pending=stmt_fetch_assoc_compat($hold);$hold->close();if($pending)respond(false,"Cancellation request is pending admin review.",[],409);
 // Payment-first orders become Confirmed immediately after verification.
  // The existing courier-specific fulfillment flow continues from Confirmed.
 $current=array_search($o["status"],$flow,true);$next=array_search($status,$flow,true);
