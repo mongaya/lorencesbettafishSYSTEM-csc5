@@ -9377,8 +9377,8 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
     <div class="pro-head-v27">
       <div><h2>Dashboard</h2></div>
       <div class="pro-tools-v27">
-        <select id="proPeriodV27" class="pro-select-v27" onchange="renderAdminDashboard()">
-          <option value="30">Last 30 Days</option><option value="7">Last 7 Days</option><option value="365">This Year</option>
+        <select id="proPeriodV27" class="pro-select-v27" aria-label="Dashboard sales period" onchange="renderAdminDashboard()">
+          <option value="today">Today</option><option value="week">This Week</option><option value="month" selected>This Month</option>
         </select>
         <button class="pro-print-v27" onclick="printSalesReportV6()">Print Report</button>
       </div>
@@ -9390,7 +9390,7 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
       <div class="pro-kpi-v27"><div class="pro-kpi-top-v27"><span>Pending Actions</span><i class="pro-kpi-icon-v27"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></i></div><strong id="proPendingV27">0</strong></div>
     </div>
     <div class="pro-main-v27">
-      <section class="pro-panel-v27"><div class="pro-panel-title-v27"><div><h3>Sales Overview</h3></div><div class="pro-range-v27"><button onclick="setProRangeV27(7,this)">7 Days</button><button class="active" onclick="setProRangeV27(30,this)">30 Days</button><button onclick="setProRangeV27(365,this)">12 Months</button></div></div><div id="proChartV27" class="pro-chart-v27"></div></section>
+      <section class="pro-panel-v27"><div class="pro-panel-title-v27"><div><h3>Sales Overview</h3></div><div class="pro-range-v27"><button class="active" data-days="7" onclick="setProRangeV27(7,this)">7 Days</button><button data-days="30" onclick="setProRangeV27(30,this)">30 Days</button><button data-days="365" onclick="setProRangeV27(365,this)">12 Months</button></div></div><div id="proChartV27" class="pro-chart-v27"></div></section>
       <section class="pro-panel-v27"><div class="pro-panel-title-v27"><div><h3>Notifications</h3></div></div><div id="proAttentionV27" class="pro-attention-v27"></div></section>
     </div>
     <section class="pro-panel-v27" style="margin-bottom:16px"><div class="pro-panel-title-v27"><div><h3>Order Status Overview</h3></div></div><div id="proStatusV27" class="pro-status-v27"></div></section>
@@ -9398,9 +9398,10 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
    </div>`;
  }
  window.setProRangeV27=function(days,btn){
-   const s=document.getElementById("proPeriodV27");if(s)s.value=String(days);
-   document.querySelectorAll(".pro-range-v27 button").forEach(b=>b.classList.remove("active"));if(btn)btn.classList.add("active");
-   renderAdminDashboard();
+   document.querySelectorAll(".pro-range-v27 button").forEach(b=>b.classList.remove("active"));
+   if(btn)btn.classList.add("active");
+   const all=Array.isArray(window.orders)?window.orders:orders||[];
+   drawChartV27(all,days);
  };
 
  function drawChartV27(list,days){
@@ -9488,9 +9489,16 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
  function renderProV27(){
    if(!document.getElementById("proSalesV27")) setupProDashboardV27();
    const all=Array.isArray(window.orders)?window.orders:orders||[];
-   const days=Number(document.getElementById("proPeriodV27")?.value||30);
-   const cutoff=new Date();cutoff.setDate(cutoff.getDate()-days);
-   const scoped=all.filter(o=>new Date(o.date||o.created_at||0)>=cutoff);
+   const period=document.getElementById("proPeriodV27")?.value||"month";
+   const now=new Date();
+   const start=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+   if(period==="week") start.setDate(start.getDate()-(start.getDay()+6)%7);
+   else if(period==="month") start.setDate(1);
+   const end=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
+   const scoped=all.filter(o=>{
+     const date=new Date(o.date||o.created_at||0);
+     return Number.isFinite(date.getTime())&&date>=start&&date<end;
+   });
    const paidOrders=scoped.filter(o=>paid(o)&&notCancelled(o));
    const sales=paidOrders.reduce((s,o)=>s+Number(o.subtotal||0),0);
    const shipping=paidOrders.reduce((s,o)=>s+Number(o.shipping||0),0);
@@ -9518,7 +9526,9 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
 
    const recent=[...all].sort((a,b)=>Number(!!b.is_new)-Number(!!a.is_new)||new Date(b.created_at||b.date||0)-new Date(a.created_at||a.date||0)).slice(0,6);
    document.getElementById("proRecentV27").innerHTML=recent.length?recent.map(o=>`<tr><td>${esc(o.id||o.order_code||"")}${o.is_new?' <span style="color:#d63b55;font-weight:800">NEW</span>':""}</td><td>${esc(o.customer_name||o.name||o.username||"")}</td><td>${esc(o.courier||"—")}</td><td>${money(o.total)}</td><td>${esc(o.payment_method||"—")}</td><td><span class="pro-status-pill-v27">${esc(o.status||"—")}</span></td><td>${esc(o.date||o.created_at||"—")}</td><td><button class="pro-view-v27" onclick="viewOrder('${esc(o.id||o.order_code||"")}')">View</button></td></tr>`).join(""):`<tr><td colspan="8">No orders yet.</td></tr>`;
-   drawChartV27(scoped,days);
+   // The Sales Overview has its own independent date-range buttons.
+   const chartDays=Number(document.querySelector(".pro-range-v27 button.active")?.getAttribute("data-days")||7);
+   drawChartV27(all,chartDays);
  }
 
  setupProDashboardV27();
