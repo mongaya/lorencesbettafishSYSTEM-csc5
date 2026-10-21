@@ -2320,42 +2320,22 @@ body:not(.dark-mode) .hero-kicker{
 </section>
 <!-- ADMIN CUSTOMERS -->
 
-            <section id="admin-customers" class="page">
-
-                <div class="page-title">
-
-                    <h2> Customer Records</h2>
-
-                    <p>
-                        Registered customer accounts.
-                    </p>
-
+            <section id="admin-customers" class="page customer-workspace-v84">
+                <div class="page-title"><h2>Customer Records</h2></div>
+                <div class="customer-metrics-v84">
+                    <div class="customer-metric-v84 total"><span class="customer-metric-icon-v84">♙</span><div><span>Total Customers</span><strong id="customerTotalV84">0</strong></div></div>
+                    <div class="customer-metric-v84 active"><span class="customer-metric-icon-v84">✓</span><div><span>Active Accounts</span><strong id="customerActiveV84">0</strong></div></div>
+                    <div class="customer-metric-v84 warned"><span class="customer-metric-icon-v84">!</span><div><span>Warned Accounts</span><strong id="customerWarnedV84">0</strong></div></div>
+                    <div class="customer-metric-v84 restricted"><span class="customer-metric-icon-v84">⊘</span><div><span>Restricted Accounts</span><strong id="customerRestrictedV84">0</strong></div></div>
                 </div>
-
-                <div class="table-wrap">
-
-                    <table>
-
-                        <thead>
-
-                            <tr>
-                                <th>Name</th>
-                                <th>Username</th>
-                                <th>Email</th>
-                                <th>Registered</th>
-                                <th>Orders</th>
-                            </tr>
-
-                        </thead>
-
-                        <tbody id="customersTable"></tbody>
-
-                    </table>
-
+                <div class="customer-search-v84"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg><input id="customerSearchV84" type="search" placeholder="Search name, username, or email..." aria-label="Search customers" oninput="renderCustomers()"></div>
+                <div class="customer-layout-v84">
+                    <div class="table-wrap customer-table-v84">
+                        <table><thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Registered</th><th>Orders</th><th>Status</th><th>Actions</th></tr></thead><tbody id="customersTable"></tbody></table>
+                    </div>
+                    <aside class="customer-details-v84" id="customerDetailsV84" hidden aria-label="Customer details"></aside>
                 </div>
-
             </section>
-
 
             <!-- ADMIN CHAT -->
             <section id="admin-chat" class="page">
@@ -4740,36 +4720,38 @@ async function deleteProduct(id) {
    CUSTOMER RECORDS
 ========================================================= */
 
-function renderCustomers() {
-    const tbody = document.getElementById("customersTable");
-    if (!tbody) return;
-
-    if (users.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5" style="text-align:center">
-                    No registered customers.
-                </td>
-            </tr>
-        `;
-        return;
-    }
-
-    tbody.innerHTML = users.map(user => {
-        const orderCount = orders.filter(
-            o => o.username === user.username
-        ).length;
-
-        return `
-            <tr>
-                <td>${escapeHTML(user.name)}</td>
-                <td>${escapeHTML(user.username)}</td>
-                <td>${escapeHTML(user.email || "")}</td>
-                <td>${escapeHTML(user.registered || "")}</td>
-                <td>${orderCount}</td>
-            </tr>
-        `;
-    }).join("");
+let selectedCustomerV84 = null;
+function customerSvgV84(kind){
+ const shapes={eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',warn:'<path d="m12 3 10 18H2L12 3Z"/><path d="M12 9v5m0 3v.1"/>',restrict:'<circle cx="12" cy="12" r="9"/><path d="M6 18 18 6"/>',suspend:'<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6 18.4 18.4"/>'};
+ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(shapes[kind]||shapes.eye)+'</svg>';
+}
+function renderCustomers(){
+ const tbody=document.getElementById("customersTable");if(!tbody)return;
+ const all=Array.isArray(users)?users:[];
+ const search=(document.getElementById("customerSearchV84")?.value||"").trim().toLowerCase();
+ const filtered=all.filter(u=>[u.name,u.username,u.email].some(v=>String(v||"").toLowerCase().includes(search)));
+ document.getElementById("customerTotalV84").textContent=all.length;
+ // Account restriction and warning counts require server-backed enforcement.
+ document.getElementById("customerActiveV84").textContent=all.length;
+ document.getElementById("customerWarnedV84").textContent="—";
+ document.getElementById("customerRestrictedV84").textContent="—";
+ tbody.innerHTML=filtered.length?filtered.map(user=>{
+   const name=String(user.username||"");
+   const count=orders.filter(o=>o.username===name).length;
+   return '<tr><td><span class="customer-name-v84"><span class="customer-avatar-v84">'+escapeHTML((user.name||name||"?").charAt(0).toUpperCase())+'</span>'+escapeHTML(user.name||name)+'</span></td><td>'+escapeHTML(name)+'</td><td>'+escapeHTML(user.email||"")+'</td><td>'+escapeHTML(user.registered||"")+'</td><td>'+count+'</td><td><span class="customer-status-v84">Registered</span></td><td><button type="button" class="customer-more-v84" aria-label="View customer details" data-customer-name="'+escapeHTML(name)+'">•••</button></td></tr>';
+ }).join(""):'<tr><td colspan="7" style="text-align:center;padding:30px">No matching customers.</td></tr>';
+ tbody.querySelectorAll("[data-customer-name]").forEach(btn=>btn.addEventListener("click",()=>{selectedCustomerV84=btn.dataset.customerName;renderCustomerDetailsV84();}));
+ renderCustomerDetailsV84();
+}
+function renderCustomerDetailsV84(){
+ const panel=document.getElementById("customerDetailsV84");if(!panel)return;
+ const user=users.find(u=>u.username===selectedCustomerV84);
+ if(!user){panel.hidden=true;return;}
+ panel.hidden=false;
+ const count=orders.filter(o=>o.username===user.username).length;
+ panel.innerHTML='<div class="customer-panel-heading-v84"><h3>Customer Details</h3><button type="button" aria-label="Close customer details" id="customerCloseV84">×</button></div><div class="customer-panel-profile-v84"><span class="customer-profile-avatar-v84">'+escapeHTML((user.name||user.username||"?").charAt(0).toUpperCase())+'</span><div><strong>'+escapeHTML(user.name||user.username)+'</strong><small>@'+escapeHTML(user.username)+'</small></div><span class="customer-status-v84">Registered</span></div><dl><div><dt>Email</dt><dd>'+escapeHTML(user.email||"—")+'</dd></div><div><dt>Registered</dt><dd>'+escapeHTML(user.registered||"—")+'</dd></div><div><dt>Total Orders</dt><dd>'+count+'</dd></div></dl><h4>Account Actions</h4><button type="button" class="customer-action-v84 history" id="customerHistoryV84">'+customerSvgV84("eye")+' View Order History <span>›</span></button><button type="button" class="customer-action-v84 warning" disabled title="Requires server-side warning records">'+customerSvgV84("warn")+' Issue Warning <span>›</span></button><button type="button" class="customer-action-v84 restrict" disabled title="Requires server-side enforcement">'+customerSvgV84("restrict")+' Restrict Account <span>›</span></button><button type="button" class="customer-action-v84 suspend" disabled title="Requires server-side enforcement">'+customerSvgV84("suspend")+' Suspend Account <span>›</span></button><p class="customer-notice-v84">Account controls will be enabled after secure server-side enforcement is added.</p>';
+ panel.querySelector("#customerCloseV84").onclick=()=>{selectedCustomerV84=null;panel.hidden=true;};
+ panel.querySelector("#customerHistoryV84").onclick=()=>{const matching=orders.filter(o=>o.username===user.username);alert(matching.length?matching.map(o=>"Order #"+(o.id||o.order_id||"—")+" — "+(o.status||"Pending")).join("\n"):"No orders for this customer.");};
 }
 
 /* =========================================================
@@ -9360,6 +9342,35 @@ body.dark-mode #admin-products .stock-empty-v83.product-stock-status-v83{backgro
 body.dark-mode #admin-products .product-stock-count-v83.stock-good-v83{color:#8be0b2}
 body.dark-mode #admin-products .product-stock-count-v83.stock-low-v83{color:#fbd28b}
 body.dark-mode #admin-products .product-stock-count-v83.stock-empty-v83{color:#ffadb5}
+</style>
+<style id="customer-management-v84-style">
+#admin-customers .page-title{margin-bottom:22px}
+.customer-metrics-v84{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.customer-metric-v84{display:flex;gap:14px;align-items:center;padding:19px 17px;border:1px solid;border-radius:13px;min-height:98px}
+.customer-metric-v84>div{display:grid;gap:4px}.customer-metric-v84>div span{font-size:13px}.customer-metric-v84 strong{font-size:27px}
+.customer-metric-icon-v84{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;font-size:25px;font-weight:700}
+.customer-metric-v84.total{background:#edf8ff;color:#147ca9;border-color:#b8e0f4}.customer-metric-v84.total .customer-metric-icon-v84{background:#d5efff}
+.customer-metric-v84.active{background:#effbf5;color:#168452;border-color:#c7e9d5}.customer-metric-v84.active .customer-metric-icon-v84{background:#d9f3e5}
+.customer-metric-v84.warned{background:#fff9ed;color:#ac7009;border-color:#f9e6b9}.customer-metric-v84.warned .customer-metric-icon-v84{background:#fff0c9}
+.customer-metric-v84.restricted{background:#fff1f3;color:#bb283c;border-color:#f5d1d6}.customer-metric-v84.restricted .customer-metric-icon-v84{background:#ffdce2}
+.customer-search-v84{display:flex;align-items:center;gap:12px;border:1px solid #c8e2f0;border-radius:10px;padding:0 15px;margin-bottom:20px;background:#f0f9fd}
+.customer-search-v84 svg,.customer-action-v84 svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.customer-search-v84 input{border:0;outline:0;background:transparent;flex:1;min-width:0;padding:15px 0;color:inherit}
+.customer-layout-v84{display:grid;grid-template-columns:minmax(0,1fr);gap:22px;align-items:start}
+.customer-layout-v84:has(.customer-details-v84:not([hidden])){grid-template-columns:minmax(0,1fr) 370px}
+.customer-table-v84{margin:0;overflow:auto}.customer-table-v84 table{min-width:750px}
+.customer-name-v84{display:flex;align-items:center;gap:10px;font-weight:700}.customer-avatar-v84,.customer-profile-avatar-v84{width:39px;height:39px;display:grid;place-items:center;background:#e0eef5;border-radius:50%;font-size:19px;color:#477b95;font-weight:700;flex-shrink:0}
+.customer-status-v84{display:inline-flex;padding:7px 12px;border-radius:999px;background:#e2f6eb;color:#127646;font-size:12px;font-weight:700}
+.customer-more-v84{border:1px solid #c7e2ee;border-radius:11px;padding:8px 13px;background:#edf9fe;color:#1586b0;cursor:pointer;font-size:17px}
+.customer-details-v84{background:var(--pro-surface,#fff);border:1px solid #d9e9f0;border-radius:16px;padding:22px;box-shadow:0 4px 24px #07354d0b;color:var(--pro-ink,#123d52)}
+.customer-details-v84[hidden]{display:none}.customer-panel-heading-v84{display:flex;justify-content:space-between;align-items:center}.customer-panel-heading-v84 h3{margin:0}.customer-panel-heading-v84 button{border:0;background:none;font-size:26px;color:inherit;cursor:pointer}
+.customer-panel-profile-v84{display:flex;align-items:center;gap:13px;margin:25px 0}.customer-profile-avatar-v84{width:62px;height:62px;font-size:27px}.customer-panel-profile-v84>div{display:grid;gap:5px;min-width:0}.customer-panel-profile-v84 small{color:#66879a}.customer-panel-profile-v84 .customer-status-v84{margin-left:auto}
+.customer-details-v84 dl{border-bottom:1px solid #dbeaf1;padding-bottom:16px}.customer-details-v84 dl>div{display:flex;justify-content:space-between;gap:12px;margin:17px 0;font-size:13px}.customer-details-v84 dd{margin:0;text-align:right;overflow-wrap:anywhere}.customer-details-v84 h4{margin:20px 0 14px}
+.customer-action-v84{display:flex;align-items:center;gap:12px;width:100%;border:1px solid;border-radius:12px;padding:14px;margin:9px 0;text-align:left;font-weight:700;cursor:pointer}.customer-action-v84>span{margin-left:auto;font-size:22px}.customer-action-v84.history{background:#eaf8ff;color:#117da8;border-color:#d6ecf7}.customer-action-v84.warning{background:#fff8e9;color:#a76b07;border-color:#fae7bc}.customer-action-v84.restrict{background:#fff1e5;color:#b44f11;border-color:#f9ddc7}.customer-action-v84.suspend{background:#fff0f2;color:#ba293d;border-color:#f5d5da}.customer-action-v84:disabled{opacity:.6;cursor:not-allowed}.customer-notice-v84{font-size:12px;color:#738b9b;line-height:1.5}
+@media(max-width:1350px){.customer-layout-v84:has(.customer-details-v84:not([hidden])){grid-template-columns:1fr}.customer-metrics-v84{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.customer-metrics-v84{grid-template-columns:1fr}.customer-metric-v84{min-height:76px}}
+body.dark-mode .customer-metric-v84,body.dark-mode .customer-search-v84,body.dark-mode .customer-details-v84{background:#173746;color:#dcecf5;border-color:#31566a}
+body.dark-mode .customer-action-v84{background:#244350;color:#e5f3fa;border-color:#3b6478}
 </style>
 <script id="professional-dashboard-v27-script">
 (function(){
