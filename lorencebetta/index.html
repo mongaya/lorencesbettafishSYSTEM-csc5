@@ -2718,7 +2718,22 @@ let currentUser = JSON.parse(
 
 async function apiRequest(endpoint, options = {}) {
     try {
-        const response = await fetch(API + endpoint, options);
+        // Retry only read-only requests after transient gateway/network failures.
+        // Never retry POST/payment/order mutations automatically.
+        const method = String(options.method || "GET").toUpperCase();
+        let response;
+        for (let attempt = 0; attempt < (method === "GET" ? 3 : 1); attempt++) {
+            try {
+                response = await fetch(API + endpoint, { ...options, cache: method === "GET" ? "no-store" : options.cache });
+            } catch (networkError) {
+                if (method !== "GET" || attempt === 2) throw networkError;
+                await new Promise(resolve => setTimeout(resolve, 400 * (attempt + 1)));
+                continue;
+            }
+            if (method !== "GET" || ![502, 503, 504, 429].includes(response.status) || attempt === 2) break;
+            console.warn("Temporary API gateway error:", endpoint, response.status, "retry", attempt + 1);
+            await new Promise(resolve => setTimeout(resolve, 400 * (attempt + 1)));
+        }
         const text = await response.text();
 
         let data;
