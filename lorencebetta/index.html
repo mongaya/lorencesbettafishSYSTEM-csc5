@@ -9338,6 +9338,13 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
  .pro-tools-v27{width:100%}.pro-select-v27,.pro-print-v27{flex:1}.pro-table-scroll-v27{overflow:auto}
  #adminApp .brand-name,#customerApp .brand-name{font-size:17px!important}
 }
+/* Keep admin section headings concise; retain operational instructions in forms/modals. */
+#adminApp .page-header > p,
+#adminApp .page-header > div > p,
+#adminApp .section-header > p,
+#adminApp .section-header > div > p,
+#adminApp .admin-page-header > p,
+#adminApp .admin-page-header > div > p { display:none!important; }
 </style>
 
 <script id="professional-dashboard-v27-script">
@@ -9352,7 +9359,7 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
    sec.innerHTML=`
    <div class="pro-dash-v27">
     <div class="pro-head-v27">
-      <div><h2>Dashboard</h2><p>Store performance and order management overview.</p></div>
+      <div><h2>Dashboard</h2></div>
       <div class="pro-tools-v27">
         <select id="proPeriodV27" class="pro-select-v27" onchange="renderAdminDashboard()">
           <option value="30">Last 30 Days</option><option value="7">Last 7 Days</option><option value="365">This Year</option>
@@ -9368,10 +9375,10 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
     </div>
     <div class="pro-main-v27">
       <section class="pro-panel-v27"><div class="pro-panel-title-v27"><div><h3>Sales Overview</h3></div><div class="pro-range-v27"><button onclick="setProRangeV27(7,this)">7 Days</button><button class="active" onclick="setProRangeV27(30,this)">30 Days</button><button onclick="setProRangeV27(365,this)">12 Months</button></div></div><div id="proChartV27" class="pro-chart-v27"></div></section>
-      <section class="pro-panel-v27"><div class="pro-panel-title-v27"><div><h3>Notifications</h3><p>New orders and cancellation requests</p></div></div><div id="proAttentionV27" class="pro-attention-v27"></div></section>
+      <section class="pro-panel-v27"><div class="pro-panel-title-v27"><div><h3>Notifications</h3></div></div><div id="proAttentionV27" class="pro-attention-v27"></div></section>
     </div>
-    <section class="pro-panel-v27" style="margin-bottom:16px"><div class="pro-panel-title-v27"><div><h3>Order Status Overview</h3><p>Current fulfillment workload</p></div></div><div id="proStatusV27" class="pro-status-v27"></div></section>
-    <section class="pro-panel-v27"><div class="pro-panel-title-v27"><div><h3>Recent Orders</h3><p>Latest customer transactions</p></div><button class="pro-view-v27" onclick="showAdminPage('orders')">View All Orders</button></div><div class="pro-table-scroll-v27"><table class="pro-table-v27"><thead><tr><th>Order ID</th><th>Customer</th><th>Courier</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody id="proRecentV27"></tbody></table></div></section>
+    <section class="pro-panel-v27" style="margin-bottom:16px"><div class="pro-panel-title-v27"><div><h3>Order Status Overview</h3></div></div><div id="proStatusV27" class="pro-status-v27"></div></section>
+    <section class="pro-panel-v27"><div class="pro-panel-title-v27"><div><h3>Recent Orders</h3></div><button class="pro-view-v27" onclick="showAdminPage('orders')">View All Orders</button></div><div class="pro-table-scroll-v27"><table class="pro-table-v27"><thead><tr><th>Order ID</th><th>Customer</th><th>Courier</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody id="proRecentV27"></tbody></table></div></section>
    </div>`;
  }
  window.setProRangeV27=function(days,btn){
@@ -9402,6 +9409,7 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
      <g opacity=".55">${[0,1,2,3].map(i=>`<line x1="${pad}" x2="${W-pad}" y1="${25+i*48}" y2="${25+i*48}" stroke="var(--pro-line)" stroke-width="1"/>`).join("")}</g>
      <polyline points="${points("sales")}" fill="none" stroke="#27a9d4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
      <polyline points="${points("ship")}" fill="none" stroke="#63d7e8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+     ${buckets.map((b,i)=>{const x=pad+(usableW*(i/Math.max(1,buckets.length-1)));const y=20+usableH-(b.sales/max)*usableH;const total=b.sales+b.ship;return `<circle cx="${x}" cy="${y}" r="12" fill="transparent" stroke="transparent" tabindex="0" aria-label="${b.label}: Product sales ${money(b.sales)}, shipping ${money(b.ship)}, total collected ${money(total)}"><title>${b.label} | Product Sales: ${money(b.sales)} | Shipping: ${money(b.ship)} | Total Collected: ${money(total)}</title></circle>`}).join("")}
      ${labels}</svg>`;
  }
 
@@ -9429,7 +9437,7 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
    const notificationTitle=notificationHeader?.querySelector("h3");
    const notificationSubtitle=notificationHeader?.querySelector(".pro-panel-title-v27 p");
    if(notificationTitle)notificationTitle.textContent="Notifications";
-   if(notificationSubtitle)notificationSubtitle.textContent="New orders and cancellation requests";
+   if(notificationSubtitle)notificationSubtitle.remove();
    notificationPanel.innerHTML=[["New Orders",fresh,"orders","new"],["Cancellation Requests",cancellations,"cancellations","cancel"]].map(([name,n,page,type])=>'<button type="button" class="dash-note-v71 '+type+'" data-dash-page="'+page+'"><span class="dash-note-icon-v71" aria-hidden="true"></span><span class="dash-note-label-v71"><strong>'+name+'</strong><small>'+n+' awaiting review</small></span><b>'+n+'</b><span aria-hidden="true">›</span></button>').join("");
 
    const count=(fn)=>scoped.filter(fn).length;
