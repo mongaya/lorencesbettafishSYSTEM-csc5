@@ -9,13 +9,14 @@ if($username===""||$orderId===""||$reference==="")respond(false,"Reference numbe
 if(!$file||$file["error"]===UPLOAD_ERR_NO_FILE)respond(false,"Please upload your payment receipt.",[],400);
 if($file["error"]!==UPLOAD_ERR_OK||$file["size"]<1||$file["size"]>5*1024*1024)respond(false,"Payment receipt upload failed or exceeds 5MB.",[],400);
 
-$check=$conn->prepare("SELECT o.id,o.status,o.payment_status,o.reservation_expires_at,o.courier
+$check=$conn->prepare("SELECT o.id,o.status,o.payment_status,o.reservation_expires_at,o.courier,o.payment_attempt_count,o.payment_correction_requested
  FROM orders o JOIN users u ON u.id=o.user_id
  WHERE o.order_code=? AND u.username=? LIMIT 1");
 if(!$check)respond(false,"Unable to prepare payment submission.",[],500);
 $check->bind_param("ss",$orderId,$username);
 if(!$check->execute())respond(false,"Unable to load order for payment.",[],500);
 $order=stmt_fetch_assoc_compat($check);$check->close();
+if($order&&(int)$order["payment_attempt_count"]>=2)respond(false,"Maximum two payment attempts reached. Contact the shop.",[],409);
 if(!$order||$order["status"]!=="Awaiting Payment"||!in_array($order["payment_status"],["Unpaid","Payment Needs Correction"],true))
     respond(false,"Payment cannot be submitted for this order right now.",[],409);
 
@@ -72,16 +73,23 @@ if($receiptUsed){
     @unlink($folder.DIRECTORY_SEPARATOR.$filename);
     respond(false,"Payment Already Used! This receipt image has already been submitted. Please contact the shop if you need help.",[],409);
 }
+$nextAttempt=(int)$order["payment_attempt_count"]+1;
+$conn->begin_transaction();
 $stmt=$conn->prepare("UPDATE orders o JOIN users u ON u.id=o.user_id
  SET o.payment_reference=?,o.payment_screenshot=?,o.payment_status='Payment Submitted',
-     o.payment_rejection_reason=NULL,o.reservation_expires_at=NULL,o.updated_at=NOW()
+     o.payment_rejection_reason=NULL,o.payment_attempt_count=o.payment_attempt_count+1,o.reservation_expires_at=NULL,o.updated_at=NOW()
  WHERE o.order_code=? AND u.username=? AND o.payment_method IN ('GCash','MariBank','AUB')
    AND o.shipping_confirmed_at IS NOT NULL AND o.status='Awaiting Payment' AND o.stock_deducted=0
-   AND o.payment_status IN ('Unpaid','Payment Needs Correction')");
+   AND o.payment_status IN ('Unpaid','Payment Needs Correction') AND o.payment_attempt_count<2");
 if(!$stmt){@unlink($folder.DIRECTORY_SEPARATOR.$filename);respond(false,"Unable to prepare payment save.",[],500);}
 $stmt->bind_param("ssss",$reference,$path,$orderId,$username);
 if(!$stmt->execute()){@unlink($folder.DIRECTORY_SEPARATOR.$filename);respond(false,"Unable to save payment submission.",[],500);}
 if($stmt->affected_rows<1){@unlink($folder.DIRECTORY_SEPARATOR.$filename);respond(false,"Payment cannot be submitted for this order right now.",[],409);}
-$stmt->close();log_order_status($conn,(int)$order["id"],"Payment Submitted");
+$stmt->close();
+$history=$conn->prepare("INSERT INTO payment_attempts(order_id,attempt_number,payment_reference,payment_screenshot,status) VALUES(?,?,?,?,'Submitted')");
+if(!$history){$conn->rollback();@unlink($folder.DIRECTORY_SEPARATOR.$filename);respond(false,"Unable to save payment history.",[],500);}
+$history->bind_param("iiss",$order["id"],$nextAttempt,$reference,$path);
+if(!$history->execute()){$conn->rollback();@unlink($folder.DIRECTORY_SEPARATOR.$filename);respond(false,"Unable to save payment history.",[],500);}
+$history->close();log_order_status($conn,(int)$order["id"],"Payment Submitted");$conn->commit();
 respond(true,"Payment submitted for admin verification. Stock is held while the admin checks it.");
 ?>
