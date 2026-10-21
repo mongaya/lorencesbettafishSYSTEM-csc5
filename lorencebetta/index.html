@@ -2202,10 +2202,6 @@ body:not(.dark-mode) .hero-kicker{
 
                     <h2>Orders &amp; Payments</h2>
 
-                    <p>
-                        Review customer orders, confirm shipping fees, and verify payments. Manage J&amp;T dispatch in Shipping Management.
-                    </p>
-
                 </div>
 
                 <div class="table-wrap">
@@ -10421,6 +10417,26 @@ body.dark-mode .shop-filters-v23 select,body.dark-mode .shop-appearance-v24 summ
  .product-colors-v25{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0 12px}.product-colors-v25 label{font-size:13px;display:flex;align-items:center;gap:6px}@media(max-width:500px){.product-colors-v25{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 
+<style id="orders-summary-polish-v81">
+.payment-summary-v58{gap:16px}
+.payment-card-v58{min-height:136px;justify-content:space-between;padding:19px 21px;border-width:1px;border-top-width:3px;box-shadow:0 2px 8px rgba(9,57,80,.035)}
+.payment-card-v58 strong{font-size:29px;line-height:1.1}
+.payment-card-heading-v81{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.payment-card-heading-v81>span:first-child{font-size:14px;font-weight:700}
+.payment-card-icon-v81{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;flex-shrink:0}
+.payment-card-icon-v81 svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.payment-card-v58.payment-card-new{border-top-color:#22a9d5;background:#f0f9fd;color:#0b668c}
+.payment-card-v58.payment-card-new .payment-card-icon-v81{background:#d7f1fc;color:#008fbd}
+.payment-card-v58.payment-card-pending{border-top-color:#e7a52b;background:#fffaf0;color:#90600e}
+.payment-card-v58.payment-card-pending .payment-card-icon-v81{background:#fff0cb;color:#b77b0c}
+.payment-card-v58.payment-card-verified{border-top-color:#22ad79;background:#f0fcf7;color:#147a56}
+.payment-card-v58.payment-card-verified .payment-card-icon-v81{background:#d8f5e6;color:#16845b}
+.payment-card-v58.active{border-width:2px;border-top-width:3px;box-shadow:0 0 0 2px rgba(21,154,194,.12)}
+body.dark-mode .payment-card-v58.payment-card-new,body.dark .payment-card-v58.payment-card-new{background:#143849;color:#b9e9ff;border-color:#2388ae}
+body.dark-mode .payment-card-v58.payment-card-pending,body.dark .payment-card-v58.payment-card-pending{background:#40351e;color:#ffe1a2;border-color:#b4832c}
+body.dark-mode .payment-card-v58.payment-card-verified,body.dark .payment-card-v58.payment-card-verified{background:#153d32;color:#b2f0d5;border-color:#2f9c71}
+@media(max-width:650px){.payment-card-v58{min-height:105px}}
+</style>
 <style id="payment-workspace-v58-style">
 .payment-summary-v58{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 18px}
 .payment-card-v58{cursor:pointer;text-align:left;border:1px solid #cfe3ec;border-radius:14px;padding:17px;background:#f1f8fb;color:#16455a;display:flex;flex-direction:column;gap:9px;transition:.15s}
@@ -10459,7 +10475,7 @@ body.dark-mode .payment-date-v58,body.dark .payment-date-v58,[data-theme="dark"]
     const categories=[["new","New Orders","shopping-bag"],["pending","Pending Verification","clock"],["verified","Verified Payments","check-circle"]];
     let cards=host.querySelector(".payment-summary-v58");
     if(!cards){cards=document.createElement("div");cards.className="payment-summary-v58";host.insertBefore(cards,host.firstChild)}
-    cards.innerHTML=categories.map(([key,label])=>'<button type="button" class="payment-card-v58 '+(active===key?'active':'')+'" data-payment-filter="'+key+'" aria-pressed="'+(active===key)+'"><span>'+label+'</span><strong>'+all.filter(o=>category(o)===key).length+'</strong><span>View '+label.toLowerCase()+'</span></button>').join("");
+    cards.innerHTML=categories.map(([key,label,icon])=>'<button type="button" class="payment-card-v58 payment-card-'+key+' '+(active===key?'active':'')+'" data-payment-filter="'+key+'" aria-pressed="'+(active===key)+'"><span class="payment-card-heading-v81"><span>'+label+'</span><span class="payment-card-icon-v81" aria-hidden="true">'+(icon==="shopping-bag"?'<svg viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6L5 8Zm4 0V6a3 3 0 0 1 6 0v2"/></svg>':icon==="clock"?'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>':'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>')+'</span></span><strong>'+all.filter(o=>category(o)===key).length+'</strong></button>').join("");
     cards.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{active=b.dataset.paymentFilter;render()}));
     const q=String(typeof adminOrderSearchV2!=="undefined"?adminOrderSearchV2:"").trim().toLowerCase();
     const selected=all.filter(o=>category(o)===active).filter(o=>!q||[o.id,o.customerName,o.customer_name,o.username,o.customerUsername,o.courier].filter(Boolean).join(" ").toLowerCase().includes(q));
