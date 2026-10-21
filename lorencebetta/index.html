@@ -9349,8 +9349,9 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
 
 <style id="sales-overview-tooltip-v78">
 /* Sales Overview: readable currency axis, hover breakdown and legend. */
-#adminApp .pro-chart-v27{height:335px;overflow:visible}
-#adminApp .pro-chart-v27 svg{height:290px}
+#adminApp .pro-chart-v27{height:auto;min-height:0;overflow:hidden;box-sizing:border-box;padding:0 8px 12px}
+#adminApp .pro-chart-v27 svg{height:auto;max-height:290px;aspect-ratio:900/290;display:block;width:100%;box-sizing:border-box}
+#adminApp .pro-chart-legend-v78{margin:8px 0 0;flex-wrap:wrap}
 .pro-chart-tooltip-v78{position:absolute;z-index:15;min-width:220px;max-width:260px;padding:13px 15px;border-radius:12px;background:#192d49;color:white;box-shadow:0 8px 26px rgba(0,0,0,.22);pointer-events:none;font-size:12px}
 .pro-chart-tooltip-v78[hidden]{display:none}
 .pro-chart-tooltip-v78>strong{display:block;font-size:13px;margin-bottom:9px}
@@ -9439,18 +9440,38 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
      '<div class="pro-chart-legend-v78"><span><i class="sales"></i>Product Sales</span><span><i class="ship"></i>Shipping Collected</span></div>';
    const svg=host.querySelector("svg"),tip=host.querySelector(".pro-chart-tooltip-v78");
    const hide=()=>{tip.hidden=true;};
+   // Convert actual screen coordinates to SVG coordinates (viewBox uses "meet",
+   // so dividing by element width alone selects the wrong date on wide screens).
+   const screenPoint=(clientX,clientY)=>{
+     const matrix=svg.getScreenCTM();
+     if(!matrix)return null;
+     const point=svg.createSVGPoint();
+     point.x=clientX;point.y=clientY;
+     return point.matrixTransform(matrix.inverse());
+   };
    const show=(i)=>{
      const b=buckets[i];if(!b)return;
      tip.innerHTML='<strong>'+b.label+'</strong><div><span>Product Sales</span><b>'+money(b.sales)+'</b></div><div><span>Shipping Collected</span><b>'+money(b.ship)+'</b></div><div class="total"><span>Total Collected</span><b>'+money(b.sales+b.ship)+'</b></div>';
      tip.hidden=false;
-     const pos=x(i)/W*svg.clientWidth+svg.offsetLeft;
-     tip.style.left=Math.max(8,Math.min(pos-tip.offsetWidth/2,host.clientWidth-tip.offsetWidth-8))+'px';
-     tip.style.top=Math.max(8,svg.offsetTop+Math.min(y(b.sales),y(b.ship))/H*svg.clientHeight-tip.offsetHeight-16)+'px';
+     const matrix=svg.getScreenCTM();
+     if(!matrix)return;
+     const marker=svg.createSVGPoint();
+     marker.x=x(i);marker.y=Math.min(y(b.sales),y(b.ship));
+     const screen=marker.matrixTransform(matrix);
+     const box=host.getBoundingClientRect();
+     const markerX=screen.x-box.left, markerY=screen.y-box.top;
+     // Keep the tooltip entirely inside the Sales Overview chart box.
+     const width=tip.offsetWidth,height=tip.offsetHeight;
+     const maxLeft=Math.max(8,host.clientWidth-width-8);
+     const maxTop=Math.max(8,host.clientHeight-height-8);
+     tip.style.left=Math.max(8,Math.min(markerX-width/2,maxLeft))+'px';
+     const desiredTop=markerY-height-14>=8?markerY-height-14:markerY+14;
+     tip.style.top=Math.max(8,Math.min(desiredTop,maxTop))+'px';
    };
    svg.addEventListener("pointermove",e=>{
-     const rect=svg.getBoundingClientRect();
-     const svgX=(e.clientX-rect.left)/rect.width*W;
-     const index=Math.max(0,Math.min(buckets.length-1,Math.round((svgX-left)/chartW*(buckets.length-1))));
+     const p=screenPoint(e.clientX,e.clientY);
+     if(!p||p.x<left||p.x>W-right||p.y<top||p.y>top+chartH){hide();return;}
+     const index=Math.max(0,Math.min(buckets.length-1,Math.round((p.x-left)/chartW*(buckets.length-1))));
      show(index);
    });
    svg.addEventListener("pointerleave",hide);
