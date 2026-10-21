@@ -2043,11 +2043,6 @@ body:not(.dark-mode) .hero-kicker{
 
     </header>
 
-    <div id="adminProfileDialogV97" class="hidden" role="dialog" aria-modal="true" aria-label="Edit Admin Profile"><div class="admin-profile-card-v97"><div class="admin-profile-head-v97"><h2>Edit Admin Profile</h2><button type="button" onclick="closeAdminProfileV97()" aria-label="Close">×</button></div><p class="admin-profile-help-v97">Changes to your login credentials require verification through your registered email.</p><label>Registered Email (read-only)</label><input id="adminProfileEmailV97" readonly aria-label="Registered email"><label>Current Username</label><input id="adminProfileCurrentUsernameV97" readonly><form id="adminProfileFormV97" onsubmit="startAdminProfileV97(event)"><label for="adminProfileTypeV97">What would you like to change?</label><select id="adminProfileTypeV97" onchange="adminProfileTypeChangedV97()"><option value="username">Username</option><option value="password">Password</option></select><label id="adminProfileValueLabelV97" for="adminProfileValueV97">New Username</label><input id="adminProfileValueV97" required autocomplete="off"><label for="adminProfileCurrentPasswordV97">Current Password</label><input id="adminProfileCurrentPasswordV97" type="password" autocomplete="current-password" required><div class="admin-profile-actions-v97"><button type="button" onclick="closeAdminProfileV97()">Cancel</button><button type="submit" id="adminProfileSendV97">Send Email OTP</button></div></form><form id="adminProfileOtpFormV97" hidden onsubmit="verifyAdminProfileV97(event)"><p class="admin-profile-help-v97">Enter the 6-digit code sent to your registered email. Valid for 5 minutes.</p><label for="adminProfileOtpV97">Verification Code</label><input id="adminProfileOtpV97" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" required autocomplete="one-time-code"><div class="admin-profile-actions-v97"><button type="button" onclick="resetAdminProfileV97()">Back</button><button type="submit" id="adminProfileVerifyV97">Verify & Save</button></div></form><p id="adminProfileMessageV97" class="admin-profile-help-v97" role="status"></p></div></div>
-
-
-
-
     <div class="layout">
 
         <aside id="adminSidebar" class="sidebar admin-sidebar">
@@ -2116,6 +2111,13 @@ body:not(.dark-mode) .hero-kicker{
 
 
         <main class="admin-content">
+    <div id="adminProfileDialogV97" class="page" aria-label="Edit Admin Profile"><div class="admin-profile-card-v97"><div class="admin-profile-head-v97"><h2>Admin Profile</h2><button type="button" onclick="closeAdminProfileV97()" aria-label="Back to dashboard">Back to Dashboard</button></div><p class="admin-profile-help-v97">Changes to your login credentials require verification through your registered email.</p><label>Registered Email (read-only)</label><input id="adminProfileEmailV97" readonly aria-label="Registered email"><label>Current Username</label><input id="adminProfileCurrentUsernameV97" readonly><form id="adminProfileFormV97" onsubmit="startAdminProfileV97(event)"><label for="adminProfileTypeV97">What would you like to change?</label><select id="adminProfileTypeV97" onchange="adminProfileTypeChangedV97()"><option value="username">Username</option><option value="password">Password</option></select><label id="adminProfileValueLabelV97" for="adminProfileValueV97">New Username</label><input id="adminProfileValueV97" required autocomplete="off"><label for="adminProfileCurrentPasswordV97">Current Password</label><input id="adminProfileCurrentPasswordV97" type="password" autocomplete="current-password" required><div class="admin-profile-actions-v97"><button type="button" onclick="closeAdminProfileV97()">Cancel</button><button type="submit" id="adminProfileSendV97">Send Email OTP</button></div></form><form id="adminProfileOtpFormV97" hidden onsubmit="verifyAdminProfileV97(event)"><p class="admin-profile-help-v97">Enter the 6-digit code sent to your registered email. Valid for 5 minutes.</p><label for="adminProfileOtpV97">Verification Code</label><input id="adminProfileOtpV97" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" required autocomplete="one-time-code"><div class="admin-profile-actions-v97"><button type="button" onclick="resetAdminProfileV97()">Back</button><button type="submit" id="adminProfileVerifyV97">Verify & Save</button></div></form><p id="adminProfileMessageV97" class="admin-profile-help-v97" role="status"></p></div></div>
+
+
+
+
+
+
 
             <!-- ADMIN DASHBOARD -->
 
