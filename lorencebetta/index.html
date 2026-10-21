@@ -3814,11 +3814,11 @@ async function savePaymentV89(){
  if(!/^\d{6,25}$/.test(number)||(name==="GCash"&&!/^09\d{9}$/.test(number)))return showToast("Invalid account number.");
  if(!file&&!paymentSettings[name]?.qr_image)return showToast("Upload a QR code.");
  const form=new FormData();form.append("method",name);form.append(name==="GCash"?"merchant_name":"account_name",account);form.append(name==="GCash"?"gcash_number":"account_number",number);if(file)form.append("qr_image",file);
- try{const d=await apiRequest("payment_settings.php",{method:"POST",body:form});paymentSettings=d.methods||paymentSettings;closePaymentEditorV89();renderPaymentSettings();renderCheckoutMethodsV89();showToast("Payment method saved.");}catch(e){showToast(e.message);}
+ try{const d=await apiRequest("payment_method_save.php",{method:"POST",body:form});paymentSettings=d.methods||paymentSettings;closePaymentEditorV89();renderPaymentSettings();renderCheckoutMethodsV89();showToast("Payment method saved.");}catch(e){showToast(e.message);}
 }
 async function togglePaymentV89(name,active){
  const form=new FormData();form.append("method",name);form.append("active",active?"1":"0");
- try{const d=await apiRequest("payment_settings.php",{method:"POST",body:form});paymentSettings=d.methods||paymentSettings;renderPaymentSettings();renderCheckoutMethodsV89();}catch(e){showToast(e.message);renderPaymentSettings();}
+ try{const d=await apiRequest("payment_method_save.php",{method:"POST",body:form});paymentSettings=d.methods||paymentSettings;renderPaymentSettings();renderCheckoutMethodsV89();}catch(e){showToast(e.message);renderPaymentSettings();}
 }
 /* =========================================================
    PROFILE
