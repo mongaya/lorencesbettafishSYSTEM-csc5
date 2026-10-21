@@ -3658,7 +3658,24 @@ async function placeOrder(){
  const cart=getCart(),selected=getSelectedCartItems();if(!selected.length)return showToast("Select at least one product.");
  const a=selectedAddress();if(!a)return showToast("Please select a delivery address.");
  const payment=document.querySelector('input[name="payment"]:checked')?.value||"GCash",deliveryMode=document.querySelector('input[name="deliveryMode"]:checked')?.value||"delivery";
- try{const data=await apiRequest("place_order.php",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:currentUser.username,customerName:`${a.first_name} ${a.last_name}`.trim(),phone:a.phone,address:addressSnapshot(a),addressId:Number(a.id),payment,deliveryMode,items:selected.map(i=>({productId:i.productId,quantity:Number(i.quantity)}))})});
+ const reference=document.getElementById("checkoutPaymentReference")?.value.trim()||"";
+ const screenshot=document.getElementById("checkoutPaymentScreenshot")?.files?.[0];
+ if(!reference)return showToast("Enter your payment transaction reference.","warning");
+ if(!screenshot)return showToast("Upload your payment screenshot before placing the order.","warning");
+ if(screenshot.size>5*1024*1024)return showToast("Payment screenshot must be 5MB or smaller.","warning");
+ if(!["image/jpeg","image/png","image/webp"].includes(screenshot.type))return showToast("Upload a JPG, PNG, or WEBP payment screenshot.","warning");
+ const form=new FormData();
+ form.append("username",currentUser.username);
+ form.append("customerName",`${a.first_name} ${a.last_name}`.trim());
+ form.append("phone",a.phone);
+ form.append("address",addressSnapshot(a));
+ form.append("addressId",String(a.id));
+ form.append("payment",payment);
+ form.append("deliveryMode",deliveryMode);
+ form.append("items",JSON.stringify(selected.map(i=>({productId:i.productId,quantity:Number(i.quantity)}))));
+ form.append("paymentReference",reference);
+ form.append("screenshot",screenshot);
+ try{const data=await apiRequest("place_order.php",{method:"POST",body:form});
  await loadProducts();await loadOrders();const ids=new Set(selected.map(i=>String(i.productId)));saveCart(cart.filter(i=>!ids.has(String(i.productId))));updateCartCount();showToast("Order placed successfully!");showCustomerPage("orders");renderCustomerOrders();renderProducts();renderHomeProducts();renderStock();renderAdminDashboard();if(data.order_id)console.log("Created order:",data.order_id);
  }catch(e){showToast(e.message);}
 }
