@@ -2109,12 +2109,7 @@ body:not(.dark-mode) .hero-kicker{
                 <span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-5.5 4v-4.5A2.5 2.5 0 0 1 4 13.5z"/></svg></span> Messages
             </button>
 
-            <button
-                class="nav-btn"
-                onclick="showAdminPage('stock',this)"
-            >
-                <span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M4 7 12 3l8 4-8 4zM4 7v10l8 4 8-4V7M12 11v10"/></svg></span> Stock Control
-            </button>
+
 
         </aside>
 
@@ -2257,9 +2252,7 @@ body:not(.dark-mode) .hero-kicker{
 
                     <h2> Product Management</h2>
 
-                    <p>
-                        Add, edit and remove Betta fish products.
-                    </p>
+
 
                     <button
                         class="primary-btn"
@@ -2272,7 +2265,7 @@ body:not(.dark-mode) .hero-kicker{
 
                 <div class="card">
                     <h3>️ Fish Categories</h3>
-                    <p class="muted">Create and manage categories used when adding products.</p>
+                    
                     <div class="category-manager">
                         <div class="form-group" style="margin:0"><label>New Category</label><input id="newCategoryName" maxlength="80" placeholder="Example: Halfmoon"></div>
                         <button class="primary-btn" onclick="addFishCategory()">+ Add Category</button>
@@ -4480,19 +4473,11 @@ function renderAdminProducts() {
 
             <td>₱${Number(product.price).toFixed(2)}</td>
 
-            <td>${Number(product.stock)}</td>
+            <td><strong class="product-stock-count-v83 ${Number(product.stock) <= 0 ? 'stock-empty-v83' : Number(product.stock) <= 3 ? 'stock-low-v83' : 'stock-good-v83'}">${Number(product.stock)}</strong></td>
 
             <td>
-                <span class="status ${
-                    Number(product.stock) > 0
-                    ? "Delivered"
-                    : "Cancelled"
-                }">
-                    ${
-                        Number(product.stock) > 0
-                        ? "Available"
-                        : "Out of Stock"
-                    }
+                <span class="product-stock-status-v83 ${Number(product.stock) <= 0 ? 'stock-empty-v83' : Number(product.stock) <= 3 ? 'stock-low-v83' : 'stock-good-v83'}">
+                    ${Number(product.stock) <= 0 ? 'Out of Stock' : Number(product.stock) <= 3 ? 'Low Stock' : 'Available'}
                 </span>
             </td>
 
@@ -9359,7 +9344,24 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
 .pro-chart-legend-v78 .sales{background:#27a9d4}
 .pro-chart-legend-v78 .ship{background:#31c5df}
 </style>
-<style id="reportStylesV81">.pro-summary-tabs-v81{display:flex;gap:5px;background:var(--pro-surface-2);border-radius:11px;padding:4px;flex-wrap:wrap}.pro-summary-tabs-v81 button{border:0;background:transparent;padding:10px 13px;color:var(--pro-muted);border-radius:9px;font-weight:700;cursor:pointer}.pro-summary-tabs-v81 button.active{background:var(--pro-accent);color:white}.report-overlay-v81{position:fixed;inset:0;z-index:99999;background:#001a2c99;display:grid;place-items:center;padding:15px}.report-dialog-v81{width:min(420px,100%);background:var(--pro-surface,#fff);color:var(--pro-ink,#123);border-radius:14px;padding:24px;display:grid;gap:12px;box-shadow:0 12px 45px #0004}.report-dialog-v81 h3,.report-dialog-v81 p{margin:0}.report-dialog-v81 label{display:block}.report-dialog-v81 select{padding:11px;border-radius:8px;border:1px solid #bbb}.report-dialog-v81 footer{display:flex;justify-content:flex-end;gap:10px;margin-top:10px}.report-dialog-v81 footer button{padding:10px 14px;border-radius:8px;cursor:pointer;border:1px solid #ccd}.report-dialog-v81 #reportPrintV81{background:#20a6d1;color:white;border-color:#20a6d1}</style><script id="professional-dashboard-v27-script">
+<style id="reportStylesV81">.pro-summary-tabs-v81{display:flex;gap:5px;background:var(--pro-surface-2);border-radius:11px;padding:4px;flex-wrap:wrap}.pro-summary-tabs-v81 button{border:0;background:transparent;padding:10px 13px;color:var(--pro-muted);border-radius:9px;font-weight:700;cursor:pointer}.pro-summary-tabs-v81 button.active{background:var(--pro-accent);color:white}.report-overlay-v81{position:fixed;inset:0;z-index:99999;background:#001a2c99;display:grid;place-items:center;padding:15px}.report-dialog-v81{width:min(420px,100%);background:var(--pro-surface,#fff);color:var(--pro-ink,#123);border-radius:14px;padding:24px;display:grid;gap:12px;box-shadow:0 12px 45px #0004}.report-dialog-v81 h3,.report-dialog-v81 p{margin:0}.report-dialog-v81 label{display:block}.report-dialog-v81 select{padding:11px;border-radius:8px;border:1px solid #bbb}.report-dialog-v81 footer{display:flex;justify-content:flex-end;gap:10px;margin-top:10px}.report-dialog-v81 footer button{padding:10px 14px;border-radius:8px;cursor:pointer;border:1px solid #ccd}.report-dialog-v81 #reportPrintV81{background:#20a6d1;color:white;border-color:#20a6d1}</style><style id="product-stock-indicators-v83">
+#admin-products .product-stock-status-v83{display:inline-flex;align-items:center;gap:7px;border:1px solid;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700;white-space:nowrap}
+#admin-products .product-stock-status-v83::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
+#admin-products .product-stock-count-v83{font-weight:800;font-size:15px}
+#admin-products .stock-good-v83.product-stock-status-v83{background:#e4f8eb;color:#117445;border-color:#b9e8cc}
+#admin-products .stock-low-v83.product-stock-status-v83{background:#fff3d6;color:#975b05;border-color:#f4d88c}
+#admin-products .stock-empty-v83.product-stock-status-v83{background:#ffe9e9;color:#b32832;border-color:#f3bfc2}
+#admin-products .product-stock-count-v83.stock-good-v83{color:#168250}
+#admin-products .product-stock-count-v83.stock-low-v83{color:#b26c07}
+#admin-products .product-stock-count-v83.stock-empty-v83{color:#c02f3a}
+body.dark-mode #admin-products .stock-good-v83.product-stock-status-v83{background:#143d2d;color:#b2f4ce;border-color:#317654}
+body.dark-mode #admin-products .stock-low-v83.product-stock-status-v83{background:#42351c;color:#ffe0a0;border-color:#96732c}
+body.dark-mode #admin-products .stock-empty-v83.product-stock-status-v83{background:#48272c;color:#ffbfc5;border-color:#9b444b}
+body.dark-mode #admin-products .product-stock-count-v83.stock-good-v83{color:#8be0b2}
+body.dark-mode #admin-products .product-stock-count-v83.stock-low-v83{color:#fbd28b}
+body.dark-mode #admin-products .product-stock-count-v83.stock-empty-v83{color:#ffadb5}
+</style>
+<script id="professional-dashboard-v27-script">
 (function(){
  const money=n=>"₱"+Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
  const paid=o=>String(o.payment_status||"").toLowerCase()==="paid";
