@@ -22,7 +22,11 @@ function read_bank_settings($conn, $bank) {
     return $settings;
 }
 function all_payment_settings($conn) {
-    return ["GCash"=>read_gcash_settings($conn),"MariBank"=>read_bank_settings($conn,"MariBank"),"AUB"=>read_bank_settings($conn,"AUB")];
+    $methods=["GCash"=>read_gcash_settings($conn),"MariBank"=>read_bank_settings($conn,"MariBank"),"AUB"=>read_bank_settings($conn,"AUB"),"Maya"=>read_bank_settings($conn,"Maya")];
+    $flags=$conn->query("SELECT setting_key,setting_value FROM shop_settings WHERE setting_key LIKE 'payment_active_%'");
+    if($flags)while($row=$flags->fetch_assoc()){$key=substr($row["setting_key"],15);foreach($methods as $name=>&$method){if(strtolower($name)===$key)$method["active"]=($row["setting_value"]==="1");}unset($method);}
+    foreach($methods as $name=>&$method){if(!isset($method["active"]))$method["active"]=($name==="GCash"||$name==="MariBank"||$name==="AUB");}unset($method);
+    return $methods;
 }
 
 if ($_SERVER["REQUEST_METHOD"] !== "GET") {
@@ -31,7 +35,18 @@ if ($_SERVER["REQUEST_METHOD"] !== "GET") {
 }
 if ($_SERVER["REQUEST_METHOD"] === "GET") respond(true, "", ["settings" => read_gcash_settings($conn),"methods"=>all_payment_settings($conn)]);
 $method=trim($_POST["method"]??"GCash");
-if(!in_array($method,["GCash","MariBank","AUB"],true))respond(false,"Unsupported payment method.",[],400);
+if(!in_array($method,["GCash","MariBank","AUB","Maya"],true))respond(false,"Unsupported payment method.",[],400);
+if(isset($_POST["active"]) && !isset($_POST["account_name"]) && !isset($_POST["merchant_name"])){
+    $active=$_POST["active"]==="1"?"1":"0";
+    if($active==="1"){
+        $methods=all_payment_settings($conn);$info=$methods[$method]??[];
+        if(trim((string)($info["account_name"]??$info["merchant_name"]??""))===""||trim((string)($info["account_number"]??$info["gcash_number"]??""))===""||trim((string)($info["qr_image"]??""))==="")respond(false,"Save account details and QR code before activating.",[],400);
+    }
+    $key="payment_active_".strtolower($method);
+    $stmt=$conn->prepare("INSERT INTO shop_settings (setting_key,setting_value) VALUES (?,?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)");
+    $stmt->bind_param("ss",$key,$active);$stmt->execute();$stmt->close();
+    respond(true,"Payment availability updated.",["methods"=>all_payment_settings($conn)]);
+}
 if($method!=="GCash") {
     $name=trim($_POST["account_name"]??"");
     $number=trim($_POST["account_number"]??"");
