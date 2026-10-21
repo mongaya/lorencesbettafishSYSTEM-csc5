@@ -12065,3 +12065,46 @@ body.dark-mode #orderDetails .payment-proof-reference-v61 strong{color:#f0f8ff}
 body.dark-mode #orderDetails .payment-proof-reference-v61 small,body.dark-mode #orderDetails .payment-proof-preview-v61 small{color:#b9d7e3}
 body.dark-mode #orderDetails .payment-proof-open-v61{color:#6bd3f3}
 </style>
+
+<style id="customer-activity-v64-style">
+#customerOrders .flow-timeline .flow-step{padding:11px 0}
+#customerOrders .flow-timeline .flow-step strong{line-height:1.4}
+#customerOrders .flow-timeline .payment-note{margin-bottom:12px;line-height:1.55}
+body.dark-mode #customerOrders .flow-timeline .payment-note{color:#c8e5ee}
+</style>
+<script id="customer-activity-v64">
+/* Match the activity timeline to the five customer tabs, not internal shipping milestones. */
+timelineHTML=function(o){
+ const history=Array.isArray(o.status_history)?o.status_history:[];
+ const bucket=smartOrderBucket(o);
+ const cancelled=bucket==="Cancelled";
+ const correction=o.payment_status==="Payment Needs Correction";
+ const stages=["To Pay","To Ship","To Receive","Completed"];
+ const current=stages.indexOf(bucket);
+ const labels={
+  "To Pay":correction?"Payment Needs Correction":o.payment_status==="Payment Submitted"?"Payment Submitted — Awaiting Verification":"To Pay",
+  "To Ship":"Payment Verified — Preparing Shipment",
+  "To Receive":"Handed to Courier — To Receive",
+  "Completed":"Order Received — Completed"
+ };
+ const findTime=(stage)=>{
+  const matching={
+   "To Pay":["Payment Submitted","Payment Needs Correction","Awaiting Payment"],
+   "To Ship":["Payment Verified","Paid","Confirmed","Preparing"],
+   "To Receive":["Shipped","Out for Delivery","Lalamove Booked"],
+   "Completed":["Order Received","Picked Up"]
+  }[stage];
+  return [...history].reverse().find(h=>matching.includes(h.status));
+ };
+ const steps=stages.map((stage,i)=>{
+  const done=!cancelled&&i<current,active=!cancelled&&i===current;
+  const entry=findTime(stage);
+  const time=entry?.changed_at?'<small>'+escapeHTML(formatFlowTime(entry.changed_at))+'</small>':active?'<small>Current status</small>':'';
+  return '<div class="flow-step '+(done?'done':active?'current':'future')+'"><strong>'+(done?'✓':active?'●':'○')+'</strong><div><strong>'+escapeHTML(active?labels[stage]:stage)+'</strong>'+time+'</div></div>';
+ }).join("");
+ const message=cancelled?'Order cancelled. No further payment or delivery steps are required.':correction?'Your payment proof needs correction. Submit your corrected reference and screenshot in To Pay. Do not pay again unless instructed by the admin.':bucket==="To Pay"?'Payment proof is waiting for admin verification.':bucket==="To Ship"?'Payment verified. Your order is being prepared for shipment.':bucket==="To Receive"?'Your parcel has been handed to the courier. Confirm receipt only after it arrives.':'Order completed. Thank you for confirming receipt.';
+ const notice='<div class="payment-note">'+escapeHTML(message)+'</div>';
+ const cancelledStep=cancelled?'<div class="flow-step current"><strong>●</strong><div><strong>Cancelled</strong></div></div>':'';
+ return '<div class="flow-timeline">'+notice+(cancelled?cancelledStep:steps)+'</div>';
+};
+</script>
