@@ -1876,9 +1876,7 @@ body:not(.dark-mode) .hero-kicker{
 
                         <div class="card">
 <h3> Payment Method</h3>
-<label class="payment-option"><input type="radio" name="payment" value="GCash" checked>  GCash</label>
-<label class="payment-option"><input type="radio" name="payment" value="MariBank">  MariBank</label>
-<label class="payment-option"><input type="radio" name="payment" value="AUB">  AUB</label>
+<div id="checkoutPaymentMethodsV89"></div>
 <div id="checkoutPaymentDetails" class="payment-note">Payment account details will appear here.</div><div class="form-group"><label>Transaction reference number</label><input id="checkoutPaymentReference" placeholder="Enter payment reference" maxlength="120"></div><div class="form-group"><label>Payment screenshot</label><input id="checkoutPaymentScreenshot" type="file" accept="image/png,image/jpeg,image/webp"></div>
 </div>
 </div>
@@ -2301,7 +2299,7 @@ body:not(.dark-mode) .hero-kicker{
 
             <!-- ADMIN PAYMENT SETTINGS -->
 <section id="admin-payments" class="page">
-<div class="page-title"><h2> Payment Method Settings</h2><p>Manage account details and QR codes.</p></div>
+<div class="page-title"><h2>Payment Method Settings</h2><button class="primary-btn" type="button" onclick="addPaymentMethodV89()">+ Add Payment Method</button></div>
 <div id="paymentSettingsCards"></div>
 </section>
 <section id="admin-couriers" class="page" style="display:none" aria-hidden="true">
@@ -2725,6 +2723,7 @@ async function loadCategories() {
 async function loadPaymentSettings() {
     const data = await apiRequest("payment_settings.php");
     paymentSettings = data.methods || paymentSettings;
+    renderCheckoutMethodsV89();
 }
 
 async function loadProductReviews() {
@@ -3624,14 +3623,15 @@ function closeCheckoutAddressPicker(){document.getElementById("checkoutAddressPi
 function chooseCheckoutAddress(id){selectedAddressId=Number(id);renderCheckoutAddress();closeCheckoutAddressPicker();}
 
 async function openCheckout(){if(!getSelectedCartItems().length)return showToast("Select at least one product to checkout.");await loadAddresses();if(!savedAddresses.length){showToast("Please add a delivery address first.");showCustomerPage("profile");return;}showCustomerPage("checkout");renderCheckout();}
-function renderCheckout(){const cart=getSelectedCartItems(),el=document.getElementById("checkoutSummary");if(!el)return;let subtotal=0,html="";cart.forEach(i=>{const p=products.find(x=>String(x.id)===String(i.productId));if(!p)return;const t=Number(p.price)*Number(i.quantity);subtotal+=t;html+=`<div class="summary-row"><span>${escapeHTML(p.name)} × ${i.quantity}</span><strong>₱${t.toFixed(2)}</strong></div>`});el.innerHTML=html+`<hr><div class="summary-row"><span>Subtotal</span><strong>₱${subtotal.toFixed(2)}</strong></div><div class="summary-row"><span>Shipping</span><strong>To be confirmed by admin</strong></div><div class="summary-total">Final total: Waiting for shipping fee</div>`;renderCheckoutAddress();}
+function renderCheckout(){const cart=getSelectedCartItems(),el=document.getElementById("checkoutSummary");if(!el)return;let subtotal=0,html="";cart.forEach(i=>{const p=products.find(x=>String(x.id)===String(i.productId));if(!p)return;const t=Number(p.price)*Number(i.quantity);subtotal+=t;html+=`<div class="summary-row"><span>${escapeHTML(p.name)} × ${i.quantity}</span><strong>₱${t.toFixed(2)}</strong></div>`});el.innerHTML=html+`<hr><div class="summary-row"><span>Subtotal</span><strong>₱${subtotal.toFixed(2)}</strong></div><div class="summary-row"><span>Shipping</span><strong>To be confirmed by admin</strong></div><div class="summary-total">Final total: Waiting for shipping fee</div>`;renderCheckoutAddress();renderCheckoutMethodsV89();}
 
 async function placeOrder(){
  const cart=getCart(),selected=getSelectedCartItems();if(!selected.length)return showToast("Select at least one product.");
  const a=selectedAddress();if(!a)return showToast("Please select a delivery address.");
- const payment=document.querySelector('input[name="payment"]:checked')?.value||"GCash",deliveryMode=document.querySelector('input[name="deliveryMode"]:checked')?.value||"delivery";
+ const payment=document.querySelector('input[name="payment"]:checked')?.value||"",deliveryMode=document.querySelector('input[name="deliveryMode"]:checked')?.value||"delivery";
  const reference=document.getElementById("checkoutPaymentReference")?.value.trim()||"";
  const screenshot=document.getElementById("checkoutPaymentScreenshot")?.files?.[0];
+ if(!payment)return showToast("Select an available payment method.","warning");
  if(!reference)return showToast("Enter your payment transaction reference.","warning");
  if(!screenshot)return showToast("Upload your payment screenshot before placing the order.","warning");
  if(screenshot.size>5*1024*1024)return showToast("Payment screenshot must be 5MB or smaller.","warning");
@@ -3749,12 +3749,58 @@ function paymentActionHTML(order){
 async function copyPaymentNumber(n){try{await navigator.clipboard.writeText(n);showToast("Account number copied.");}catch(e){showToast("Could not copy automatically.");}}
 async function submitPayment(id){const ref=document.getElementById("payref-"+id)?.value.trim(),file=document.getElementById("payproof-"+id)?.files[0];if(!ref)return showToast("Enter the payment reference or transaction number.","warning");if(!file)return showToast("Please upload your payment receipt.","warning");const f=new FormData();f.append("username",currentUser.username);f.append("orderId",id);f.append("reference",ref);if(file)f.append("screenshot",file);try{await apiRequest("submit_payment.php",{method:"POST",body:f});await loadOrders();renderCustomerOrders();showToast("Payment proof submitted.");}catch(e){showToast(e.message);}}
 async function markPaymentPaid(id){if(!confirm("Mark this payment as verified and paid?"))return;try{await apiRequest("mark_payment.php",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId:id})});await loadOrders();renderAdminOrders();renderAdminDashboard();viewOrder(id);showToast("Payment marked as paid.");}catch(e){showToast(e.message);}}
+
+function paymentKeyV89(m){return m.toLowerCase().replace(/ /g,"_");}
+function paymentReadyV89(x){return !!((x.account_name||x.merchant_name)&&(x.account_number||x.gcash_number)&&x.qr_image);}
+function renderCheckoutMethodsV89(){
+ const box=document.getElementById("checkoutPaymentMethodsV89");if(!box)return;
+ const old=document.querySelector('input[name="payment"]:checked')?.value;
+ const names=Object.keys(paymentSettings).filter(m=>paymentSettings[m].active!==false&&paymentReadyV89(paymentSettings[m]));
+ const selected=names.includes(old)?old:names[0];
+ box.innerHTML=names.map(m=>'<label class="payment-option"><input type="radio" name="payment" value="'+escapeHTML(m)+'" '+(m===selected?'checked':'')+'> '+escapeHTML(m)+'</label>').join("")||'<div>No payment methods available.</div>';
+ box.querySelectorAll('input').forEach(x=>x.addEventListener("change",showCheckoutPaymentV89));
+ showCheckoutPaymentV89();
+}
+function showCheckoutPaymentV89(){
+ const el=document.getElementById("checkoutPaymentDetails");if(!el)return;
+ const m=document.querySelector('input[name="payment"]:checked')?.value,x=paymentSettings[m]||{};
+ el.innerHTML=m?'<strong>'+escapeHTML(m)+'</strong><div>'+escapeHTML(x.account_name||x.merchant_name||"")+'</div><div>'+escapeHTML(x.account_number||x.gcash_number||"")+'</div>'+(x.qr_image?'<img style="width:180px;max-width:100%;display:block;margin-top:10px" src="'+escapeHTML(x.qr_image)+'" alt="Payment QR">':'')+'</div>':'';
+}
 function renderPaymentSettings(){
  const el=document.getElementById("paymentSettingsCards");if(!el)return;
- el.innerHTML=["GCash","MariBank","AUB"].map(m=>{const x=paymentSettings[m]||{},p=m.toLowerCase();return `<div class="card" style="margin-bottom:18px"><h3>${m==="GCash"?"":""} ${escapeHTML(m)}</h3><div class="form-group"><label>Account Name</label><input id="${p}AccountName" value="${escapeHTML((x.account_name||x.merchant_name)||"")}"></div><div class="form-group"><label>Account Number</label><input id="${p}AccountNumber" value="${escapeHTML((x.account_number||x.gcash_number)||"")}"></div><div class="form-group"><label>QR Code</label><input id="${p}Qr" type="file" accept="image/jpeg,image/png,image/webp"></div>${x.qr_image?`<div class="gcash-box"><img class="gcash-qr" src="${escapeHTML(x.qr_image)}"></div>`:""}<button class="primary-btn" onclick="savePaymentSettings('${m}')">Save ${m} Settings</button></div>`}).join("");
+ el.innerHTML='<div class="payment-grid-v89">'+Object.entries(paymentSettings).map(([m,x])=>{
+ const active=x.active===true,ready=paymentReadyV89(x);
+ return '<article class="payment-card-v89"><div class="payment-card-top-v89"><h3>'+escapeHTML(m)+'</h3><span class="payment-badge-v89 '+(active?'enabled':'')+'">'+(active?'Active':'Inactive')+'</span></div><div class="payment-card-fields-v89"><div><b>Account Name</b><span>'+escapeHTML(x.account_name||x.merchant_name||"—")+'</span></div><div><b>Account Number</b><span>'+escapeHTML(x.account_number||x.gcash_number||"—")+'</span></div>'+(x.qr_image?'<img src="'+escapeHTML(x.qr_image)+'" alt="'+escapeHTML(m)+' QR">':'')+'</div><div class="payment-card-buttons-v89"><button type="button" class="secondary-btn" onclick="editPaymentMethodV89(\''+escapeHTML(m)+'\')">Edit</button><button type="button" class="primary-btn" onclick="togglePaymentV89(\''+escapeHTML(m)+'\','+(active?'false':'true')+')" '+(!active&&!ready?'disabled':'')+'>'+(active?'Deactivate':'Activate')+'</button></div></article>';
+ }).join("")+'</div>';
 }
-async function savePaymentSettings(m){const p=m.toLowerCase(),name=document.getElementById(p+"AccountName").value.trim(),num=document.getElementById(p+"AccountNumber").value.trim(),file=document.getElementById(p+"Qr").files[0];if(!name||!num)return showToast("Enter account name and account number.");const f=new FormData();f.append("method",m);f.append(m==="GCash"?"merchant_name":"account_name",name);f.append(m==="GCash"?"gcash_number":"account_number",num);if(file)f.append("qr_image",file);try{const d=await apiRequest("payment_settings.php",{method:"POST",body:f});paymentSettings=d.methods||paymentSettings;renderPaymentSettings();showToast(m+" settings saved.");}catch(e){showToast(e.message);}}
-
+function addPaymentMethodV89(){editPaymentMethodV89("");}
+function editPaymentMethodV89(m){
+ const x=paymentSettings[m]||{};
+ const name=m||prompt("Payment method name (e.g. Maya, Bank Transfer):");
+ if(!name)return;
+ if(!/^[A-Za-z][A-Za-z0-9 ]{1,39}$/.test(name))return showToast("Use 2–40 letters, numbers or spaces.");
+ if(!m&&Object.keys(paymentSettings).some(k=>k.toLowerCase()===name.toLowerCase()))return showToast("Payment method already exists.");
+ const box=document.getElementById("paymentEditorV89");box.hidden=false;
+ document.getElementById("paymentMethodNameV89").textContent=name;
+ document.getElementById("paymentMethodNameV89").dataset.name=name;
+ document.getElementById("paymentAccountNameV89").value=x.account_name||x.merchant_name||"";
+ document.getElementById("paymentAccountNumberV89").value=x.account_number||x.gcash_number||"";
+ document.getElementById("paymentQrV89").value="";
+ document.getElementById("paymentQrPreviewV89").innerHTML=x.qr_image?'<img src="'+escapeHTML(x.qr_image)+'" alt="QR">':'';
+}
+function closePaymentEditorV89(){document.getElementById("paymentEditorV89").hidden=true;}
+async function savePaymentV89(){
+ const name=document.getElementById("paymentMethodNameV89").dataset.name,account=document.getElementById("paymentAccountNameV89").value.trim(),number=document.getElementById("paymentAccountNumberV89").value.trim(),file=document.getElementById("paymentQrV89").files[0];
+ if(!account||!number)return showToast("Enter account name and number.");
+ if(!/^\d{6,25}$/.test(number)||(name==="GCash"&&!/^09\d{9}$/.test(number)))return showToast("Invalid account number.");
+ if(!file&&!paymentSettings[name]?.qr_image)return showToast("Upload a QR code.");
+ const form=new FormData();form.append("method",name);form.append(name==="GCash"?"merchant_name":"account_name",account);form.append(name==="GCash"?"gcash_number":"account_number",number);if(file)form.append("qr_image",file);
+ try{const d=await apiRequest("payment_settings.php",{method:"POST",body:form});paymentSettings=d.methods||paymentSettings;closePaymentEditorV89();renderPaymentSettings();renderCheckoutMethodsV89();showToast("Payment method saved.");}catch(e){showToast(e.message);}
+}
+async function togglePaymentV89(name,active){
+ const form=new FormData();form.append("method",name);form.append("active",active?"1":"0");
+ try{const d=await apiRequest("payment_settings.php",{method:"POST",body:form});paymentSettings=d.methods||paymentSettings;renderPaymentSettings();renderCheckoutMethodsV89();}catch(e){showToast(e.message);renderPaymentSettings();}
+}
 /* =========================================================
    PROFILE
 ========================================================= */
@@ -4285,7 +4331,12 @@ function printCourierV50(){
  const popup=window.open("","_blank");if(!popup)return showToast("Allow popups to print shipping details.");
  const safe=escapeHTML(courierTextV50(list));
  popup.document.open();
- popup.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Courier Shipping List</title><style>body{font:14px Arial,sans-serif;margin:30px}h2{margin-bottom:5px}pre{font:13px/1.5 Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}.note{font-weight:bold}@media print{@page{margin:15mm}}</style></head><body><h2>Lorence&#39;s Betta Fish</h2><h3>Courier Shipping List</h3><pre>'+safe+'</pre><p class="note">Confirm the courier accepts live fish before handover.</p></body></html>');
+ popup.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Courier Shipping List</title><style>body{font:14px Arial,sans-serif;margin:30px}h2{margin-bottom:5px}pre{font:13px/1.5 Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}.note{font-weight:bold}@media print{@page{margin:15mm}}</style></head><body><h2>Lorence&#39;s Betta Fish</h2><h3>Courier Shipping List</h3><pre>'+safe+'</pre><p class="note">Confirm the courier accepts live fish before handover.</p>
+<style id="payment-style-v89">
+.payment-grid-v89{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.payment-card-v89{border:1px solid #cde4ee;border-radius:16px;background:#fff;padding:22px;color:#103b52}.payment-card-top-v89{display:flex;justify-content:space-between;align-items:center}.payment-card-top-v89 h3{margin:0}.payment-badge-v89{border-radius:22px;background:#edf0f3;color:#657b87;padding:7px 12px;font-size:12px;font-weight:700}.payment-badge-v89.enabled{background:#d9f6e5;color:#107b4a}.payment-card-fields-v89{display:flex;flex-wrap:wrap;gap:20px;margin:22px 0}.payment-card-fields-v89>div{display:grid;gap:8px;min-width:150px}.payment-card-fields-v89 b{font-size:12px}.payment-card-fields-v89 img{width:115px;height:115px;object-fit:contain}.payment-card-buttons-v89{display:flex;justify-content:flex-end;gap:10px}#paymentEditorV89[hidden]{display:none}#paymentEditorV89{position:fixed;inset:0;z-index:9999;background:#001b2b99;display:flex;justify-content:flex-end}#paymentEditorV89>div{width:min(440px,100%);padding:26px;background:#fff;color:#103b52;overflow:auto}#paymentEditorV89 input{box-sizing:border-box;width:100%}#paymentEditorV89 .form-group{margin:20px 0}#paymentQrPreviewV89 img{max-width:135px;max-height:135px;object-fit:contain;margin-top:10px}.payment-editor-actions-v89{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}body.dark-mode .payment-card-v89,body.dark-mode #paymentEditorV89>div{background:#193846;color:#e9f6fa;border-color:#345a69}@media(max-width:900px){.payment-grid-v89{grid-template-columns:1fr}}
+</style>
+<div id="paymentEditorV89" hidden><div role="dialog" aria-modal="true"><h3 id="paymentMethodNameV89"></h3><div class="form-group"><label>Account Name</label><input id="paymentAccountNameV89"></div><div class="form-group"><label>Account Number</label><input id="paymentAccountNumberV89" inputmode="numeric"></div><div class="form-group"><label>QR Code</label><input id="paymentQrV89" type="file" accept="image/png,image/jpeg,image/webp"><div id="paymentQrPreviewV89"></div></div><div class="payment-editor-actions-v89"><button class="secondary-btn" type="button" onclick="closePaymentEditorV89()">Cancel</button><button class="primary-btn" type="button" onclick="savePaymentV89()">Save</button></div></div></div>
+</body></html>');
  popup.document.close();popup.focus();popup.print();
 }
 
