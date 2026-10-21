@@ -24,11 +24,4 @@ renderAdminDashboard=function(){
   panel.innerHTML=[['New Orders',fresh,'orders','new'],['Cancellation Requests',cancelled,'cancellations','cancel']].map(([name,n,page,type])=>'<button type="button" class="dash-note-v71 '+type+'" data-dash-page="'+page+'"><span class="dash-note-icon-v71" aria-hidden="true"></span><span class="dash-note-label-v71"><strong>'+name+'</strong><small>'+n+' awaiting review</small></span><b>'+n+'</b><span aria-hidden="true">›</span></button>').join('');
  }
 };
-document.addEventListener('click',e=>{
- const btn=e.target.closest('.dash-note-v71');
- if(!btn)return;
- e.preventDefault();
- const page=btn.dataset.dashPage;
- showAdminPage(page,document.querySelector('#adminSidebar .nav-btn[onclick*="'+page+'"]'));
-});
 })();
