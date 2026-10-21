@@ -1,0 +1,20 @@
+/* Dashboard v68: clean, colorful but restrained action surfaces */
+#admin-dashboard .pro-kpi-v27:nth-child(1){border-top:3px solid #139fc8}
+#admin-dashboard .pro-kpi-v27:nth-child(2){border-top:3px solid #18b9ae}
+#admin-dashboard .pro-kpi-v27:nth-child(3){border-top:3px solid #548bd9}
+#admin-dashboard .pro-kpi-v27:nth-child(4){border-top:3px solid #d89d30}
+#admin-dashboard .dash-action-v68{appearance:none;width:100%;font:inherit;text-align:left;cursor:pointer;border:1px solid var(--pro-line,#d5e7ef);border-radius:12px;padding:12px 14px;background:var(--pro-surface,#eef7fb);color:inherit;display:flex;align-items:center;gap:12px;margin-bottom:8px;transition:background .15s,border-color .15s}
+#admin-dashboard .dash-action-v68:hover{border-color:#25a6d0;background:#e1f3fa}
+#admin-dashboard .dash-action-v68:focus-visible{outline:3px solid #159bc7;outline-offset:2px}
+#admin-dashboard .dash-action-v68 .pro-attention-dot-v27{flex:0 0 34px;width:34px;height:34px;display:grid;place-items:center;background:#d8eef7;border-radius:9px;color:#1689b1;font-weight:700}
+#admin-dashboard .dash-action-v68:nth-child(2) .pro-attention-dot-v27{background:#d9f4ee;color:#147b67}
+#admin-dashboard .dash-action-v68:nth-child(3) .pro-attention-dot-v27{background:#e5eafd;color:#5b68b5}
+#admin-dashboard .dash-action-v68:nth-child(4) .pro-attention-dot-v27{background:#f7ecd5;color:#a17b23}
+#admin-dashboard .dash-action-v68:nth-child(5) .pro-attention-dot-v27{background:#f8e4e4;color:#bd6666}
+#admin-dashboard .dash-action-v68:nth-child(6) .pro-attention-dot-v27{background:#e9e2f9;color:#8763b9}
+#admin-dashboard .dash-action-v68>div:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+#admin-dashboard .dash-action-v68 b{font-size:17px}
+#admin-dashboard .dash-action-v68 span{font-size:13px}
+#admin-dashboard .dash-action-v68>strong{font-size:18px}
+body.dark-mode #admin-dashboard .dash-action-v68{background:#193749;color:#e4f3fb;border-color:#416276}
+body.dark-mode #admin-dashboard .dash-action-v68:hover{background:#25516a;border-color:#4bb5d8}
