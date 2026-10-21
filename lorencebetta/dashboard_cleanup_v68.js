@@ -3,20 +3,8 @@
   function cleanup(){
     const dash=document.getElementById('admin-dashboard');
     if(!dash)return;
-    // Hide all legacy duplicate widgets, while preserving their data hooks.
-    for(const selector of ['#dashLowerV9','#recentOrders','.dash-lower-v9','#proRecentV27']){
-      dash.querySelectorAll(selector).forEach(el=>{const panel=el.closest('.pro-panel-v27')||el.closest('.card');if(panel&&selector==='#proRecentV27')panel.style.display='none';else if(panel&&selector==='#recentOrders')panel.style.display='none';else el.style.display='none'});
-    }
-    const pro=dash.querySelector('#proSalesV27');
-    if(pro){
-      const parent=pro.closest('.pro-dashboard-v27')||pro.parentElement;
-      const recent=dash.querySelector('#proRecentV27');
-      if(recent){const panel=recent.closest('.pro-panel-v27');if(panel)panel.remove()}
-    }
-    // The old Order Status Overview and its legacy chart are redundant to shipping management.
-    const status=dash.querySelector('#proStatusV27');
-    if(status){const panel=status.closest('.pro-panel-v27');if(panel)panel.remove()}
-    const legacy=dash.querySelector('#dashLowerV9');if(legacy)legacy.remove();
+    // v69: legacy dashboard renderers write to these IDs after every refresh.
+    // Do not remove the nodes: CSS hides their containing panels consistently.
     // Keep actionable work visible: payment verification, shipping, cancellations and refunds.
     const list=document.getElementById('proAttentionV27');
     if(list){
