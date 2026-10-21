@@ -1876,9 +1876,7 @@ body:not(.dark-mode) .hero-kicker{
 
                         <div class="card">
 <h3> Payment Method</h3>
-<label class="payment-option"><input type="radio" name="payment" value="GCash" checked>  GCash</label>
-<label class="payment-option"><input type="radio" name="payment" value="MariBank">  MariBank</label>
-<label class="payment-option"><input type="radio" name="payment" value="AUB">  AUB</label>
+<div id="checkoutPaymentOptionsV88"></div>
 <div id="checkoutPaymentDetails" class="payment-note">Payment account details will appear here.</div><div class="form-group"><label>Transaction reference number</label><input id="checkoutPaymentReference" placeholder="Enter payment reference" maxlength="120"></div><div class="form-group"><label>Payment screenshot</label><input id="checkoutPaymentScreenshot" type="file" accept="image/png,image/jpeg,image/webp"></div>
 </div>
 </div>
@@ -2301,7 +2299,7 @@ body:not(.dark-mode) .hero-kicker{
 
             <!-- ADMIN PAYMENT SETTINGS -->
 <section id="admin-payments" class="page">
-<div class="page-title"><h2> Payment Method Settings</h2><p>Manage account details and QR codes.</p></div>
+<div class="page-title payment-head-v88"><h2>Payment Method Settings</h2><button type="button" class="primary-btn" onclick="paymentEditV88()">+ Add Payment Method</button></div>
 <div id="paymentSettingsCards"></div>
 </section>
 <section id="admin-couriers" class="page" style="display:none" aria-hidden="true">
@@ -2725,6 +2723,7 @@ async function loadCategories() {
 async function loadPaymentSettings() {
     const data = await apiRequest("payment_settings.php");
     paymentSettings = data.methods || paymentSettings;
+    if(typeof renderCheckoutPaymentsV88==="function")renderCheckoutPaymentsV88();
 }
 
 async function loadProductReviews() {
@@ -3629,7 +3628,7 @@ function renderCheckout(){const cart=getSelectedCartItems(),el=document.getEleme
 async function placeOrder(){
  const cart=getCart(),selected=getSelectedCartItems();if(!selected.length)return showToast("Select at least one product.");
  const a=selectedAddress();if(!a)return showToast("Please select a delivery address.");
- const payment=document.querySelector('input[name="payment"]:checked')?.value||"GCash",deliveryMode=document.querySelector('input[name="deliveryMode"]:checked')?.value||"delivery";
+ const payment=document.querySelector('input[name="payment"]:checked')?.value||"",deliveryMode=document.querySelector('input[name="deliveryMode"]:checked')?.value||"delivery";
  const reference=document.getElementById("checkoutPaymentReference")?.value.trim()||"";
  const screenshot=document.getElementById("checkoutPaymentScreenshot")?.files?.[0];
  if(!reference)return showToast("Enter your payment transaction reference.","warning");
@@ -3718,7 +3717,7 @@ function orderHTML(order) {
       const reviewed=product?alreadyReviewed(product):false;
       return `<div class="order-item-row">${item.image?`<img src="${escapeHTML(item.image)}" alt="${escapeHTML(item.name)}">`:`<div></div>`}<div><div class="order-item-name">${escapeHTML(item.name)}</div><div class="order-item-sub">Qty ${Number(item.quantity)} · ₱${Number(item.price).toFixed(2)}</div></div><div>${reviewReady?`<button class="action-btn view-btn" onclick="openProductDetail('${escapeHTML(product.id)}')">${reviewed?"View Rating":"Rate Product"}</button>`:""}</div></div>`;
     }).join("");
-    const paymentAction=order.status!=="Cancelled"&&["GCash","MariBank","AUB"].includes(order.payment)&&order.shipping_confirmed&&!order.payment_reference&&!["Paid","Payment Submitted"].includes(order.payment_status)?paymentActionHTML(order):"";
+    const paymentAction=order.status!=="Cancelled"&&["GCash","MariBank","AUB","Maya"].includes(order.payment)&&order.shipping_confirmed&&!order.payment_reference&&!["Paid","Payment Submitted"].includes(order.payment_status)?paymentActionHTML(order):"";
     return `<div class="order-card">
       <div class="order-head"><div><div class="order-id">${escapeHTML(order.id)}</div><small>${escapeHTML(order.date)}</small></div><span class="status ${escapeHTML(order.status)}">${escapeHTML(order.status==="Pending"?"Payment Submitted":order.status)}</span></div>
       <div class="order-body-grid">
@@ -3749,11 +3748,50 @@ function paymentActionHTML(order){
 async function copyPaymentNumber(n){try{await navigator.clipboard.writeText(n);showToast("Account number copied.");}catch(e){showToast("Could not copy automatically.");}}
 async function submitPayment(id){const ref=document.getElementById("payref-"+id)?.value.trim(),file=document.getElementById("payproof-"+id)?.files[0];if(!ref)return showToast("Enter the payment reference or transaction number.","warning");if(!file)return showToast("Please upload your payment receipt.","warning");const f=new FormData();f.append("username",currentUser.username);f.append("orderId",id);f.append("reference",ref);if(file)f.append("screenshot",file);try{await apiRequest("submit_payment.php",{method:"POST",body:f});await loadOrders();renderCustomerOrders();showToast("Payment proof submitted.");}catch(e){showToast(e.message);}}
 async function markPaymentPaid(id){if(!confirm("Mark this payment as verified and paid?"))return;try{await apiRequest("mark_payment.php",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId:id})});await loadOrders();renderAdminOrders();renderAdminDashboard();viewOrder(id);showToast("Payment marked as paid.");}catch(e){showToast(e.message);}}
+
+const paymentNamesV88=["GCash","Maya","MariBank","AUB"];
+function paymentReadyV88(m){const x=paymentSettings[m]||{};return Boolean((x.account_name||x.merchant_name)&&(x.account_number||x.gcash_number)&&x.qr_image);}
+function renderCheckoutPaymentsV88(){
+ const box=document.getElementById("checkoutPaymentOptionsV88");if(!box)return;
+ const previous=document.querySelector('input[name="payment"]:checked')?.value;
+ const available=paymentNamesV88.filter(m=>paymentSettings[m]?.active!==false&&paymentReadyV88(m));
+ const chosen=available.includes(previous)?previous:available[0];
+ box.innerHTML=available.map(m=>'<label class="payment-option payment-choice-v88"><input type="radio" name="payment" value="'+escapeHTML(m)+'" '+(m===chosen?'checked':'')+'> '+escapeHTML(m)+'</label>').join("")||'<p>No payment methods available.</p>';
+ box.querySelectorAll('input[name="payment"]').forEach(i=>i.addEventListener("change",renderCheckoutPaymentDetailsV88));
+ renderCheckoutPaymentDetailsV88();
+}
+function renderCheckoutPaymentDetailsV88(){
+ const box=document.getElementById("checkoutPaymentDetails");if(!box)return;
+ const m=document.querySelector('input[name="payment"]:checked')?.value,x=paymentSettings[m]||{};
+ box.innerHTML=m?'<div class="payment-details-v88"><strong>'+escapeHTML(m)+'</strong><div>'+escapeHTML(x.account_name||x.merchant_name||"")+'</div><div>'+escapeHTML(x.account_number||x.gcash_number||"")+'</div>'+(x.qr_image?'<img src="'+escapeHTML(x.qr_image)+'" alt="Payment QR">':'')+'</div>':'';
+}
 function renderPaymentSettings(){
  const el=document.getElementById("paymentSettingsCards");if(!el)return;
- el.innerHTML=["GCash","MariBank","AUB"].map(m=>{const x=paymentSettings[m]||{},p=m.toLowerCase();return `<div class="card" style="margin-bottom:18px"><h3>${m==="GCash"?"":""} ${escapeHTML(m)}</h3><div class="form-group"><label>Account Name</label><input id="${p}AccountName" value="${escapeHTML((x.account_name||x.merchant_name)||"")}"></div><div class="form-group"><label>Account Number</label><input id="${p}AccountNumber" value="${escapeHTML((x.account_number||x.gcash_number)||"")}"></div><div class="form-group"><label>QR Code</label><input id="${p}Qr" type="file" accept="image/jpeg,image/png,image/webp"></div>${x.qr_image?`<div class="gcash-box"><img class="gcash-qr" src="${escapeHTML(x.qr_image)}"></div>`:""}<button class="primary-btn" onclick="savePaymentSettings('${m}')">Save ${m} Settings</button></div>`}).join("");
+ el.innerHTML='<div class="payment-grid-v88">'+paymentNamesV88.filter(m=>m!=="Maya"||paymentReadyV88(m)).map(m=>{
+ const x=paymentSettings[m]||{},active=x.active!==false;
+ return '<article class="payment-card-v88"><header><span class="payment-mark-v88 '+m.toLowerCase()+'">'+escapeHTML(m==="GCash"?"G":m==="Maya"?"M":m==="MariBank"?"MB":"A")+'</span><h3>'+escapeHTML(m)+'</h3><label class="payment-toggle-v88"><input type="checkbox" '+(active?'checked':'')+' onchange="paymentToggleV88(\''+m+'\',this.checked)" aria-label="Enable '+escapeHTML(m)+'"><span></span></label><span class="payment-state-v88 '+(active?'on':'off')+'">'+(active?'Active':'Inactive')+'</span></header><div class="payment-fields-v88"><div><b>Account Name</b><span>'+escapeHTML(x.account_name||x.merchant_name||"—")+'</span></div><div><b>Account Number</b><span>'+escapeHTML(x.account_number||x.gcash_number||"—")+'</span></div><div><b>QR Code</b>'+(x.qr_image?'<img src="'+escapeHTML(x.qr_image)+'" alt="'+escapeHTML(m)+' QR">':'<span>—</span>')+'</div></div><footer><button type="button" class="secondary-btn" onclick="paymentEditV88(\''+m+'\')">Edit</button></footer></article>';
+ }).join("")+'</div>';
 }
-async function savePaymentSettings(m){const p=m.toLowerCase(),name=document.getElementById(p+"AccountName").value.trim(),num=document.getElementById(p+"AccountNumber").value.trim(),file=document.getElementById(p+"Qr").files[0];if(!name||!num)return showToast("Enter account name and account number.");const f=new FormData();f.append("method",m);f.append(m==="GCash"?"merchant_name":"account_name",name);f.append(m==="GCash"?"gcash_number":"account_number",num);if(file)f.append("qr_image",file);try{const d=await apiRequest("payment_settings.php",{method:"POST",body:f});paymentSettings=d.methods||paymentSettings;renderPaymentSettings();showToast(m+" settings saved.");}catch(e){showToast(e.message);}}
+function paymentEditV88(m){
+ const modal=document.getElementById("paymentModalV88"),select=document.getElementById("paymentMethodV88");if(!modal)return;
+ select.value=m||"Maya";select.disabled=Boolean(m);
+ document.getElementById("paymentModalTitleV88").textContent=m?"Edit Payment Method":"Add Payment Method";
+ const fill=()=>{const x=paymentSettings[select.value]||{};document.getElementById("paymentNameV88").value=x.account_name||x.merchant_name||"";document.getElementById("paymentNumberV88").value=x.account_number||x.gcash_number||"";document.getElementById("paymentQrV88").value="";document.getElementById("paymentPreviewV88").innerHTML=x.qr_image?'<img src="'+escapeHTML(x.qr_image)+'" alt="QR">':'';};
+ select.onchange=fill;fill();modal.hidden=false;
+}
+function paymentCloseV88(){document.getElementById("paymentModalV88").hidden=true;}
+async function paymentSaveV88(){
+ const m=document.getElementById("paymentMethodV88").value,name=document.getElementById("paymentNameV88").value.trim(),num=document.getElementById("paymentNumberV88").value.trim(),file=document.getElementById("paymentQrV88").files[0],btn=document.getElementById("paymentSaveButtonV88");
+ if(!name||!num)return showToast("Enter account name and number.");
+ if(!/^\d{6,25}$/.test(num)||(m==="GCash"&&!/^09\d{9}$/.test(num)))return showToast("Enter a valid account number.");
+ if(!file&&!paymentSettings[m]?.qr_image)return showToast("Upload a QR code.");
+ const form=new FormData();form.append("method",m);form.append(m==="GCash"?"merchant_name":"account_name",name);form.append(m==="GCash"?"gcash_number":"account_number",num);if(file)form.append("qr_image",file);
+ btn.disabled=true;try{const d=await apiRequest("payment_settings.php",{method:"POST",body:form});paymentSettings=d.methods||paymentSettings;paymentCloseV88();renderPaymentSettings();renderCheckoutPaymentsV88();showToast(m+" saved.");}catch(e){showToast(e.message);}finally{btn.disabled=false;}
+}
+async function paymentToggleV88(m,active){
+ const f=new FormData();f.append("method",m);f.append("active",active?"1":"0");
+ try{const d=await apiRequest("payment_settings.php",{method:"POST",body:f});paymentSettings=d.methods||paymentSettings;renderPaymentSettings();renderCheckoutPaymentsV88();showToast(m+" updated.");}catch(e){renderPaymentSettings();showToast(e.message);}
+}
 
 /* =========================================================
    PROFILE
@@ -4285,7 +4323,26 @@ function printCourierV50(){
  const popup=window.open("","_blank");if(!popup)return showToast("Allow popups to print shipping details.");
  const safe=escapeHTML(courierTextV50(list));
  popup.document.open();
- popup.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Courier Shipping List</title><style>body{font:14px Arial,sans-serif;margin:30px}h2{margin-bottom:5px}pre{font:13px/1.5 Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}.note{font-weight:bold}@media print{@page{margin:15mm}}</style></head><body><h2>Lorence&#39;s Betta Fish</h2><h3>Courier Shipping List</h3><pre>'+safe+'</pre><p class="note">Confirm the courier accepts live fish before handover.</p></body></html>');
+ popup.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Courier Shipping List</title><style>body{font:14px Arial,sans-serif;margin:30px}h2{margin-bottom:5px}pre{font:13px/1.5 Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}.note{font-weight:bold}@media print{@page{margin:15mm}}</style></head><body><h2>Lorence&#39;s Betta Fish</h2><h3>Courier Shipping List</h3><pre>'+safe+'</pre><p class="note">Confirm the courier accepts live fish before handover.</p>
+<style id="payment-v88-css">
+.payment-head-v88{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.payment-grid-v88{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.payment-card-v88{background:#fff;border:1px solid #cfe5ef;border-radius:16px;padding:22px;color:#123d52}
+.payment-card-v88 header{display:flex;align-items:center;gap:12px}.payment-card-v88 h3{margin:0;flex:1}
+.payment-mark-v88{display:grid;place-items:center;width:54px;height:54px;border-radius:12px;background:#0764e8;color:#fff;font-size:20px;font-weight:800}.payment-mark-v88.maya{background:#13221d;color:#23e89c}.payment-mark-v88.maribank{background:#e76c34}.payment-mark-v88.aub{background:#17659b}
+.payment-state-v88{padding:7px 10px;border-radius:22px;font-size:12px;font-weight:700}.payment-state-v88.on{background:#ddf6e8;color:#10784d}.payment-state-v88.off{background:#edf0f2;color:#647887}
+.payment-toggle-v88{position:relative;width:45px;height:26px;display:inline-flex}.payment-toggle-v88 input{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:1}.payment-toggle-v88 span{width:100%;border-radius:20px;background:#b8cbd4}.payment-toggle-v88 span:before{content:"";position:absolute;top:4px;left:4px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .2s}.payment-toggle-v88 input:checked+span{background:#1aa66e}.payment-toggle-v88 input:checked+span:before{transform:translateX(19px)}
+.payment-fields-v88{display:grid;grid-template-columns:1fr 1fr 110px;gap:12px;margin:24px 0}.payment-fields-v88>div{display:grid;align-content:start;gap:10px;min-width:0}.payment-fields-v88 b{font-size:12px}.payment-fields-v88 span{overflow-wrap:anywhere}.payment-fields-v88 img{width:100px;height:100px;object-fit:contain;background:#fff;border:1px solid #d7e8ef;border-radius:8px}
+.payment-card-v88 footer{display:flex;justify-content:flex-end}
+#paymentModalV88[hidden]{display:none}#paymentModalV88{position:fixed;inset:0;z-index:99999;background:#001b2b99;display:flex;justify-content:flex-end}#paymentModalV88>div{width:min(460px,100%);padding:28px;background:#fff;color:#123d52;overflow-y:auto;box-shadow:-10px 0 35px #0003}
+.payment-modal-head-v88{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}.payment-modal-head-v88 h3{margin:0}.payment-modal-head-v88 button{border:0;background:transparent;font-size:27px;cursor:pointer;color:inherit}#paymentModalV88 .form-group{margin-bottom:18px}#paymentModalV88 input,#paymentModalV88 select{box-sizing:border-box;width:100%}#paymentPreviewV88 img{width:130px;max-height:130px;object-fit:contain;margin-top:12px}.payment-modal-actions-v88{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+.payment-choice-v88{display:inline-flex;gap:8px;margin:5px 12px 5px 0}.payment-details-v88{display:grid;gap:8px;margin-top:12px}.payment-details-v88 img{width:180px;max-width:100%;height:auto;background:white;border-radius:9px}
+body.dark-mode .payment-card-v88,body.dark-mode #paymentModalV88>div{background:#183846;color:#e4f3fa;border-color:#35596a}
+@media(max-width:1100px){.payment-grid-v88{grid-template-columns:1fr}}@media(max-width:550px){.payment-fields-v88{grid-template-columns:1fr 1fr}.payment-fields-v88>div:last-child{grid-column:1/-1}}
+</style>
+<div id="paymentModalV88" hidden><div role="dialog" aria-modal="true" aria-label="Payment Method"><div class="payment-modal-head-v88"><h3 id="paymentModalTitleV88">Add Payment Method</h3><button type="button" onclick="paymentCloseV88()" aria-label="Close">×</button></div><div class="form-group"><label>Payment Method</label><select id="paymentMethodV88"><option>GCash</option><option>Maya</option><option>MariBank</option><option>AUB</option></select></div><div class="form-group"><label>Account Name</label><input id="paymentNameV88" maxlength="150"></div><div class="form-group"><label>Account Number</label><input id="paymentNumberV88" inputmode="numeric" maxlength="25"></div><div class="form-group"><label>QR Code</label><input id="paymentQrV88" type="file" accept="image/png,image/jpeg,image/webp"><div id="paymentPreviewV88"></div></div><div class="payment-modal-actions-v88"><button type="button" class="secondary-btn" onclick="paymentCloseV88()">Cancel</button><button type="button" class="primary-btn" id="paymentSaveButtonV88" onclick="paymentSaveV88()">Save Payment Method</button></div></div></div>
+
+</body></html>');
  popup.document.close();popup.focus();popup.print();
 }
 
@@ -4383,7 +4440,7 @@ function viewOrder(orderId) {
              </div>
            </div>`;
 
-    const paymentBlock = order.status!=="Cancelled" && ["GCash","MariBank","AUB"].includes(order.payment) && order.shipping_confirmed
+    const paymentBlock = order.status!=="Cancelled" && ["GCash","MariBank","AUB","Maya"].includes(order.payment) && order.shipping_confirmed
         ? `<div class="admin-shipping-box"><strong>${escapeHTML(order.payment)}</strong><p class="payment-note">Final amount: ₱${Number(order.total).toFixed(2)} · Payment status: ${escapeHTML(order.payment_status || "Unpaid")}</p>${order.payment_reference ? `<p><strong>Reference:</strong> ${escapeHTML(order.payment_reference)}</p>` : ''}${order.payment_screenshot ? `<a href="${escapeHTML(order.payment_screenshot)}" target="_blank" rel="noopener"><img src="${escapeHTML(order.payment_screenshot)}" alt="Payment screenshot" style="width:260px;max-width:100%;border-radius:12px;margin:12px 0;display:block"></a>` : ''}${order.payment_reference||order.payment_screenshot ? (order.payment_status !== 'Paid' ? `<button class="primary-btn" onclick="markPaymentPaid('${escapeHTML(order.id)}')">Mark Payment as Paid</button>` : `<div class="shipping-confirmed">✅ Payment verified</div>`) : `<p class="payment-note">Waiting for the customer to submit payment proof.</p>`}</div>`
         : order.status==="Cancelled" ? "" : `<p class="payment-note">Payment method: ${escapeHTML(order.payment)} · ${escapeHTML(order.payment_status || "Waiting for shipping fee")}</p>`;
 
@@ -5301,7 +5358,7 @@ orderHTML=function(order){
  const activeIndex=statuses.indexOf(displayStage);
  const progress=statuses.map((status,index)=>{const done=order.status!=="Cancelled"&&index<=activeIndex;return `<div class="progress-step ${done?'done':''}"><div class="progress-dot">${done?'✓':index+1}</div>${escapeHTML(status)}</div>`}).join("");
  const items=(order.items||[]).map(item=>{const product=products.find(p=>Number(p.db_id)===Number(item.productId));const reviewReady=["Delivered","Order Received","Picked Up"].includes(order.status)&&product;const reviewed=product?alreadyReviewed(product):false;return `<div class="order-item-row">${item.image?`<img src="${escapeHTML(item.image)}" alt="${escapeHTML(item.name)}">`:`<div></div>`}<div><div class="order-item-name">${escapeHTML(item.name)}</div><div class="order-item-sub">Qty ${Number(item.quantity)} · ₱${Number(item.price).toFixed(2)}</div></div><div>${reviewReady?`<button class="action-btn view-btn" onclick="openProductDetail('${escapeHTML(product.id)}')">${reviewed?"View Rating":"Rate Product"}</button>`:""}</div></div>`}).join("");
- const paymentAction=order.status!=="Cancelled"&&["GCash","MariBank","AUB"].includes(order.payment)&&order.shipping_confirmed&&!["Paid","Payment Submitted"].includes(order.payment_status)?paymentActionHTML(order):"";
+ const paymentAction=order.status!=="Cancelled"&&["GCash","MariBank","AUB","Maya"].includes(order.payment)&&order.shipping_confirmed&&!["Paid","Payment Submitted"].includes(order.payment_status)?paymentActionHTML(order):"";
  return `<div class="order-card"><div class="order-head"><div><div class="order-id">${escapeHTML(order.id)}</div><small>${escapeHTML(order.date)}</small></div><span class="status">${escapeHTML(displayStage)}</span></div><div class="order-body-grid"><div class="order-main-column"><div class="order-items-list">${items}</div><div class="progress">${progress}</div>${paymentAction}</div><aside class="order-side-column"><div class="order-side-card"><h4>Order Summary</h4><div class="summary-row"><span>Subtotal</span><strong>₱${Number(order.subtotal||0).toFixed(2)}</strong></div><div class="summary-row"><span>Shipping</span><strong>${order.shipping_confirmed?'₱'+Number(order.shipping).toFixed(2):'Pending'}</strong></div><div class="summary-row"><span>Total</span><strong>${order.shipping_confirmed?'₱'+Number(order.total).toFixed(2):'Pending final total'}</strong></div></div><div class="order-side-card"><h4>Delivery</h4><p><strong>${escapeHTML(order.courier||"Not specified")}</strong></p>${order.courier==="J&T Express"&&["Shipped","Out for Delivery","Delivered","Order Received"].includes(order.status)?`<div class="courier-customer-track-v53"><strong>J&T Express Tracking</strong>${order.tracking_number?`<p>Tracking Number: <strong>${escapeHTML(order.tracking_number)}</strong></p>`:""}${order.tracking_url&&/^https?:\/\//i.test(order.tracking_url)?`<a class="primary-btn" href="${escapeHTML(order.tracking_url)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:8px;text-decoration:none">Track Package ↗</a>`:""}</div>`:""}${order.courier==="Lalamove"&&order.payment_status==="Paid"&&order.status!=="Cancelled"&&order.tracking_url?`<a class="primary-btn" style="display:inline-block;text-decoration:none;margin-top:8px" href="${escapeHTML(order.tracking_url)}" target="_blank" rel="noopener">Track Delivery</a>`:""}</div>${order.status!=="Cancelled"?`<div class="order-side-card"><h4>Payment</h4><p>${escapeHTML(order.payment||"")}</p><p class="payment-note">Status: <strong>${escapeHTML(order.payment_status||"Waiting")}</strong></p>${["Paid","Payment Submitted"].includes(order.payment_status)&&order.payment_screenshot?`<button class="action-btn view-btn" onclick="viewReceipt('${escapeHTML(order.id)}',false)">View Receipt</button>`:""}</div>`:""}${(order.status==="Delivered"||(order.courier==="J&T Express"&&["Shipped","Out for Delivery"].includes(order.status)))?`<div class="order-side-card receive-card"><h4>Package delivered?</h4><p class="payment-note">Confirm only after you have received and checked your order.</p><button class="primary-btn" onclick="confirmOrderReceived('${escapeHTML(order.id)}')">Order Received</button></div>`:""}</aside></div></div>`;
 };
 
