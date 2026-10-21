@@ -27,3 +27,9 @@ body.dark-mode #admin-dashboard .dash-action-v68:hover{background:#25516a;border
 #admin-dashboard .pro-panel-v27:has(#proRecentV27){
   display:none!important;
 }
+
+/* v70: four clean, concise attention queues */
+#admin-dashboard .dash-action-v68{padding:11px 13px;margin-bottom:9px}
+#admin-dashboard .dash-action-v68 .pro-attention-dot-v27{flex-basis:32px;width:32px;height:32px;font-size:13px}
+#admin-dashboard .dash-action-v68:nth-child(3) .pro-attention-dot-v27{background:#f8e4e4;color:#bd6666}
+#admin-dashboard .dash-action-v68:nth-child(4) .pro-attention-dot-v27{background:#e9e2f9;color:#8763b9}
