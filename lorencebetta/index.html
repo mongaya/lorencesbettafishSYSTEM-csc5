@@ -10280,6 +10280,63 @@ body.dark-mode .shop-filter-heading-v24 span{color:#b9d7e3}
 body.dark-mode .shop-filters-v23 select,body.dark-mode .shop-appearance-v24 summary,body.dark-mode .shop-appearance-options-v24,body.dark-mode .shop-clear-v24{background:#163e52;color:#f1f9fd;border-color:#37677c}
  .product-colors-v25{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0 12px}.product-colors-v25 label{font-size:13px;display:flex;align-items:center;gap:6px}@media(max-width:500px){.product-colors-v25{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
+
+<style id="payment-workspace-v58-style">
+.payment-summary-v58{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 18px}
+.payment-card-v58{cursor:pointer;text-align:left;border:1px solid #cfe3ec;border-radius:14px;padding:17px;background:#f1f8fb;color:#16455a;display:flex;flex-direction:column;gap:9px;transition:.15s}
+.payment-card-v58 strong{font-size:25px}.payment-card-v58 span{font-size:12px;font-weight:700}.payment-card-v58.active{border:2px solid #159ac2;background:#def3fa}
+.payment-card-v58:focus-visible{outline:3px solid #159ac2;outline-offset:2px}
+.payment-date-v58{font-size:12px;color:#54788a;margin-top:4px}
+body.dark-mode .payment-card-v58,body.dark .payment-card-v58,[data-theme="dark"] .payment-card-v58{background:#183747;color:#e9f7fc;border-color:#386072}
+body.dark-mode .payment-card-v58.active,body.dark .payment-card-v58.active,[data-theme="dark"] .payment-card-v58.active{background:#16516a;border-color:#57c8eb}
+body.dark-mode .payment-date-v58,body.dark .payment-date-v58,[data-theme="dark"] .payment-date-v58{color:#b1cddc}
+@media(max-width:650px){.payment-summary-v58{grid-template-columns:1fr}.admin-order-row-v2{grid-template-columns:1fr 1fr}}
+</style>
+<script id="payment-workspace-v58-script">
+(function(){
+  function category(o){
+    const p=String(o.payment_status||"").toLowerCase(),st=String(o.status||"").toLowerCase();
+    if(p==="paid"||p==="verified")return "verified";
+    if(p==="payment submitted"||p==="payment needs correction")return "pending";
+    if(st==="cancelled"||st==="order received"||st==="delivered"||st==="shipped")return "other";
+    return "new";
+  }
+  let active="new";
+  function formatDate(o){
+    const raw=o.created_at||o.date||o.order_date;
+    if(!raw)return "Date unavailable";
+    const d=new Date(String(raw).replace(" ","T"));
+    return Number.isNaN(d.getTime())?String(raw):d.toLocaleString("en-PH",{year:"numeric",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
+  }
+  function render(){
+    const host=document.getElementById("adminOrdersGroupedV2");
+    if(!host||typeof orders==="undefined")return;
+    const wrap=host.querySelector(".admin-customer-groups");
+    if(!wrap)return;
+    const all=orders||[];
+    const categories=[["new","New Orders","shopping-bag"],["pending","Pending Verification","clock"],["verified","Verified Payments","check-circle"]];
+    let cards=host.querySelector(".payment-summary-v58");
+    if(!cards){cards=document.createElement("div");cards.className="payment-summary-v58";host.insertBefore(cards,host.firstChild)}
+    cards.innerHTML=categories.map(([key,label])=>'<button type="button" class="payment-card-v58 '+(active===key?'active':'')+'" data-payment-filter="'+key+'" aria-pressed="'+(active===key)+'"><span>'+label+'</span><strong>'+all.filter(o=>category(o)===key).length+'</strong><span>View '+label.toLowerCase()+'</span></button>').join("");
+    cards.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{active=b.dataset.paymentFilter;render()}));
+    const q=String(typeof adminOrderSearchV2!=="undefined"?adminOrderSearchV2:"").trim().toLowerCase();
+    const selected=all.filter(o=>category(o)===active).filter(o=>!q||[o.id,o.customerName,o.customer_name,o.username,o.customerUsername,o.courier].filter(Boolean).join(" ").toLowerCase().includes(q));
+    const groups={};
+    selected.forEach(o=>{const k=adminCustomerKey(o);(groups[k]||(groups[k]=[])).push(o)});
+    wrap.innerHTML=Object.values(groups).map(list=>{
+      list.sort((a,b)=>String(b.created_at||b.date||"").localeCompare(String(a.created_at||a.date||"")));
+      const first=list[0],user=adminCustomerUsername(first);
+      return '<section class="admin-customer-group"><div class="admin-customer-head"><div><h3>'+escapeHTML(adminCustomerLabel(first))+'</h3><p>'+(user?'Account: @'+escapeHTML(user):'Customer account')+'</p></div><span class="admin-customer-count">'+list.length+' Order(s)</span></div>'+
+      list.map(o=>'<div class="admin-order-row-v2"><div><small>ORDER</small><strong>'+escapeHTML(o.id)+'</strong><div class="payment-date-v58">Ordered: '+escapeHTML(formatDate(o))+'</div></div><div><small>COURIER</small><strong>'+escapeHTML(o.courier||"—")+'</strong></div><div><small>TOTAL</small><strong>'+(o.shipping_confirmed===false||o.shipping_confirmed===0?'Pending':'₱'+Number(o.total||0).toFixed(2))+'</strong></div><div><small>PAYMENT</small><strong>'+escapeHTML(o.payment_status||"Awaiting Payment")+'</strong></div><button class="action-btn view-btn" data-payment-order="'+escapeHTML(o.id)+'">'+(active==="pending"?"Review Payment":"View Order")+'</button></div>').join("")+'</section>'
+    }).join("")||'<div class="card"><p class="muted">No orders in this category.</p></div>';
+    wrap.querySelectorAll("[data-payment-order]").forEach(b=>b.addEventListener("click",()=>viewOrder(b.dataset.paymentOrder)));
+    const oldSelect=host.querySelector(".admin-order-search-v2 select");if(oldSelect)oldSelect.style.display="none";
+    const search=host.querySelector(".admin-order-search-v2");if(search)search.style.gridTemplateColumns="1fr";
+  }
+  const old=renderAdminOrders;
+  renderAdminOrders=function(){old();render()};
+})();
+</script>
 </body>
 </html>
 
