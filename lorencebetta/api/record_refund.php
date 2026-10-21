@@ -15,7 +15,7 @@ $folder=dirname(__DIR__).'/images/refunds';
 if(!is_dir($folder)) mkdir($folder,0755,true);
 $name='refund_'.bin2hex(random_bytes(12)).'.'.$allowed[$mime];
 if(!move_uploaded_file($file['tmp_name'],$folder.'/'.$name)) respond(false,'Upload failed.',[],500);
-$path='/images/refunds/'.$name;
+$path='images/refunds/'.$name;
 $conn->begin_transaction();
 try{
  $q=$conn->prepare('SELECT cr.id,cr.status,o.total FROM cancellation_requests cr JOIN orders o ON o.id=cr.order_id WHERE o.order_code=? FOR UPDATE');
