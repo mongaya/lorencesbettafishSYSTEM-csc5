@@ -9432,6 +9432,7 @@ body.dark-mode #adminApp .topbar,body.dark-mode #customerApp .topbar{background:
    if(notificationSubtitle)notificationSubtitle.textContent="New orders and cancellation requests";
    notificationPanel.innerHTML=[["New Orders",fresh,"orders","new"],["Cancellation Requests",cancellations,"cancellations","cancel"]].map(([name,n,page,type])=>'<button type="button" class="dash-note-v71 '+type+'" data-dash-page="'+page+'"><span class="dash-note-icon-v71" aria-hidden="true"></span><span class="dash-note-label-v71"><strong>'+name+'</strong><small>'+n+' awaiting review</small></span><b>'+n+'</b><span aria-hidden="true">›</span></button>').join("");
 
+   const count=(fn)=>scoped.filter(fn).length;
    const sts=[["New Orders",null],["Payment Review",null],["Confirmed","Confirmed"],["Preparing","Preparing"],["Ready to Ship","Ready to Ship"],["Shipped","Shipped"],["Out for Delivery","Out for Delivery"],["Delivered","Delivered"],["Ready for Pickup","Ready for Pickup"],["Completed",["Order Received","Picked Up"]],["Cancelled","Cancelled"]];
    document.getElementById("proStatusV27").innerHTML=sts.map(([label,val])=>`<div class="pro-status-item-v27"><b>${label==="New Orders"?count(o=>o.is_new):label==="Payment Review"?count(o=>o.payment_status==="Payment Submitted"):count(o=>Array.isArray(val)?val.includes(o.status):o.status===val)}</b><span>${label}</span></div>`).join("");
 
