@@ -24,7 +24,7 @@ try {
    $q=$conn->prepare("UPDATE cancellation_requests SET status='Rejected',admin_reason=?,reviewed_at=NOW() WHERE id=?");
    $q->bind_param('si',$note,$request['id']);$q->execute();$q->close();
  } else {
-   $paid=$o['payment_status']==='Paid'||$o['payment_status']==='Payment Submitted';
+   $paid=in_array($o['payment_status'],['Paid','Payment Submitted','Payment Needs Correction'],true);
    $next=$paid?'Refund Pending':'Approved';
    $q=$conn->prepare('UPDATE cancellation_requests SET status=?,admin_reason=?,reviewed_at=NOW() WHERE id=?');
    $q->bind_param('ssi',$next,$note,$request['id']);$q->execute();$q->close();
