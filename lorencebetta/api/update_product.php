@@ -53,7 +53,7 @@ if (!$row) {
     respond(false, "Product not found.", [], 404);
 }
 
-$newImage = save_product_image($_FILES["image"] ?? null);
+$newImage = isset($_POST["image_base64"]) ? save_admin_base64_image($_POST["image_base64"], "products", "betta") : save_product_image($_FILES["image"] ?? null);
 
 $imagePath = $newImage ?: $row["image"];
 $status = $stock > 0 ? "available" : "out_of_stock";
