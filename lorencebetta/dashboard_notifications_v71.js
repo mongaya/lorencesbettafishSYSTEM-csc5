@@ -12,7 +12,7 @@ renderAdminDashboard=function(){
   const label=card?.querySelector('.pro-kpi-top-v27 span');
   if(label)label.textContent='New Orders';
   const note=card?.querySelector('small');
-  if(note)note.textContent='Awaiting review';
+  if(note)note.remove();
  }
  const panel=document.getElementById('proAttentionV27');
  if(panel){
