@@ -4,7 +4,7 @@ require_once __DIR__ . "/auth.php";
 require_once "db.php";require_once "stock_reservations.php";require_once "couriers.php";require_once "shipping_rates.php";ensure_order_flow_columns($conn);release_expired_reservations($conn);
 $data=$_POST;$data["items"]=json_decode((string)($_POST["items"]??"[]"),true);$username=trim($data["username"]??"");
 require_customer_owner($conn,$username);$customerName=trim($data["customerName"]??"");$phone=trim($data["phone"]??"");$address=trim($data["address"]??"");$payment=trim($data["payment"]??"");$mode=trim($data["deliveryMode"]??"");$courier=$mode==="pickup"?"Pick Up":"J&T Express";$items=$data["items"]??[];$reference=trim((string)($data["paymentReference"]??""));
-if($username===""||$customerName===""||$phone===""||$address===""||!in_array($payment,["GCash","MariBank","AUB"],true)||!in_array($mode,["delivery","pickup"],true)||!is_array($items)||!count($items)||$reference==="")respond(false,"Please complete your order information.",[],400);
+if($username===""||$customerName===""||$phone===""||$address===""||!in_array($payment,["GCash","MariBank","AUB","Maya"],true)||!in_array($mode,["delivery","pickup"],true)||!is_array($items)||!count($items)||$reference==="")respond(false,"Please complete your order information.",[],400);
 if(strlen($reference)>120)respond(false,"Reference number is too long.",[],400);
 $file=$_FILES["screenshot"]??null;
 if(!$file||$file["error"]!==UPLOAD_ERR_OK||$file["size"]<1||$file["size"]>5*1024*1024)respond(false,"Upload a receipt image up to 5MB.",[],400);
@@ -19,6 +19,10 @@ if(!move_uploaded_file($file["tmp_name"],$diskPath))respond(false,"Unable to sav
 $proofPath="images/payments/".$filename;
 $u=$conn->prepare("SELECT id FROM users WHERE username=? AND role='customer' AND status='active' LIMIT 1");$u->bind_param("s",$username);$u->execute();$user=stmt_fetch_assoc_compat($u);if(!$user){unlink($diskPath);respond(false,"Customer account not found.",[],404);}
 $cq=$conn->prepare("SELECT requires_shipping_fee,courier_type FROM couriers WHERE name=? AND status='active' LIMIT 1");$cq->bind_param("s",$courier);$cq->execute();$courierRow=stmt_fetch_assoc_compat($cq);if(!$courierRow){unlink($diskPath);respond(false,"Selected courier is not available.",[],409);}$requiresFee=(int)$courierRow["requires_shipping_fee"]===1;
+$activeKey="payment_active_".strtolower($payment);
+$activeStmt=$conn->prepare("SELECT setting_value FROM shop_settings WHERE setting_key=? LIMIT 1");
+$activeStmt->bind_param("s",$activeKey);$activeStmt->execute();$activeRow=stmt_fetch_assoc_compat($activeStmt);$activeStmt->close();
+if($activeRow && $activeRow["setting_value"]!=="1"){unlink($diskPath);respond(false,"This payment method is currently unavailable.",[],409);}
 $prefix=strtolower($payment)."_";
 $keys=$payment==="GCash"?["merchant_name","gcash_number","qr_image"]:[$prefix."account_name",$prefix."account_number",$prefix."qr_image"];
 $settings=$conn->prepare("SELECT setting_key,setting_value FROM shop_settings WHERE setting_key IN (?,?,?)");
