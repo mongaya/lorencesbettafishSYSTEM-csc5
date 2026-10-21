@@ -10400,7 +10400,7 @@ body.dark-mode .payment-readonly-v59 h4,body.dark .payment-readonly-v59 h4,[data
    if(p==="paid"||p==="verified")return;
    const proof=o.payment_screenshot||"";
    const submitted=p==="payment submitted";
-   const attempt=Number(o.payment_attempt_count||0);
+   const attempt=Number(o.payment_attempt_count||0) || (submitted?1:0);
    const corrected=!!o.payment_correction_requested;
    panel.innerHTML='<section class="payment-readonly-v59"><h4>'+ (corrected?'Pending Verification':'Payment Review') +'</h4>'+
      '<div class="payment-field"><span>Payment Method</span><strong>'+escapeHTML(o.payment||"—")+'</strong></div>'+
@@ -10408,11 +10408,17 @@ body.dark-mode .payment-readonly-v59 h4,body.dark .payment-readonly-v59 h4,[data
      '<div class="payment-field"><span>Automatic Shipping Fee</span><strong>₱'+Number(o.shipping||0).toFixed(2)+'</strong></div>'+
      '<div class="payment-field"><span>Total</span><strong>₱'+Number(o.total||0).toFixed(2)+'</strong></div>'+
      '<div class="payment-field"><span>Payment Attempt</span><strong>'+attempt+' / 2</strong></div>'+
-     '<div class="payment-field"><span>Reference</span><strong>'+escapeHTML(o.payment_reference||"Not submitted")+'</strong></div>'+
+     '<div class="payment-proof-reference-v61"><small>TRANSACTION REFERENCE NUMBER</small><strong>'+escapeHTML(o.payment_reference||"Not submitted")+'</strong></div>'+
      (o.payment_rejection_reason?'<p class="payment-note">Correction reason: '+escapeHTML(o.payment_rejection_reason)+'</p>':'')+
-     (proof?'<p><a href="'+escapeHTML(proof)+'" target="_blank" rel="noopener">View Uploaded Payment Proof</a></p>':'<p class="payment-note">Waiting for payment proof.</p>')+
+     (proof?'<div class="payment-proof-preview-v61"><small>UPLOADED PAYMENT SCREENSHOT</small><a href="'+escapeHTML(proof)+'" target="_blank" rel="noopener" title="Open full-size payment proof"><img src="'+escapeHTML(proof)+'" alt="Customer uploaded payment proof" loading="lazy"></a><a class="payment-proof-open-v61" href="'+escapeHTML(proof)+'" target="_blank" rel="noopener">View full-size screenshot</a></div>':'<p class="payment-note">Waiting for payment proof.</p>')+
      (submitted?'<div class="payment-actions"><button class="primary-btn" id="paymentVerifyV60">Verify Payment</button><button class="danger-solid-btn" id="paymentRejectV60">'+(attempt>=2?'Reject & Cancel Order':'Request Correction')+'</button></div>':'<p class="payment-note">Waiting for customer submission.</p>')+
      '</section>';
+   // Payment decisions belong in the right panel; remove duplicate legacy footer.
+   d.querySelectorAll("section,div").forEach(node=>{
+     if(node===panel||panel.contains(node))return;
+     const heading=Array.from(node.children).find(child=>/^(H[1-6]|STRONG)$/i.test(child.tagName)&&child.textContent.trim()==="Payment Verification");
+     if(heading && node.querySelector("button") && /Approve Payment|Reject Payment/.test(node.textContent))node.remove();
+   });
    const verify=panel.querySelector("#paymentVerifyV60");
    const reject=panel.querySelector("#paymentRejectV60");
    if(verify)verify.addEventListener("click",()=>markPaymentPaid(String(o.id)));
@@ -12033,4 +12039,17 @@ body.dark-mode #admin-courier-shipping.shipping-v56 .courier-side-v53 .courier-i
 body.dark-mode #admin-courier-shipping.shipping-v56 .shipping-status-v56{background:#174d68;color:#b8e9ff}
 body.dark-mode #admin-courier-shipping.shipping-v56 .shipping-status-v56.done{background:#174e3b;color:#b7f5d2}
 body.dark-mode #admin-courier-shipping.shipping-v56 .courier-side-placeholder-v53{color:#c0d6e3}
+</style>
+<style id="payment-proof-preview-v61-styles">
+#orderDetails .payment-proof-reference-v61{padding:13px 14px;margin:12px 0;border:1px solid #c7e2ed;border-radius:11px;background:#fff;overflow-wrap:anywhere}
+#orderDetails .payment-proof-reference-v61 small,#orderDetails .payment-proof-preview-v61 small{display:block;font-size:11px;font-weight:750;letter-spacing:.5px;color:#607f8e;margin-bottom:7px}
+#orderDetails .payment-proof-reference-v61 strong{display:block;font-size:20px;letter-spacing:.4px;color:#103e55;user-select:text}
+#orderDetails .payment-proof-preview-v61{margin:12px 0 18px}
+#orderDetails .payment-proof-preview-v61>a:first-of-type{display:block;padding:9px;border-radius:12px;border:1px solid #c7e2ed;background:#fff}
+#orderDetails .payment-proof-preview-v61 img{display:block;width:100%;max-height:330px;object-fit:contain;border-radius:7px}
+#orderDetails .payment-proof-open-v61{display:inline-block;margin-top:8px;font-size:12px;font-weight:700;color:#087fa8}
+body.dark-mode #orderDetails .payment-proof-reference-v61,body.dark-mode #orderDetails .payment-proof-preview-v61>a:first-of-type{background:#103246;border-color:#22516a}
+body.dark-mode #orderDetails .payment-proof-reference-v61 strong{color:#f0f8ff}
+body.dark-mode #orderDetails .payment-proof-reference-v61 small,body.dark-mode #orderDetails .payment-proof-preview-v61 small{color:#b9d7e3}
+body.dark-mode #orderDetails .payment-proof-open-v61{color:#6bd3f3}
 </style>
