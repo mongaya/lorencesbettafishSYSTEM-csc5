@@ -47,7 +47,7 @@
  };
  window.customerAccountVerifyV105=async function(event){
   event.preventDefault();
-  const button=$('customerAccountVerifyV105');
+  const button=$('customerAccountVerifyButtonV113');
   button.disabled=true;message('Verifying code...');
   try{
    const result=await request({action:'verify',code:$('customerAccountOtpV105').value});
@@ -71,7 +71,7 @@
     window.location.reload();
     return;
    }else{message(result.message);}
-  }catch(e){message(e.message);}
+  }catch(e){message('Verification failed: '+e.message);}
   finally{button.disabled=false;}
  };
 })();
