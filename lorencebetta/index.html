@@ -1348,6 +1348,17 @@ th{
 .product-detail-title{font-size:30px;color:#123f52;margin:8px 0}
 .product-detail-price{font-size:28px;font-weight:850;color:#087ea4;margin:14px 0}
 .product-detail-description{line-height:1.7;color:#516b76;white-space:pre-wrap}
+.fish-details-v116{margin:16px 0 20px}
+.fish-details-v116 h4{margin:0 0 11px;color:#123f52}
+.fish-details-grid-v116{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 14px}
+.fish-detail-row-v116{border:1px solid #e0edf1;border-radius:10px;padding:10px 12px;min-width:0;background:#f8fbfc}
+.fish-detail-row-v116 span{display:block;color:#637e8a;font-size:12px;margin-bottom:3px}
+.fish-detail-row-v116 strong{display:block;color:#16495c;font-size:13px;overflow-wrap:anywhere}
+.product-detail-actions-v116{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.product-detail-actions-v116 button{min-height:43px;padding:10px 20px;border-radius:10px;font-weight:700;cursor:pointer}
+.product-detail-add-v116{background:white;color:#087ea4;border:1px solid #087ea4}
+.product-detail-actions-v116 button:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:480px){.fish-details-grid-v116{grid-template-columns:1fr}.product-detail-actions-v116 button{flex:1}}
 .product-detail-meta{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0}
 .product-detail-meta span{background:#f2f8fa;border:1px solid #dfedf1;border-radius:999px;padding:8px 12px;font-size:13px;color:#47636f}
 .review-section{border-top:1px solid #e5eef1;padding:28px 34px 36px}
@@ -3394,6 +3405,13 @@ function openProductDetail(productCode) {
     document.getElementById("productDetailOverlay")?.remove();
     const reviews=productReviews.filter(r=>Number(r.productId)===Number(product.db_id));
     const canReview=eligibleToReview(product) && !alreadyReviewed(product);
+    const fishDetails=[
+        ["Category", product.category],
+        ["Appearance", product.appearance],
+        ["Colors", Array.isArray(product.colors)?product.colors.join(", "):""],
+        ["Gender", product.gender]
+    ];
+    const detailsHTML=fishDetails.map(([label,value])=>`<div class="fish-detail-row-v116"><span>${escapeHTML(label)}</span><strong>${escapeHTML(String(value||"Not specified"))}</strong></div>`).join("");
     const overlay=document.createElement("div");
     overlay.id="productDetailOverlay";
     overlay.className="product-detail-overlay";
@@ -3408,8 +3426,9 @@ function openProductDetail(productCode) {
           ${ratingSummaryHTML(product)}
           <div class="product-detail-price">₱${Number(product.price).toLocaleString(undefined,{minimumFractionDigits:2})}</div>
           <div class="product-detail-meta"><span>${Number(product.stock)} available</span><span>${Number(product.stock)>0?"In Stock":"Out of Stock"}</span></div>
+          <section class="fish-details-v116" aria-label="Fish Details"><h4>Fish Details</h4><div class="fish-details-grid-v116">${detailsHTML}</div></section>
           <h4>Description</h4><p class="product-detail-description">${escapeHTML(product.description||"No product description yet.")}</p>
-          ${currentUser?`<button class="primary-btn" onclick="addToCart('${escapeHTML(product.id)}');closeProductDetail()" ${Number(product.stock)<=0?"disabled":""}>Add to Cart</button>`:`<button class="primary-btn" onclick="closeProductDetail();requireLoginToOrder()">Log in to order</button>`}
+          ${currentUser?`<div class="product-detail-actions-v116"><button type="button" class="product-detail-add-v116" onclick="closeProductDetail();addToCart('${escapeHTML(product.id)}')" ${Number(product.stock)<=0?"disabled":""}>Add to Cart</button><button type="button" class="primary-btn" onclick="closeProductDetail();buyProductNow('${escapeHTML(product.id)}')" ${Number(product.stock)<=0?"disabled":""}>Buy Now</button></div>`:`<button class="primary-btn" onclick="closeProductDetail();requireLoginToOrder()">Log in to order</button>`}
         </div>
       </div>
       <div class="review-section">
