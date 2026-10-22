@@ -3823,13 +3823,13 @@ function orderHTML(order) {
       (order.shipping_confirmed && !!order.payment_reference &&
        ["Pending","Confirmed","Preparing","Ready for Pickup","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received","Picked Up"].includes(order.status));
     const pickup = String(order.courier||"").toLowerCase() === "pick up";
-    const statuses = !pickup && order.courier==="J&T Express"
+    const statuses = pickup
+      ? ["Payment Submitted","Payment Verified","Preparing","Ready for Pickup","Handed Over","Completed"]
+      : order.courier==="J&T Express"
       ? ["Payment Submitted","Payment Verified","To Ship","To Receive","Completed"]
       : payFirst
-      ? (pickup ? ["Payment Submitted","Payment Verified","Preparing","Ready for Pickup","Handed Over","Completed"]
-                : ["Payment Submitted","Payment Verified","Preparing","Ready to Ship","Shipped","Out for Delivery","Completed"])
-      : (pickup ? ["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready for Pickup","Picked Up"]
-                : ["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received"]);
+      ? ["Payment Submitted","Payment Verified","Preparing","Ready to Ship","Shipped","Out for Delivery","Completed"]
+      : ["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received"];
     const fulfilled = ["Delivered","Order Received","Picked Up"].includes(order.status);
     const verified = order.payment_status === "Paid";
     const stage = order.courier==="J&T Express" ?
@@ -3837,7 +3837,7 @@ function orderHTML(order) {
       !verified ? "Payment Submitted" :
       fulfilled ? "Completed" :
       order.status === "Pending" || order.status === "Confirmed" ? "Payment Verified" : order.status;
-    const currentIndex = statuses.indexOf(pickup&&order.status==="Picked Up"?"Handed Over":stage);
+    const currentIndex = statuses.indexOf(pickup ? (order.status==="Picked Up"?"Handed Over":order.status==="Order Received"?"Completed":order.payment_status!=="Paid"?"Payment Submitted":["Pending","Confirmed"].includes(order.status)?"Payment Verified":stage) : stage);
     const progress = order.status === "Cancelled"
       ? '<div class="payment-note">Order cancelled. See the cancellation reason below.</div>'
       : statuses.map((status,index)=>{
