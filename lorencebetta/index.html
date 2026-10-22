@@ -4505,57 +4505,7 @@ function printCourierV50(){
  const safe=escapeHTML(courierTextV50(list));
  popup.document.open();
  popup.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Courier Shipping List</title><style>body{font:14px Arial,sans-serif;margin:30px}h2{margin-bottom:5px}pre{font:13px/1.5 Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}.note{font-weight:bold}@media print{@page{margin:15mm}}</style></head><body><h2>Lorence&#39;s Betta Fish</h2><h3>Courier Shipping List</h3><pre>'+safe+'</pre><p class="note">Confirm the courier accepts live fish before handover.</p>
-<script id="pickup-flow-v120">
-(function(){
- const original=renderCourierShippingV50;
- const picked=()=>orders.filter(o=>o.courier==="Pick Up"&&o.status!=="Cancelled");
- renderCourierShippingV50=function(){
-  original();
-  const counts=document.getElementById("courierCountsV50"),box=document.getElementById("pickupListV120");
-  if(!counts||!box)return;
-  const all=picked(),pending=all.filter(o=>o.status!=="Order Received"),completed=all.filter(o=>o.status==="Order Received");
-  const active=shippingActiveTabV57==="pickup";
-  counts.querySelector(".pickup-tab-v120")?.remove();
-  const btn=document.createElement("button");btn.type="button";btn.className="courier-stat-v53 shipping-stat-v56 pickup-tab-v120"+(active?" shipping-active-v57":"");
-  btn.setAttribute("aria-pressed",String(active));btn.innerHTML='<span><svg viewBox="0 0 24 24"><path d="M4 8h16v12H4zM8 8V5h8v3M8 13h8"/></svg></span><div><small>Pick Up</small><strong>'+pending.length+'</strong><small>Customer collection</small></div>';
-  btn.onclick=()=>shippingSetTabV57("pickup");
-  counts.querySelector('button[onclick*="completed"]')?.before(btn);
-  const compBtn=counts.querySelector('button[onclick*="completed"] strong');
-  if(compBtn)compBtn.textContent=String(Number(compBtn.textContent||0)+completed.length);
-  document.querySelectorAll("#admin-courier-shipping .shipping-panel-v57").forEach(p=>p.hidden=p.dataset.shippingPanel!==shippingActiveTabV57);
-  if(shippingActiveTabV57==="completed"&&completed.length){
-   const dest=document.getElementById("courierCompletedListV56");
-   if(dest)dest.insertAdjacentHTML("beforeend",completed.map(o=>'<div class="pickup-card-v120"><div><strong>#'+escapeHTML(o.id)+'</strong><p>'+escapeHTML(o.customerName||"Customer")+' · Pick Up</p></div><span class="pickup-status-v120">Completed</span><button class="action-btn view-btn" onclick="viewOrder(\''+escapeHTML(o.id)+'\')">View</button></div>').join(""));
-  }
-  if(!active)return;
-  const q=(document.getElementById("pickupSearchV120")?.value||"").toLowerCase();
-  const relevant=pending.filter(o=>!q||[o.id,o.customerName,o.username].some(v=>String(v||"").toLowerCase().includes(q)));
-  const actions={Confirmed:["Preparing","Start Preparing"],Preparing:["Ready for Pickup","Mark as Ready for Pickup"],"Ready for Pickup":["Picked Up","Confirm Handed Over"]};
-  box.innerHTML=relevant.length?relevant.map(o=>{
-   const id=escapeHTML(o.id),a=o.payment_status==="Paid"?actions[o.status]:null;
-   return '<div class="pickup-card-v120"><div class="pickup-info-v120"><strong>#'+id+'</strong><p>'+escapeHTML(o.customerName||"Customer")+'</p><small>₱'+Number(o.total||0).toFixed(2)+' · '+escapeHTML(o.payment_status||"Awaiting payment")+'</small></div><span class="pickup-status-v120">'+escapeHTML(o.status==="Picked Up"?"Handed Over":o.status)+'</span><div class="pickup-actions-v120"><button class="action-btn view-btn" onclick="viewOrder(\''+id+'\')">View</button>'+(a?'<button class="primary-btn" onclick="pickupAdvanceV120(\''+id+'\',\''+a[0]+'\')">'+a[1]+'</button>':'<small>'+(o.status==="Picked Up"?"Awaiting customer confirmation":o.payment_status!=="Paid"?"Verify payment in Orders":"Awaiting next step")+'</small>')+'</div></div>';
-  }).join(""):'<div class="courier-empty-v50">No pickup orders found.</div>';
-  const side=document.getElementById("courierSideV53");
-  if(side)side.innerHTML='<div class="courier-side-placeholder-v53"><h3>Store Pick Up</h3><p>Pickup orders have no tracking number or link. Verify payment first, prepare the Betta Fish, then confirm handover. The customer finishes the order by selecting Order Received.</p></div>';
- };
- window.pickupAdvanceV120=async(id,status)=>{
-  const expected={Preparing:"Confirmed","Ready for Pickup":"Preparing","Picked Up":"Ready for Pickup"};
-  const label={Preparing:"Start preparing this pickup order?","Ready for Pickup":"Mark the order ready for pickup?","Picked Up":"Confirm you handed this order to the customer?"};
-  if(!Object.hasOwn(expected,status))return;
-  const order=picked().find(o=>String(o.id)===String(id));
-  if(!order||order.status!==expected[status]||order.payment_status!=="Paid"){showToast("Pickup status changed. Refresh and try again.","warning");return;}
-  if(confirm(label[status]))await updateOrderStatus(id,status);
- };
-})();
-</script>
-<style id="pickup-flow-style-v120">
-.pickup-card-v120{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;padding:16px;border:1px solid #d6e5ed;background:var(--card-bg,#fff);border-radius:13px;margin:11px 0;color:inherit}
-.pickup-info-v120{flex:1;min-width:165px}.pickup-info-v120 p{margin:5px 0}.pickup-info-v120 small{color:#65818c}
-.pickup-actions-v120{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.pickup-status-v120{color:#14647f;background:#e5f4fa;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:bold}
-#admin-courier-shipping .shipping-panel-v57[hidden]{display:none!important}
-@media(max-width:600px){.pickup-actions-v120{width:100%}.pickup-actions-v120 button{flex:1}}
-</style>
+
 
 </body></html>');
  popup.document.close();popup.focus();popup.print();
@@ -11070,6 +11020,57 @@ body.dark-mode .payment-readonly-v59 h4,body.dark .payment-readonly-v59 h4,[data
 </style>
 <div id="paymentEditorV89" hidden><div class="payment-editor-panel-v90" role="dialog" aria-modal="true" aria-labelledby="paymentEditorHeadingV90"><div class="payment-editor-head-v90"><h3 id="paymentEditorHeadingV90">Add Payment Method</h3><button type="button" class="payment-close-v90" aria-label="Close" onclick="closePaymentEditorV89()">×</button></div><div class="form-group"><label for="paymentMethodNameV89">Payment Method Name</label><input id="paymentMethodNameV89" placeholder="Enter payment method name" maxlength="40" oninput="updatePaymentPreviewV90()"></div><div class="form-group"><label for="paymentAccountNameV89">Account Name</label><input id="paymentAccountNameV89" placeholder="Enter account name" oninput="updatePaymentPreviewV90()"></div><div class="form-group"><label for="paymentAccountNumberV89">Account Number</label><input id="paymentAccountNumberV89" inputmode="numeric" placeholder="Enter account number" oninput="updatePaymentPreviewV90()"></div><div class="form-group"><label for="paymentQrV89">QR Code</label><label class="payment-upload-v90" for="paymentQrV89"><span class="upload-icon-v90">⇧</span><strong>Click to upload QR code</strong><span>PNG, JPG or WebP (Max 5 MB)</span><input id="paymentQrV89" type="file" accept="image/png,image/jpeg,image/webp" onchange="previewPaymentQrV90()"></label><div id="paymentQrPreviewV89"></div></div><h4>Preview</h4><div class="payment-live-preview-v90" id="paymentLivePreviewV90"></div><div class="payment-editor-actions-v89"><button class="secondary-btn" type="button" onclick="closePaymentEditorV89()">Cancel</button><button class="primary-btn" type="button" onclick="savePaymentV89()">Save</button></div></div></div>
 
+<script id="pickup-flow-v120">
+(function(){
+ const original=renderCourierShippingV50;
+ const picked=()=>orders.filter(o=>o.courier==="Pick Up"&&o.status!=="Cancelled");
+ renderCourierShippingV50=function(){
+  original();
+  const counts=document.getElementById("courierCountsV50"),box=document.getElementById("pickupListV120");
+  if(!counts||!box)return;
+  const all=picked(),pending=all.filter(o=>o.status!=="Order Received"),completed=all.filter(o=>o.status==="Order Received");
+  const active=shippingActiveTabV57==="pickup";
+  counts.querySelector(".pickup-tab-v120")?.remove();
+  const btn=document.createElement("button");btn.type="button";btn.className="courier-stat-v53 shipping-stat-v56 pickup-tab-v120"+(active?" shipping-active-v57":"");
+  btn.setAttribute("aria-pressed",String(active));btn.innerHTML='<span><svg viewBox="0 0 24 24"><path d="M4 8h16v12H4zM8 8V5h8v3M8 13h8"/></svg></span><div><small>Pick Up</small><strong>'+pending.length+'</strong><small>Customer collection</small></div>';
+  btn.onclick=()=>shippingSetTabV57("pickup");
+  counts.querySelector('button[onclick*="completed"]')?.before(btn);
+  const compBtn=counts.querySelector('button[onclick*="completed"] strong');
+  if(compBtn)compBtn.textContent=String(Number(compBtn.textContent||0)+completed.length);
+  document.querySelectorAll("#admin-courier-shipping .shipping-panel-v57").forEach(p=>p.hidden=p.dataset.shippingPanel!==shippingActiveTabV57);
+  if(shippingActiveTabV57==="completed"&&completed.length){
+   const dest=document.getElementById("courierCompletedListV56");
+   if(dest)dest.insertAdjacentHTML("beforeend",completed.map(o=>'<div class="pickup-card-v120"><div><strong>#'+escapeHTML(o.id)+'</strong><p>'+escapeHTML(o.customerName||"Customer")+' · Pick Up</p></div><span class="pickup-status-v120">Completed</span><button class="action-btn view-btn" onclick="viewOrder(\''+escapeHTML(o.id)+'\')">View</button></div>').join(""));
+  }
+  if(!active)return;
+  const q=(document.getElementById("pickupSearchV120")?.value||"").toLowerCase();
+  const relevant=pending.filter(o=>!q||[o.id,o.customerName,o.username].some(v=>String(v||"").toLowerCase().includes(q)));
+  const actions={Confirmed:["Preparing","Start Preparing"],Preparing:["Ready for Pickup","Mark as Ready for Pickup"],"Ready for Pickup":["Picked Up","Confirm Handed Over"]};
+  box.innerHTML=relevant.length?relevant.map(o=>{
+   const id=escapeHTML(o.id),a=o.payment_status==="Paid"?actions[o.status]:null;
+   return '<div class="pickup-card-v120"><div class="pickup-info-v120"><strong>#'+id+'</strong><p>'+escapeHTML(o.customerName||"Customer")+'</p><small>₱'+Number(o.total||0).toFixed(2)+' · '+escapeHTML(o.payment_status||"Awaiting payment")+'</small></div><span class="pickup-status-v120">'+escapeHTML(o.status==="Picked Up"?"Handed Over":o.status)+'</span><div class="pickup-actions-v120"><button class="action-btn view-btn" onclick="viewOrder(\''+id+'\')">View</button>'+(a?'<button class="primary-btn" onclick="pickupAdvanceV120(\''+id+'\',\''+a[0]+'\')">'+a[1]+'</button>':'<small>'+(o.status==="Picked Up"?"Awaiting customer confirmation":o.payment_status!=="Paid"?"Verify payment in Orders":"Awaiting next step")+'</small>')+'</div></div>';
+  }).join(""):'<div class="courier-empty-v50">No pickup orders found.</div>';
+  const side=document.getElementById("courierSideV53");
+  if(side)side.innerHTML='<div class="courier-side-placeholder-v53"><h3>Store Pick Up</h3><p>Pickup orders have no tracking number or link. Verify payment first, prepare the Betta Fish, then confirm handover. The customer finishes the order by selecting Order Received.</p></div>';
+ };
+ window.pickupAdvanceV120=async(id,status)=>{
+  const expected={Preparing:"Confirmed","Ready for Pickup":"Preparing","Picked Up":"Ready for Pickup"};
+  const label={Preparing:"Start preparing this pickup order?","Ready for Pickup":"Mark the order ready for pickup?","Picked Up":"Confirm you handed this order to the customer?"};
+  if(!Object.hasOwn(expected,status))return;
+  const order=picked().find(o=>String(o.id)===String(id));
+  if(!order||order.status!==expected[status]||order.payment_status!=="Paid"){showToast("Pickup status changed. Refresh and try again.","warning");return;}
+  if(confirm(label[status]))await updateOrderStatus(id,status);
+ };
+})();
+</script>
+<style id="pickup-flow-style-v120">
+.pickup-card-v120{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;padding:16px;border:1px solid #d6e5ed;background:var(--card-bg,#fff);border-radius:13px;margin:11px 0;color:inherit}
+.pickup-info-v120{flex:1;min-width:165px}.pickup-info-v120 p{margin:5px 0}.pickup-info-v120 small{color:#65818c}
+.pickup-actions-v120{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pickup-status-v120{color:#14647f;background:#e5f4fa;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:bold}
+#admin-courier-shipping .shipping-panel-v57[hidden]{display:none!important}
+@media(max-width:600px){.pickup-actions-v120{width:100%}.pickup-actions-v120 button{flex:1}}
+</style>
 </body>
 </html>
 
