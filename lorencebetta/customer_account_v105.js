@@ -55,11 +55,21 @@
    if(result.stage==='new'){
     $('customerAccountOtpHelpV105').textContent='Enter the NEW 6-digit code sent to your new email address. Valid for 5 minutes.';
     message(result.message);
-   }else if(result.done){
-    window.customerAccountCloseV105();
+   }else if(result.done && result.requires_login){
+    // The server has committed the change and invalidated the PHP session.
+    // Never keep showing the old customer identity from localStorage.
     try{localStorage.removeItem('lorence_currentUser');}catch(e){}
-    // Credentials changed server-side; start a fresh authenticated session.
-    location.reload();
+    try{sessionStorage.removeItem('lorence_currentUser');}catch(e){}
+    window.customerAccountCloseV105();
+    const notice=$('customerAccountSuccessV112');
+    if(notice){
+     const what=kind==='username'?'Username':kind==='password'?'Password':'Email';
+     notice.textContent=what+' updated successfully. You have been signed out. Please sign in again'+(kind==='username'?' using your new username.':'.');
+     notice.hidden=false;
+    }
+    // The app bootstraps currentUser from localStorage, so reload into signed-out storefront.
+    window.location.reload();
+    return;
    }else{message(result.message);}
   }catch(e){message(e.message);}
   finally{button.disabled=false;}
