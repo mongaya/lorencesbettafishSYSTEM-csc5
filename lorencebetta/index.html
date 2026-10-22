@@ -5061,7 +5061,27 @@ function renderOrderStatusTabs(allOrders){const el=document.getElementById("orde
 function setCustomerOrderFilter(status){customerOrderFilter=status;renderCustomerOrders();}
 function customerAvatar(){const u=users.find(u=>u.username===currentUser?.username);return u?.profile_image||"images/logo.png";}
 function refreshProfileAvatars(){const src=customerAvatar();const a=document.getElementById("customerHeaderAvatar"),b=document.getElementById("customerProfileImage");if(a)a.src=src;if(b)b.src=src;}
-async function uploadProfilePicture(){if(!currentUser)return;const file=document.getElementById("profileImageInput")?.files[0];if(!file)return showToast("Choose a profile picture first.","warning");const f=new FormData();f.append("username",currentUser.username);f.append("profile_image",file);try{await apiRequest("update_profile.php",{method:"POST",body:f});await loadUsers();refreshProfileAvatars();document.getElementById("profileImageInput").value="";showToast("Profile picture updated.","success");}catch(e){showToast(e.message,"error");}}
+async function uploadProfilePicture(){
+ if(!currentUser||currentUser.type!=="customer")return showToast("Customer login required.","warning");
+ const input=document.getElementById("profileImageInput");
+ const file=input?.files?.[0];
+ if(!file)return showToast("Choose a profile picture first.","warning");
+ if(file.size>5*1024*1024)return showToast("Please choose an image under 5 MB.","warning");
+ if(!["image/jpeg","image/png","image/webp"].includes(file.type))return showToast("Choose a JPG, PNG, or WEBP picture.","warning");
+ const button=document.querySelector('#customer-profile .profile-photo-editor button');
+ if(button){button.disabled=true;button.textContent="Uploading...";}
+ const form=new FormData();
+ form.append("profile_image",file);
+ try{
+  const result=await apiRequest("upload_profile_photo.php",{method:"POST",body:form,credentials:"same-origin"});
+  await loadUsers();
+  refreshProfileAvatars();
+  const avatar=document.getElementById("customerTopAvatar");if(avatar&&result.profile_image)avatar.src=result.profile_image;
+  input.value="";
+  showToast("Profile picture updated.","success");
+ }catch(e){showToast(e.message,"error");}
+ finally{if(button){button.disabled=false;button.textContent="Update Photo";}}
+}
 const _openCustomerUpgrade=openCustomer;openCustomer=async function(){document.getElementById("publicStore")?.classList.add("hidden");await _openCustomerUpgrade();refreshProfileAvatars();showToast("Login successful.","success");};
 const _openAdminUpgrade=openAdmin;openAdmin=async function(){document.getElementById("publicStore")?.classList.add("hidden");await _openAdminUpgrade();showToast("Admin login successful.","success");};
 logout=function(){if(!confirm("Are you sure you want to log out?"))return;currentUser=null;localStorage.removeItem("lorence_currentUser");document.getElementById("customerApp")?.classList.add("hidden");document.getElementById("adminApp")?.classList.add("hidden");document.getElementById("authScreen")?.classList.add("hidden");document.getElementById("publicStore")?.classList.remove("hidden");document.getElementById("loginForm")?.reset();document.getElementById("signupForm")?.reset();const u=document.getElementById("loginUsername"),p=document.getElementById("loginPassword");if(u)u.value="";if(p){p.value="";p.type="password";}showToast("Logged out successfully.","success");window.scrollTo({top:0,behavior:"smooth"});};
