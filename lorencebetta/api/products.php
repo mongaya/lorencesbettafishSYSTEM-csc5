@@ -8,6 +8,13 @@ if ($colorsColumn && $colorsColumn->num_rows === 0) {
         respond(false, "Unable to initialize product colors.", [], 500);
     }
 }
+// Keep existing fish records; gender can be assigned when an admin edits a product.
+$genderColumn = $conn->query("SHOW COLUMNS FROM products LIKE 'gender'");
+if ($genderColumn && $genderColumn->num_rows === 0) {
+    if (!$conn->query("ALTER TABLE products ADD COLUMN gender VARCHAR(12) NOT NULL DEFAULT ''")) {
+        respond(false, "Unable to initialize fish gender.", [], 500);
+    }
+}
 $appearanceColumn = $conn->query("SHOW COLUMNS FROM products LIKE 'appearance'");
 if ($appearanceColumn && $appearanceColumn->num_rows === 0) {
     if (!$conn->query("ALTER TABLE products ADD COLUMN appearance VARCHAR(60) NOT NULL DEFAULT ''")) {
@@ -15,7 +22,7 @@ if ($appearanceColumn && $appearanceColumn->num_rows === 0) {
     }
 }
 $result = $conn->query(
-    "SELECT id, product_code, name, category, appearance, colors, price, stock,
+    "SELECT id, product_code, name, category, appearance, colors, gender, price, stock,
             description, image, status
      FROM products
      WHERE status <> 'deleted'
@@ -39,6 +46,7 @@ while ($row = $result->fetch_assoc()) {
         "name" => $row["name"],
         "category" => $row["category"],
         "appearance" => $row["appearance"],
+        "gender" => $row["gender"],
         "colors" => $row["colors"] === "" ? [] : explode(",", $row["colors"]),
         "price" => (float)$row["price"],
         "stock" => (int)$row["stock"],
