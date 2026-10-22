@@ -3268,11 +3268,22 @@ function showCustomerPage(page, button) {
 
     if (target) target.classList.add("active");
 
-    if (button) {
-        document.querySelectorAll("#customerSidebar .nav-btn")
-            .forEach(b => b.classList.remove("active"));
-        button.classList.add("active");
+    // Keep the sidebar in sync whether navigation comes from a sidebar button,
+    // the top-right profile shortcut, notifications, or a checkout redirect.
+    const sidebarButtons = document.querySelectorAll("#customerSidebar .nav-btn");
+    sidebarButtons.forEach(b => b.classList.remove("active"));
+    const activeButton = (button && [...sidebarButtons].includes(button))
+        ? button
+        : [...sidebarButtons].find(b =>
+            (b.getAttribute("onclick") || "").includes("showCustomerPage('" + page + "'")
+          );
+    if (activeButton) {
+        activeButton.classList.add("active");
+        activeButton.setAttribute("aria-current", "page");
     }
+    sidebarButtons.forEach(b => {
+        if (b !== activeButton) b.removeAttribute("aria-current");
+    });
 
     if (page === "cart") renderCart();
     if (page === "orders") renderCustomerOrders();
