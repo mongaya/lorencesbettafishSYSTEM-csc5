@@ -8,7 +8,29 @@ function send_gmail($to,$subject,$html){
  fwrite($fp,"EHLO localhost\r\n");smtp_expect($fp,250);fwrite($fp,"STARTTLS\r\n");smtp_expect($fp,220);if(!stream_socket_enable_crypto($fp,true,STREAM_CRYPTO_METHOD_TLS_CLIENT))throw new Exception('TLS negotiation failed.');
  fwrite($fp,"EHLO localhost\r\n");smtp_expect($fp,250);fwrite($fp,"AUTH LOGIN\r\n");smtp_expect($fp,334);fwrite($fp,base64_encode(GMAIL_USERNAME)."\r\n");smtp_expect($fp,334);fwrite($fp,base64_encode(GMAIL_APP_PASSWORD)."\r\n");smtp_expect($fp,235);
  fwrite($fp,"MAIL FROM:<".GMAIL_USERNAME.">\r\n");smtp_expect($fp,250);fwrite($fp,"RCPT TO:<".$to.">\r\n");smtp_expect($fp,250);fwrite($fp,"DATA\r\n");smtp_expect($fp,354);
- $headers="From: ".GMAIL_FROM_NAME." <".GMAIL_USERNAME.">\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\nSubject: =?UTF-8?B?".base64_encode($subject)."?=\r\nTo: <".$to.">\r\n\r\n";
- $normalizedHtml=preg_replace("/\r\n|\r|\n/","\r\n",$html);$body=$headers.$normalizedHtml;$body=preg_replace('/^\./m','..',$body);fwrite($fp,$body."\r\n.\r\n");smtp_expect($fp,250);fwrite($fp,"QUIT\r\n");fclose($fp);return true;
+ // Use a standards-compliant multipart message so Gmail can parse both text and HTML.
+ $domain=substr(strrchr(GMAIL_USERNAME,'@'),1)?:'gmail.com';
+ $boundary='betta_'.bin2hex(random_bytes(12));
+ $plain=html_entity_decode(strip_tags(preg_replace('/<br\s*\/?>|<\/p>/i',"\n",$html)),ENT_QUOTES|ENT_HTML5,'UTF-8');
+ $headers="Date: ".date('r')."\r\n"
+  ."Message-ID: <".bin2hex(random_bytes(16))."@".$domain.">\r\n"
+  ."From: ".GMAIL_FROM_NAME." <".GMAIL_USERNAME.">\r\n"
+  ."To: <".$to.">\r\n"
+  ."Subject: =?UTF-8?B?".base64_encode($subject)."?=\r\n"
+  ."MIME-Version: 1.0\r\n"
+  ."Content-Type: multipart/alternative; boundary=\"".$boundary."\"\r\n\r\n";
+ $mime="--".$boundary."\r\n"
+  ."Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n"
+  .quoted_printable_encode($plain)."\r\n"
+  ."--".$boundary."\r\n"
+  ."Content-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n"
+  .quoted_printable_encode($html)."\r\n"
+  ."--".$boundary."--\r\n";
+ $body=$headers.$mime;
+ // SMTP DATA requires CRLF and escaped leading dots.
+ $body=preg_replace("/\r\n|\r|\n/","\r\n",$body);
+ $body=preg_replace('/(^|\r\n)\./',"$1..",$body);
+ fwrite($fp,$body."\r\n.\r\n");smtp_expect($fp,250);
+ fwrite($fp,"QUIT\r\n");fclose($fp);return true;
 }
 ?>
