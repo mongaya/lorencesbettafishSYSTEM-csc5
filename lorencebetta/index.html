@@ -1962,11 +1962,11 @@ body:not(.dark-mode) .hero-kicker{
                         <input type="password" id="customerAccountPasswordV105" required autocomplete="current-password">
                         <div class="customer-account-actions-v105"><button type="button" onclick="customerAccountCloseV105()">Cancel</button><button id="customerAccountSendV105" type="submit">Send Email OTP</button></div>
                     </form>
-                    <form id="customerAccountOtpFormV105" hidden onsubmit="customerAccountVerifyV105(event)">
+                    <form id="customerAccountOtpFormV105" hidden onsubmit="window.customerAccountVerifyV105(event)">
                         <p id="customerAccountOtpHelpV105">Enter the 6-digit code sent to your registered email.</p>
                         <label for="customerAccountOtpV105">Verification Code</label>
                         <input id="customerAccountOtpV105" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" required autocomplete="one-time-code">
-                        <div class="customer-account-actions-v105"><button type="button" onclick="customerAccountCloseV105()">Cancel</button><button id="customerAccountVerifyV105" type="submit">Verify &amp; Save</button></div>
+                        <div class="customer-account-actions-v105"><button type="button" onclick="customerAccountCloseV105()">Cancel</button><button id="customerAccountVerifyButtonV113" type="submit">Verify &amp; Save</button></div>
                     </form>
                     <p id="customerAccountMessageV105" role="status" aria-live="polite"></p>
                 
@@ -12544,7 +12544,7 @@ body.dark-mode #admin-cancellations .cancel-resolved-v82,body.dark #admin-cancel
 body.dark-mode #customer-profile .customer-security-options-v105 button,
 body.dark-mode #customer-profile .customer-account-actions-v105 button{background:#203d4c;color:#d7f1fd;border-color:#466579}
 </style>
-<script src="customer_account_v105.js?v=112"></script>
+<script src="customer_account_v105.js?v=113"></script>
 
 <style>
 /* Customer full-name inline edit: compact actions, unchanged account-security flow. */
