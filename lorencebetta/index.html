@@ -1816,6 +1816,7 @@ body:not(.dark-mode) .hero-kicker{
 <div class="shop-appearance-wrap-v24"><label for="shopAppearanceToggle">Appearance</label><details id="shopAppearanceDetails" class="shop-appearance-v24"><summary id="shopAppearanceToggle">All appearances</summary><div class="shop-appearance-options-v24">
 <label><input type="checkbox" value="Solid Color" onchange="renderProducts();updateAppearanceFilterLabel()"> Solid Color</label><label><input type="checkbox" value="Multicolor" onchange="renderProducts();updateAppearanceFilterLabel()"> Multicolor</label><label><input type="checkbox" value="Marble" onchange="renderProducts();updateAppearanceFilterLabel()"> Marble</label><label><input type="checkbox" value="Koi" onchange="renderProducts();updateAppearanceFilterLabel()"> Koi</label><label><input type="checkbox" value="Galaxy" onchange="renderProducts();updateAppearanceFilterLabel()"> Galaxy</label><label><input type="checkbox" value="Metallic" onchange="renderProducts();updateAppearanceFilterLabel()"> Metallic</label>
 </div></details></div>
+<div class="shop-appearance-wrap-v24"><label for="shopGenderFilterV115">Gender</label><select id="shopGenderFilterV115" onchange="renderProducts()"><option value="">All genders</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
 <div class="shop-appearance-wrap-v24"><label for="shopColorToggle">Color</label><details id="shopColorDetails" class="shop-appearance-v24"><summary id="shopColorToggle">All colors</summary><div class="shop-appearance-options-v24"><label><input type="checkbox" value="Red" onchange="renderProducts();updateColorFilterLabel()"> Red</label><label><input type="checkbox" value="Blue" onchange="renderProducts();updateColorFilterLabel()"> Blue</label><label><input type="checkbox" value="White" onchange="renderProducts();updateColorFilterLabel()"> White</label><label><input type="checkbox" value="Black" onchange="renderProducts();updateColorFilterLabel()"> Black</label><label><input type="checkbox" value="Yellow" onchange="renderProducts();updateColorFilterLabel()"> Yellow</label><label><input type="checkbox" value="Orange" onchange="renderProducts();updateColorFilterLabel()"> Orange</label><label><input type="checkbox" value="Purple" onchange="renderProducts();updateColorFilterLabel()"> Purple</label><label><input type="checkbox" value="Green" onchange="renderProducts();updateColorFilterLabel()"> Green</label><label><input type="checkbox" value="Pink" onchange="renderProducts();updateColorFilterLabel()"> Pink</label><label><input type="checkbox" value="Gold" onchange="renderProducts();updateColorFilterLabel()"> Gold</label><label><input type="checkbox" value="Silver" onchange="renderProducts();updateColorFilterLabel()"> Silver</label><label><input type="checkbox" value="Multicolor" onchange="renderProducts();updateColorFilterLabel()"> Multicolor</label></div></details></div>
 <label>Price Range <select id="shopPriceFilter" onchange="renderProducts()"><option value="">Any price</option><option value="0-50">₱0–₱50</option><option value="50-150">₱50–₱150</option><option value="150-250">₱150–₱250</option><option value="250-500">₱250–₱500</option><option value="500-1000">₱500–₱1,000</option><option value="1000+">₱1,000+</option></select></label>
 
@@ -2455,6 +2456,7 @@ body:not(.dark-mode) .hero-kicker{
         </div>
         <div class="form-group"><label>Colors (select all that apply)</label><div id="productColorsV25" class="product-colors-v25"><label><input type="checkbox" value="Red"> Red</label><label><input type="checkbox" value="Blue"> Blue</label><label><input type="checkbox" value="White"> White</label><label><input type="checkbox" value="Black"> Black</label><label><input type="checkbox" value="Yellow"> Yellow</label><label><input type="checkbox" value="Orange"> Orange</label><label><input type="checkbox" value="Purple"> Purple</label><label><input type="checkbox" value="Green"> Green</label><label><input type="checkbox" value="Pink"> Pink</label><label><input type="checkbox" value="Gold"> Gold</label><label><input type="checkbox" value="Silver"> Silver</label><label><input type="checkbox" value="Multicolor"> Multicolor</label></div><small>Select the colors visible on this fish.</small></div>
         <div class="form-group"><label>Appearance</label><select id="productAppearance"><option value="">Not specified</option><option>Solid Color</option><option>Multicolor</option><option>Marble</option><option>Koi</option><option>Galaxy</option><option>Metallic</option></select></div>
+        <div class="form-group"><label for="productGenderV115">Gender</label><select id="productGenderV115"><option value="">Not specified</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
         <div class="form-group">
             <label>Price</label>
 
@@ -3464,7 +3466,7 @@ function clearShopFilters(){
  document.querySelectorAll("#shopAppearanceDetails input[type=checkbox],#shopColorDetails input[type=checkbox]").forEach(el=>el.checked=false);
  updateColorFilterLabel();
  updateAppearanceFilterLabel();
- for(const id of ["shopPriceFilter","shopSortFilter"]){const el=document.getElementById(id);if(el){if(el.multiple)[...el.options].forEach(o=>o.selected=false);else el.value="";}}
+ for(const id of ["shopPriceFilter","shopSortFilter","shopGenderFilterV115"]){const el=document.getElementById(id);if(el){if(el.multiple)[...el.options].forEach(o=>o.selected=false);else el.value="";}}
  const availability=document.getElementById("shopAvailabilityFilter");if(availability)availability.value="available";
  const search=document.getElementById("searchInput");if(search)search.value="";
  selectedFishCategory="all";
@@ -3477,6 +3479,7 @@ function renderProducts(){
  const appearance=[...document.querySelectorAll("#shopAppearanceDetails input:checked")].map(o=>o.value);
  const colorSelections=[...document.querySelectorAll("#shopColorDetails input:checked")].map(el=>el.value);
  const price=document.getElementById("shopPriceFilter")?.value||"";
+ const gender=document.getElementById("shopGenderFilterV115")?.value||"";
  const availability="available";
  const sort=document.getElementById("shopSortFilter")?.value||"default";
  const filtered=products.filter(p=>{
@@ -3486,6 +3489,7 @@ function renderProducts(){
    &&(!search||String(p.name||"").toLowerCase().includes(search))
    &&(selectedFishCategory==="all"||p.category===selectedFishCategory)
    &&(!appearance.length||appearance.includes(p.appearance))
+   &&(!gender||p.gender===gender)
    &&(!colorSelections.length||colorSelections.some(color=>Array.isArray(p.colors)&&p.colors.includes(color)))
    &&(!price||(price==="0-50"?cost>=0&&cost<=50:price==="50-150"?cost>50&&cost<=150:price==="150-250"?cost>150&&cost<=250:price==="250-500"?cost>250&&cost<=500:price==="500-1000"?cost>500&&cost<=1000:cost>1000));
  });
@@ -4689,6 +4693,7 @@ function openProductModal(product = null) {
     document.getElementById("productImage").value = "";
     populateProductCategorySelect(product?.category || "");
     document.getElementById("productAppearance").value = product?.appearance || "";
+    document.getElementById("productGenderV115").value = product?.gender || "";
     document.querySelectorAll("#productColorsV25 input").forEach(el=>el.checked=Array.isArray(product?.colors)&&product.colors.includes(el.value));
 
     if (product) {
@@ -4788,6 +4793,7 @@ async function saveProduct() {
     formData.append("name", name);
     formData.append("category", category);
     formData.append("appearance", document.getElementById("productAppearance").value);
+    formData.append("gender", document.getElementById("productGenderV115").value);
     formData.append("colors",JSON.stringify([...document.querySelectorAll("#productColorsV25 input:checked")].map(el=>el.value)));
     formData.append("price", price);
     formData.append("stock", stock);
