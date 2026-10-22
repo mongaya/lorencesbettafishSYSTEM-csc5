@@ -1931,9 +1931,19 @@ body:not(.dark-mode) .hero-kicker{
                       <div><h3>Profile Picture</h3><p class="muted">Choose a JPG, PNG, or WEBP image up to 5MB.</p><input id="profileImageInput" type="file" accept="image/jpeg,image/png,image/webp"><button type="button" class="action-btn edit-btn" onclick="uploadProfilePicture()">Update Photo</button></div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Full Name</label>
-                        <input id="profileName">
+                    <div class="form-group customer-name-editor-v106">
+                        <div class="customer-name-heading-v106">
+                            <label for="profileName">Full Name</label>
+                            <button type="button" id="customerNameEditV106" class="customer-name-edit-v106" onclick="editCustomerNameV106()" aria-label="Edit full name" title="Edit full name">
+                                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="m16.5 3.5 4 4L9 19l-5 1 1-5Z"/></svg>
+                                Edit
+                            </button>
+                        </div>
+                        <input id="profileName" readonly maxlength="150">
+                        <div id="customerNameActionsV106" class="customer-name-actions-v106" hidden>
+                            <button type="button" class="customer-name-cancel-v106" onclick="cancelCustomerNameV106()">Cancel</button>
+                            <button type="button" id="customerNameSaveV106" class="primary-btn" onclick="saveProfile()">Save Name</button>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -1946,9 +1956,7 @@ body:not(.dark-mode) .hero-kicker{
                         <input id="profileEmail" readonly>
                     </div>
 
-                    <button class="primary-btn" onclick="saveProfile()">
-                        Save Changes
-                    </button>
+
 
                 </div>
 
@@ -3872,18 +3880,52 @@ function loadProfile() {
         const topAvatar=document.getElementById("customerTopAvatar"); if(topAvatar) topAvatar.src=user.profile_image || "images/logo.png";
 }
 
+function editCustomerNameV106() {
+    const field = document.getElementById("profileName");
+    if (!field) return;
+    field.dataset.originalName = field.value;
+    field.readOnly = false;
+    document.getElementById("customerNameEditV106").hidden = true;
+    document.getElementById("customerNameActionsV106").hidden = false;
+    field.focus();
+    field.select();
+}
+
+function cancelCustomerNameV106() {
+    const field = document.getElementById("profileName");
+    if (!field) return;
+    if (field.dataset.originalName !== undefined) field.value = field.dataset.originalName;
+    field.readOnly = true;
+    document.getElementById("customerNameEditV106").hidden = false;
+    document.getElementById("customerNameActionsV106").hidden = true;
+}
+
 async function saveProfile() {
-    const name = document.getElementById("profileName").value.trim();
+    const field = document.getElementById("profileName");
+    if (!field || field.readOnly) return;
+    const name = field.value.trim();
+    if (!name || name.length > 150) {
+        showToast("Please enter a valid full name (up to 150 characters).");
+        return;
+    }
+    const saveButton = document.getElementById("customerNameSaveV106");
+    saveButton.disabled = true;
     try {
         await apiRequest("update_profile.php", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({name})
         });
-        await loadUsers();
+        field.value = name;
+        field.dataset.originalName = name;
+        field.readOnly = true;
+        document.getElementById("customerNameEditV106").hidden = false;
+        document.getElementById("customerNameActionsV106").hidden = true;
         document.getElementById("customerName").textContent = name;
-        showToast("Profile updated.");
+        await loadUsers();
+        showToast("Full name updated.");
     } catch (err) { showToast(err.message); }
+    finally { saveButton.disabled = false; }
 }
 
 /* =========================================================
@@ -12444,3 +12486,20 @@ body.dark-mode #customer-profile .customer-security-options-v105 button,
 body.dark-mode #customer-profile .customer-account-actions-v105 button{background:#203d4c;color:#d7f1fd;border-color:#466579}
 </style>
 <script src="customer_account_v105.js?v=105"></script>
+
+<style>
+/* Customer full-name inline edit: compact actions, unchanged account-security flow. */
+#customer-profile .customer-name-heading-v106{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+#customer-profile .customer-name-heading-v106 label{margin-bottom:0}
+#customer-profile .customer-name-edit-v106{display:inline-flex;align-items:center;gap:5px;border:1px solid #b9d9e9;border-radius:9px;background:#f2faff;color:#10799f;padding:7px 11px;font-size:13px;font-weight:650;cursor:pointer}
+#customer-profile .customer-name-edit-v106:hover{background:#dff3fb}
+#customer-profile .customer-name-editor-v106 #profileName[readonly]{background:#eaf3f8;cursor:default}
+#customer-profile .customer-name-editor-v106 #profileName:not([readonly]){background:#fff;outline:2px solid #34a5cf;outline-offset:0}
+#customer-profile .customer-name-actions-v106:not([hidden]){display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
+#customer-profile .customer-name-actions-v106 button{border-radius:9px;min-height:38px;padding:8px 15px;cursor:pointer}
+#customer-profile .customer-name-cancel-v106{border:1px solid #b9d9e9;background:transparent;color:inherit}
+#customer-profile .customer-name-actions-v106 .primary-btn{width:auto;margin:0}
+#customer-profile .customer-name-actions-v106 button:disabled{opacity:.55;cursor:wait}
+body.dark-mode #customer-profile .customer-name-edit-v106{background:#213e4d;color:#d6f3ff;border-color:#486577}
+body.dark-mode #customer-profile .customer-name-editor-v106 #profileName:not([readonly]){background:#1b3342;color:#fff}
+</style>
