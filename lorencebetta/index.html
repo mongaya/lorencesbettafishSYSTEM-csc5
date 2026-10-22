@@ -11046,6 +11046,7 @@ body.dark-mode .payment-readonly-v59 h4,body.dark .payment-readonly-v59 h4,[data
   const counts=document.getElementById("courierCountsV50"),box=document.getElementById("pickupListV120");if(!counts||!box)return;
   const all=picked(),pending=all.filter(o=>o.status!=="Order Received"),completed=all.filter(o=>o.status==="Order Received");
   const active=shippingActiveTabV57==="pickup";
+  document.getElementById("admin-courier-shipping")?.classList.toggle("pickup-active-v122",active);
   counts.querySelector(".pickup-tab-v120")?.remove();
   const btn=document.createElement("button");btn.type="button";btn.className="courier-stat-v53 shipping-stat-v56 pickup-tab-v120"+(active?" shipping-active-v57":"");
   btn.setAttribute("aria-pressed",String(active));btn.innerHTML='<span><svg viewBox="0 0 24 24"><path d="M4 8h16v12H4zM8 8V5h8v3M8 13h8"/></svg></span><div><small>Pick Up</small><strong>'+pending.length+'</strong></div>';
@@ -12931,4 +12932,123 @@ body.dark-mode #admin-courier-shipping .pickup-detail-section-v121{border-color:
 body.dark-mode #admin-courier-shipping .pickup-view-v121{color:#7ad2ff}
 @media(max-width:900px){#admin-courier-shipping.shipping-v56 #courierCountsV50{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:450px){#admin-courier-shipping.shipping-v56 #courierCountsV50 .shipping-stat-v56{padding:10px;gap:7px}#admin-courier-shipping.shipping-v56 #courierCountsV50 .shipping-stat-v56>span{width:32px;height:32px;min-width:32px}#admin-courier-shipping.shipping-v56 #courierCountsV50 .shipping-stat-v56 small{font-size:11px}}
+</style>
+
+
+<style id="pickup-layout-balance-v122">
+/* Pick Up only: make the order list and detail sidebar balanced without modifying courier layout. */
+@media (min-width: 1061px){
+  #admin-courier-shipping.shipping-v56.pickup-active-v122 .courier-layout-v53{
+    display:grid;
+    grid-template-columns:minmax(0,1.08fr) minmax(0,1fr);
+    gap:20px;
+    align-items:start;
+  }
+  #admin-courier-shipping.pickup-active-v122 .courier-main-v53,
+  #admin-courier-shipping.pickup-active-v122 .courier-side-v53{min-width:0;width:100%}
+}
+#admin-courier-shipping.pickup-active-v122 .courier-side-v53{
+  overflow-x:hidden;
+  box-sizing:border-box;
+}
+#admin-courier-shipping.pickup-active-v122 .courier-side-v53 .courier-side-title-v53{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:8px;
+}
+#admin-courier-shipping.pickup-active-v122 .courier-side-v53 .courier-side-title-v53 span{
+  max-width:100%;
+  overflow-wrap:anywhere;
+  font-size:12px;
+}
+#admin-courier-shipping.pickup-active-v122 #pickupListV120 .pickup-card-v120.pickup-selectable-v121{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  column-gap:16px;
+  row-gap:12px;
+  padding:18px 20px;
+  margin:12px 0;
+  min-width:0;
+  border-radius:14px;
+}
+#admin-courier-shipping.pickup-active-v122 .pickup-card-v120 .pickup-info-v120{
+  grid-column:1/-1;
+  min-width:0;
+  overflow-wrap:anywhere;
+  width:100%;
+}
+#admin-courier-shipping.pickup-active-v122 .pickup-info-v120 strong{
+  display:block;
+  max-width:100%;
+  overflow-wrap:anywhere;
+  line-height:1.4;
+  font-size:14px;
+}
+#admin-courier-shipping.pickup-active-v122 .pickup-info-v120 p{
+  margin:7px 0 4px;
+  line-height:1.35;
+}
+#admin-courier-shipping.pickup-active-v122 .pickup-info-v120 small{
+  line-height:1.4;
+}
+#admin-courier-shipping.pickup-active-v122 .pickup-card-v120 .pickup-status-v120{
+  grid-column:1;
+  justify-self:start;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  text-align:center;
+}
+#admin-courier-shipping.pickup-active-v122 .pickup-card-v120 .pickup-view-v121{
+  grid-column:2;
+  justify-self:end;
+  text-align:right;
+  white-space:nowrap;
+}
+#admin-courier-shipping.pickup-active-v122 .pickup-detail-v121{
+  min-width:0;
+  padding:2px 6px;
+}
+#admin-courier-shipping.pickup-active-v122 .pickup-detail-section-v121{
+  padding:14px 0;
+}
+#admin-courier-shipping.pickup-active-v122 .pickup-detail-grid-v121{
+  gap:12px;
+}
+@media (min-width: 1061px) and (max-width: 1280px){
+ #admin-courier-shipping.shipping-v56.pickup-active-v122 .courier-layout-v53{
+   grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);
+   gap:14px;
+ }
+ #admin-courier-shipping.pickup-active-v122 #pickupListV120 .pickup-card-v120.pickup-selectable-v121{
+   padding:15px;
+ }
+}
+@media (max-width: 1060px){
+ #admin-courier-shipping.shipping-v56.pickup-active-v122 .courier-layout-v53{
+   display:grid;
+   grid-template-columns:minmax(0,1fr);
+   gap:16px;
+ }
+ #admin-courier-shipping.pickup-active-v122 .courier-side-v53{
+   position:static;
+   max-height:none;
+ }
+}
+@media (max-width: 460px){
+ #admin-courier-shipping.pickup-active-v122 #pickupListV120 .pickup-card-v120.pickup-selectable-v121{
+   grid-template-columns:minmax(0,1fr);
+   padding:14px;
+ }
+ #admin-courier-shipping.pickup-active-v122 .pickup-card-v120 .pickup-status-v120,
+ #admin-courier-shipping.pickup-active-v122 .pickup-card-v120 .pickup-view-v121{
+   grid-column:1;
+   justify-self:start;
+ }
+}
+body.dark-mode #admin-courier-shipping.pickup-active-v122 .pickup-card-v120 .pickup-info-v120 strong{
+  color:#eaf6ff;
+}
 </style>
