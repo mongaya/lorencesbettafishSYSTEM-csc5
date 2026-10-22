@@ -3036,36 +3036,47 @@ async function resetPassword(){
 ========================================================= */
 let notificationCache = { customer: [], admin: [] };
 
+
 function notificationReadKey(role){
-    return "lorence_notification_read_" + role + "_" + (currentUser?.username || "guest");
+    const identity=role==="customer"?(currentUser?.id||currentUser?.username||"guest"):"administrator";
+    return "lorence_notification_read_v114_"+role+"_"+identity;
 }
-
 function getReadNotifications(role){
-    try { return JSON.parse(localStorage.getItem(notificationReadKey(role)) || "[]"); }
-    catch { return []; }
+    try{const data=JSON.parse(localStorage.getItem(notificationReadKey(role))||"[]");return Array.isArray(data)?data:[];}catch(e){return [];}
 }
-
-function saveReadNotifications(role, ids){
-    localStorage.setItem(notificationReadKey(role), JSON.stringify(ids.slice(-300)));
+function saveReadNotifications(role,ids){
+    localStorage.setItem(notificationReadKey(role),JSON.stringify([...new Set(ids)].slice(-500)));
 }
-
 function buildNotifications(role){
-    const list=[];
-    if(role === "customer" && currentUser){
-        orders.filter(o=>o.username===currentUser.username).forEach(o=>{
-            list.push({id:"order-status-"+o.id+"-"+o.status,title:"Order "+o.id,body:"Your order is now: "+o.status,kind:"order"});
-            if(o.shipping_confirmed) list.push({id:"shipping-"+o.id+"-"+o.shipping,title:"Shipping fee confirmed",body:"Order "+o.id+" final total is ₱"+Number(o.total).toFixed(2),kind:"order"});
-            if(o.payment_status && o.payment_status!=="Waiting for shipping fee") list.push({id:"payment-"+o.id+"-"+o.payment_status,title:"Payment update",body:"Order "+o.id+": "+o.payment_status,kind:"payment"});
-        });
-        // Customer chat notifications are detected by the latest admin messages.
-        // loadCustomerChat also refreshes the chat when opened.
-    } else if(role === "admin") {
-        orders.slice(0,50).forEach(o=>list.push({id:"new-order-"+o.id,title:"Order update",body:o.id+" from "+(o.username||o.customerName||"customer")+" — "+o.status,kind:"order"}));
+    const items=[];
+    const mine=role==="customer"&&currentUser
+        ?orders.filter(o=>String(o.username)===String(currentUser.username))
+        :role==="admin"?orders.slice(-75):[];
+    for(const o of mine){
+        const oid=String(o.id),status=String(o.status||"Pending");
+        if(role==="admin"){
+            items.push({id:"admin-order-"+oid,title:"Customer order "+oid,body:(o.customerName||o.username||"Customer")+" — "+status,kind:"order",orderId:oid});
+            if(o.payment_status==="Payment Submitted"||o.payment_status==="Pending Verification"){
+                items.push({id:"admin-payment-"+oid+"-"+o.payment_status,title:"Payment needs review",body:"Order "+oid+" — "+o.payment_status,kind:"payment",orderId:oid});
+            }
+            if(status==="Cancelled"){
+                items.push({id:"admin-cancel-"+oid,title:"Order cancelled",body:"Order "+oid+" was cancelled",kind:"order",orderId:oid});
+            }
+        }else{
+            items.push({id:"customer-order-"+oid+"-"+status,title:"Order "+oid,body:"Order status: "+status,kind:"order",orderId:oid});
+            if(o.payment_status&&o.payment_status!=="Waiting for shipping fee"&&o.payment_status!=="Pending"){
+                items.push({id:"customer-payment-"+oid+"-"+o.payment_status,title:"Payment update",body:"Order "+oid+" — "+o.payment_status,kind:"payment",orderId:oid});
+            }
+            if(o.shipping_confirmed){
+                items.push({id:"customer-shipping-"+oid+"-"+o.shipping,title:"Shipping confirmed",body:"Order "+oid+" final total: ₱"+Number(o.total||0).toFixed(2),kind:"order",orderId:oid});
+            }
+        }
     }
-    const chats = chatNotificationState[role] || [];
-    list.push(...chats);
-    return list.reverse();
+    const chats=(chatNotificationState[role]||[]).slice(-40);
+    items.push(...chats);
+    return items.reverse();
 }
+
 
 function renderNotifications(role){
     const listEl=document.getElementById(role+"NotificationList");
@@ -3094,18 +3105,41 @@ function markNotificationsRead(role){
     renderNotifications(role);
 }
 
+
 function openNotification(role,id){
+    const n=(notificationCache[role]||[]).find(x=>x.id===id);
+    if(!n)return;
     const read=getReadNotifications(role);
     if(!read.includes(id)){read.push(id);saveReadNotifications(role,read);}
-    const n=(notificationCache[role]||[]).find(x=>x.id===id);
-    if(n?.kind==="order"){
-        if(role==="customer") showCustomerPage("orders");
-        else showAdminPage("orders");
-    }
     const panel=document.getElementById(role+"NotificationPanel");
-    if(panel) panel.classList.add('hidden');
+    if(panel)panel.classList.add("hidden");
+    if(n.kind==="chat"){
+        if(role==="customer"){
+            showCustomerPage("chat");
+            loadCustomerChat();
+        }else{
+            showAdminPage("chat");
+            if(n.username)selectAdminChat(n.username);
+        }
+    }else if(n.kind==="order"||n.kind==="payment"){
+        // Payment-related alerts belong to Orders, too.
+        if(role==="customer"){
+            if(typeof customerOrderFilter!=="undefined")customerOrderFilter="";
+            showCustomerPage("orders");
+        }else{
+            showAdminPage("orders");
+        }
+        if(n.orderId){
+            const selector=role==="customer"?"#customerOrders .order-card":"#adminOrdersTable tr";
+            setTimeout(()=>{
+                const target=[...document.querySelectorAll(selector)].find(el=>el.textContent.includes(n.orderId));
+                if(target){target.scrollIntoView({behavior:"smooth",block:"center"});target.classList.add("notification-target-v114");setTimeout(()=>target.classList.remove("notification-target-v114"),2800);}
+            },100);
+        }
+    }
     renderNotifications(role);
 }
+
 
 document.addEventListener('click',function(e){
     if(!e.target.closest('.notification-wrap')){
@@ -3118,23 +3152,23 @@ document.addEventListener('click',function(e){
 ========================================================= */
 let selectedChatUsername = null;
 let chatNotificationState = {customer:[],admin:[]};
+
 function updateChatNotifications(role,messages){
-    const read=getReadNotifications(role);
-    const chatItems=(messages||[]).map(m=>({id:"chat-"+m.id,title:role==="customer"?"New message from Admin":"New customer message",body:m.username+": "+m.message,kind:"chat"}));
-    const existing=notificationCache[role]||[];
-    const nonChat=existing.filter(n=>!n.id.startsWith("chat-"));
-    notificationCache[role]=[...chatItems.reverse(),...nonChat];
-    const unread=notificationCache[role].filter(n=>!read.includes(n.id));
-    const count=document.getElementById(role+"NotificationCount");
-    if(count){count.textContent=unread.length>99?"99+":unread.length;count.style.display=unread.length?"flex":"none";}
-    const list=document.getElementById(role+"NotificationList");
-    if(list && !document.getElementById(role+"NotificationPanel")?.classList.contains("hidden")) renderNotificationsFromCache(role);
+    const relevant=(messages||[]).filter(m=>{
+        if(role==="customer")return m.sender_role==="admin";
+        return m.sender_role==="customer";
+    });
+    // Only received messages generate notifications; never notify users about their own messages.
+    chatNotificationState[role]=relevant.slice(-40).map(m=>({
+        id:"chat-"+m.id,
+        title:role==="customer"?"Message from Admin":"Message from "+(m.username||"customer"),
+        body:String(m.message||"").slice(0,130),
+        kind:"chat",username:m.username
+    }));
+    renderNotifications(role);
 }
-function renderNotificationsFromCache(role){
-    const list=document.getElementById(role+"NotificationList"); if(!list)return;
-    const read=getReadNotifications(role); const items=notificationCache[role]||[];
-    list.innerHTML=items.length?items.slice(0,50).map(n=>`<div class="notification-item ${read.includes(n.id)?'':'unread'}" onclick="openNotification('${escapeHTML(role)}','${escapeHTML(n.id)}')"><strong>${escapeHTML(n.title)}</strong><small>${escapeHTML(n.body)}</small></div>`).join(""):'<div class="notification-empty">No notifications yet.</div>';
-}
+function renderNotificationsFromCache(role){renderNotifications(role);}
+
 
 async function loadCustomerChat(){
     if(!currentUser || currentUser.type!=="customer") return;
@@ -12631,4 +12665,8 @@ body.dark-mode #customer-profile .customer-info-card-v107 .customer-field-v107 i
 #customer-profile .customer-photo-actions-v110 .customer-photo-cancel-v110{border:1px solid #bad5e7;background:#fff;color:#245370;font-size:12px;font-weight:650;border-radius:8px;padding:7px 11px;cursor:pointer}
 #customer-profile .customer-photo-preview-note-v110{font-size:11px;color:#517e94;line-height:1.3}
 #customer-profile .customer-photo-actions-v110 button:disabled{opacity:.55;cursor:wait}
+</style>
+
+<style>
+#customer-profile .notification-target-v114,#customerOrders .notification-target-v114,#adminOrdersTable .notification-target-v114{outline:2px solid #1c97d5;outline-offset:2px;box-shadow:0 0 0 5px rgba(28,151,213,.14);transition:box-shadow .2s}
 </style>
