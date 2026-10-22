@@ -16,6 +16,9 @@ $flows=[
  "J&T Express"=>["Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received"]
 ];
 $flow=$flows[$o["courier"]]??null;if(!$flow)respond(false,"Unsupported courier.",[],400);
+// For store pickup, the customer alone completes the order after admin handover.
+if($o["courier"]==="Pick Up"&&$status==="Order Received")respond(false,"Customer must confirm receipt of the pickup order.",[],403);
+if($o["courier"]==="Pick Up"&&($trackingNumber!==""||$trackingUrl!==""))respond(false,"Pickup orders do not use tracking details.",[],400);
 $hold=$conn->prepare("SELECT id FROM cancellation_requests WHERE order_id=? AND status='Pending Review' LIMIT 1");$hold->bind_param("i",$o["id"]);$hold->execute();$pending=stmt_fetch_assoc_compat($hold);$hold->close();if($pending)respond(false,"Cancellation request is pending admin review.",[],409);
 // Payment-first orders become Confirmed immediately after verification.
  // The existing courier-specific fulfillment flow continues from Confirmed.
