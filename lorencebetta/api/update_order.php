@@ -17,13 +17,13 @@ $flows=[
 ];
 $flow=$flows[$o["courier"]]??null;if(!$flow)respond(false,"Unsupported courier.",[],400);
 // For store pickup, the customer alone completes the order after admin handover.
-if($o["courier"]==="Pick Up"&&$status==="Order Received")respond(false,"Customer must confirm receipt of the pickup order.",[],403);
+if($o["courier"]==="Pick Up"&&in_array($status,["Order Received","Picked Up"],true))respond(false,"The customer confirms receipt of pickup orders; admin should mark Ready for Pickup only.",[],403);
 if($o["courier"]==="Pick Up"&&($trackingNumber!==""||$trackingUrl!==""))respond(false,"Pickup orders do not use tracking details.",[],400);
 $hold=$conn->prepare("SELECT id FROM cancellation_requests WHERE order_id=? AND status='Pending Review' LIMIT 1");$hold->bind_param("i",$o["id"]);$hold->execute();$pending=stmt_fetch_assoc_compat($hold);$hold->close();if($pending)respond(false,"Cancellation request is pending admin review.",[],409);
 // Payment-first orders become Confirmed immediately after verification.
  // The existing courier-specific fulfillment flow continues from Confirmed.
 $current=array_search($o["status"],$flow,true);$next=array_search($status,$flow,true);
-if($current===false||$next===false||!($next===$current+1||($o["courier"]==="J&T Express"&&$status==="Ready to Ship"&&in_array($o["status"],["Confirmed","Preparing"],true))))respond(false,"Status must follow the order process one step at a time.",[],409);
+if($current===false||$next===false||!($next===$current+1||($o["courier"]==="Pick Up"&&$status==="Ready for Pickup"&&in_array($o["status"],["Confirmed","Preparing"],true))||($o["courier"]==="J&T Express"&&$status==="Ready to Ship"&&in_array($o["status"],["Confirmed","Preparing"],true))))respond(false,"Status must follow the order process one step at a time.",[],409);
 if($o["status"]==="Cancelled")respond(false,"Cancelled orders cannot be processed.",[],409);
 if($o["status"]==="Awaiting Payment")respond(false,"Use Verify Payment after the customer submits payment.",[],409);
 if($o["payment_status"]!=="Paid"&&$next>=array_search("Confirmed",$flow,true))respond(false,"Payment must be verified before fulfillment can continue.",[],409);

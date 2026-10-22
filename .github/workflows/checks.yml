@@ -79,7 +79,7 @@ jobs:
           settings=(api/"payment_settings.php").read_text()
           assert 'require_admin_session($conn)' in settings
           received=(api/"receive_order.php").read_text()
-          assert "o.status='Picked Up'" in received
+          assert "o.status IN ('Ready for Pickup','Picked Up')" in received, "Customer pickup receipt must support ready and legacy picked-up orders"
           flow=(api/"update_order.php").read_text()
           assert '$status==="Out for Delivery"&&!$hasTracking' in flow
           print("Authentication and fulfillment static checks passed")
