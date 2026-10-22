@@ -1,7 +1,16 @@
 <?php
-require_once "db.php";
-$data=json_input(); $username=trim($data["username"]??""); $name=trim($data["name"]??""); $email=trim($data["email"]??""); $phone=trim($data["phone"]??""); $address=trim($data["address"]??"");
-if($username===""||$name===""||!filter_var($email,FILTER_VALIDATE_EMAIL)) respond(false,"Please provide a valid name and email.",[],400);
-$check=$conn->prepare("SELECT id FROM users WHERE email=? AND username<>? LIMIT 1"); $check->bind_param("ss",$email,$username); $check->execute(); if(stmt_has_rows_compat($check)) respond(false,"That email is already used by another account.",[],409);
-$stmt=$conn->prepare("UPDATE users SET name=?,email=?,phone=?,address=? WHERE username=? AND role='customer'"); $stmt->bind_param("sssss",$name,$email,$phone,$address,$username); $stmt->execute(); respond(true,"Profile updated.");
+require_once __DIR__.'/db.php';
+require_once __DIR__.'/auth.php';
+if(($_SERVER['REQUEST_METHOD']??'')!=='POST') respond(false,'Method not allowed.',[],405);
+$user=require_user_session($conn);
+if($user['role']!=='customer') respond(false,'Customer login required.',[],403);
+$data=json_input();
+$name=trim((string)($data['name']??''));
+if($name===''||mb_strlen($name)>150) respond(false,'Please provide a valid name (up to 150 characters).',[],400);
+$id=(int)$_SESSION['user_id'];
+$stmt=$conn->prepare("UPDATE users SET name=? WHERE id=? AND role='customer' AND status='active'");
+$stmt->bind_param('si',$name,$id);
+$stmt->execute();
+$stmt->close();
+respond(true,'Profile updated.');
 ?>
