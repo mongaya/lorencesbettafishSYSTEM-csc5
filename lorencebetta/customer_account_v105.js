@@ -41,8 +41,8 @@
    $('customerAccountFormV105').hidden=true;
    $('customerAccountOtpFormV105').hidden=false;
    $('customerAccountOtpHelpV105').textContent='Enter the 6-digit code sent to your registered email. Valid for 5 minutes.';
-   message(result.message);
-  }catch(e){message(e.message);}
+   message(result.message+' If you do not receive it, confirm this is your registered email and check Spam or All Mail.');
+  }catch(e){message('OTP request failed: '+e.message);}
   finally{button.disabled=false;}
  };
  window.customerAccountVerifyV105=async function(event){

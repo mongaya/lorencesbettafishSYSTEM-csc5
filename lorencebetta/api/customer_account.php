@@ -17,9 +17,15 @@ if ($action==='profile') respond(true,'Profile loaded.',['username'=>$customer['
 function customer_account_mail($to,$code,$kind){
  send_gmail($to,'BettaTrack Customer Account Verification','<p>Your '.htmlspecialchars($kind,ENT_QUOTES,'UTF-8').' verification code is <strong>'.htmlspecialchars($code,ENT_QUOTES,'UTF-8').'</strong>.</p><p>Valid for 5 minutes. If you did not request this change, ignore this email.</p>');
 }
+function customer_account_mask_email(string $email): string {
+ $parts=explode('@',$email,2);
+ if(count($parts)!==2)return 'registered email';
+ $local=$parts[0];$visible=mb_substr($local,0,1);
+ return $visible.str_repeat('*',min(max(mb_strlen($local)-1,2),8)).'@'.$parts[1];
+}
 function customer_account_code(){return (string)random_int(100000,999999);}
 function customer_account_check_code($pending,$code){
- if(time()>(int)($pending['expires']??0)||(int)($pending['attempts']??0)>=5) respond(false,'Code expired or too many attempts. Start again.',[],401);
+ if(time()>(int)($pending['expires']??0)||(int)($pending['attempts']??0)>5) respond(false,'Code expired or too many attempts. Start again.',[],401);
  if(!preg_match('/^[0-9]{6}$/D',$code)||!password_verify($code,(string)$pending['code_hash'])) respond(false,'Incorrect verification code.',[],401);
 }
 if ($action==='start'){
@@ -48,9 +54,9 @@ if ($action==='start'){
  $_SESSION['customer_account_pending']=['id'=>$id,'email'=>$customer['email'],'type'=>$type,'value'=>$value,'hash'=>$hash,'original_password'=>$customer['password'],'stage'=>'old','code_hash'=>password_hash($code,PASSWORD_DEFAULT),'expires'=>time()+300,'attempts'=>0];
  $_SESSION['customer_account_last_otp']=time();
  session_write_close();
- try{customer_account_mail($customer['email'],$code,'customer account');}
+ try{customer_account_mail($customer['email'],$code,$type.' change');}
  catch(Throwable $e){error_log('Customer account mail: '.$e->getMessage());respond(false,'Unable to send verification email. No changes saved.',[],503);}
- respond(true,'Verification code sent to your registered email. Valid for 5 minutes.',['stage'=>'old']);
+ respond(true,'Verification request accepted by the mail server for '.customer_account_mask_email($customer['email']).'. Check Inbox, Spam, and All Mail. Valid for 5 minutes.',['stage'=>'old','destination'=>customer_account_mask_email($customer['email'])]);
 }
 if($action==='verify'){
  $pending=$_SESSION['customer_account_pending']??null;
@@ -67,7 +73,7 @@ if($action==='verify'){
   session_write_close();
   try{customer_account_mail($pending['value'],$newCode,'new email address');}
   catch(Throwable $e){error_log('Customer new email verification: '.$e->getMessage());respond(false,'Unable to send code to the new email. No changes saved.',[],503);}
-  respond(true,'Check your NEW email address for another verification code.',['stage'=>'new','done'=>false]);
+  respond(true,'Verification request accepted for your new email '.customer_account_mask_email($pending['value']).'. Check Inbox and Spam.',['stage'=>'new','done'=>false,'destination'=>customer_account_mask_email($pending['value'])]);
  }
  if(!hash_equals((string)$customer['password'],(string)$pending['original_password'])) respond(false,'Password changed during verification. Start again.',[],409);
  try{
