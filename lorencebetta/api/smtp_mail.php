@@ -9,6 +9,6 @@ function send_gmail($to,$subject,$html){
  fwrite($fp,"EHLO localhost\r\n");smtp_expect($fp,250);fwrite($fp,"AUTH LOGIN\r\n");smtp_expect($fp,334);fwrite($fp,base64_encode(GMAIL_USERNAME)."\r\n");smtp_expect($fp,334);fwrite($fp,base64_encode(GMAIL_APP_PASSWORD)."\r\n");smtp_expect($fp,235);
  fwrite($fp,"MAIL FROM:<".GMAIL_USERNAME.">\r\n");smtp_expect($fp,250);fwrite($fp,"RCPT TO:<".$to.">\r\n");smtp_expect($fp,250);fwrite($fp,"DATA\r\n");smtp_expect($fp,354);
  $headers="From: ".GMAIL_FROM_NAME." <".GMAIL_USERNAME.">\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\nSubject: =?UTF-8?B?".base64_encode($subject)."?=\r\nTo: <".$to.">\r\n\r\n";
- $body=str_replace(["\r\n","\r","\n"],"\r\n",$headers.$html);$body=preg_replace('/^\./m','..',$body);fwrite($fp,$body."\r\n.\r\n");smtp_expect($fp,250);fwrite($fp,"QUIT\r\n");fclose($fp);return true;
+ $normalizedHtml=preg_replace("/\r\n|\r|\n/","\r\n",$html);$body=$headers.$normalizedHtml;$body=preg_replace('/^\./m','..',$body);fwrite($fp,$body."\r\n.\r\n");smtp_expect($fp,250);fwrite($fp,"QUIT\r\n");fclose($fp);return true;
 }
 ?>
