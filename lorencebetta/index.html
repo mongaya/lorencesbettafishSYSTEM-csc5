@@ -1938,28 +1938,43 @@ body:not(.dark-mode) .hero-kicker{
 
                     <div class="form-group">
                         <label>Username</label>
-                        <input id="profileUsername" disabled>
+                        <input id="profileUsername" readonly>
                     </div>
 
                     <div class="form-group">
                         <label>Email</label>
-                        <input id="profileEmail">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Phone Number</label>
-                        <input id="profilePhone" placeholder="09XXXXXXXXX">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Address</label>
-                        <textarea id="profileAddress" rows="3" placeholder="Complete delivery address"></textarea>
+                        <input id="profileEmail" readonly>
                     </div>
 
                     <button class="primary-btn" onclick="saveProfile()">
                         Save Changes
                     </button>
 
+                </div>
+
+                <div class="card customer-security-v105" style="margin-top:20px;">
+                    <h3 class="customer-security-title-v105">Account Security</h3>
+                    <p class="muted">Username, password, and email changes require verification. Your registered email is read-only above.</p>
+                    <div class="customer-security-options-v105">
+                        <button type="button" onclick="customerAccountOpenV105('username')">Change Username</button>
+                        <button type="button" onclick="customerAccountOpenV105('password')">Change Password</button>
+                        <button type="button" onclick="customerAccountOpenV105('email')">Change Email</button>
+                    </div>
+                    <form id="customerAccountFormV105" hidden onsubmit="customerAccountStartV105(event)">
+                        <h4 id="customerAccountHeadingV105"></h4>
+                        <label id="customerAccountValueLabelV105" for="customerAccountValueV105">New Value</label>
+                        <input id="customerAccountValueV105" required autocomplete="off">
+                        <label for="customerAccountPasswordV105">Current Password</label>
+                        <input type="password" id="customerAccountPasswordV105" required autocomplete="current-password">
+                        <div class="customer-account-actions-v105"><button type="button" onclick="customerAccountCloseV105()">Cancel</button><button id="customerAccountSendV105" type="submit">Send Email OTP</button></div>
+                    </form>
+                    <form id="customerAccountOtpFormV105" hidden onsubmit="customerAccountVerifyV105(event)">
+                        <p id="customerAccountOtpHelpV105">Enter the 6-digit code sent to your registered email.</p>
+                        <label for="customerAccountOtpV105">Verification Code</label>
+                        <input id="customerAccountOtpV105" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" required autocomplete="one-time-code">
+                        <div class="customer-account-actions-v105"><button type="button" onclick="customerAccountCloseV105()">Cancel</button><button id="customerAccountVerifyV105" type="submit">Verify &amp; Save</button></div>
+                    </form>
+                    <p id="customerAccountMessageV105" role="status" aria-live="polite"></p>
                 </div>
 
                 <div class="card" style="margin-top:20px;">
@@ -2900,8 +2915,8 @@ async function openCustomer() {
         document.getElementById("profileName").value = user.name;
         document.getElementById("profileUsername").value = user.username;
         document.getElementById("profileEmail").value = user.email || "";
-        document.getElementById("profilePhone").value = user.phone || "";
-        document.getElementById("profileAddress").value = user.address || "";
+        
+        
         const topAvatar=document.getElementById("customerTopAvatar"); if(topAvatar) topAvatar.src=user.profile_image || "images/logo.png";
     }
 
@@ -3852,39 +3867,24 @@ function loadProfile() {
     document.getElementById("profileName").value = user.name || "";
     document.getElementById("profileUsername").value = user.username || "";
     document.getElementById("profileEmail").value = user.email || "";
-    document.getElementById("profilePhone").value = user.phone || "";
-    document.getElementById("profileAddress").value = user.address || "";
+    
+    
         const topAvatar=document.getElementById("customerTopAvatar"); if(topAvatar) topAvatar.src=user.profile_image || "images/logo.png";
 }
 
 async function saveProfile() {
     const name = document.getElementById("profileName").value.trim();
-    const email = document.getElementById("profileEmail").value.trim();
-    const phone = document.getElementById("profilePhone").value.trim();
-    const address = document.getElementById("profileAddress").value.trim();
-
     try {
         await apiRequest("update_profile.php", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                username: currentUser.username,
-                name,
-                email,
-                phone,
-                address
-            })
+            body: JSON.stringify({name})
         });
-
         await loadUsers();
-
         document.getElementById("customerName").textContent = name;
         showToast("Profile updated.");
-    } catch (err) {
-        showToast(err.message);
-    }
+    } catch (err) { showToast(err.message); }
 }
-
 
 /* =========================================================
    SAVED CUSTOMER ADDRESSES
@@ -12427,3 +12427,20 @@ body.dark-mode #admin-cancellations .cancel-resolved-v82,body.dark #admin-cancel
 
 <link rel="stylesheet" href="dashboard_notifications_v71.css?v=71">
 <script src="dashboard_notifications_v71.js?v=72"></script>
+
+<style>
+/* Customer account security, scoped; does not affect order/address interfaces. */
+#customer-profile .customer-security-title-v105{font-weight:750;margin:0 0 8px}
+#customer-profile .customer-security-options-v105{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+#customer-profile .customer-security-options-v105 button,
+#customer-profile .customer-account-actions-v105 button{border:1px solid #b5d7e6;border-radius:10px;padding:11px 16px;background:#eef8fc;color:#0b4e68;font-weight:650;cursor:pointer}
+#customer-profile .customer-security-options-v105 button:hover{background:#d9f1fb}
+#customer-profile #customerAccountFormV105:not([hidden]),#customer-profile #customerAccountOtpFormV105:not([hidden]){display:grid;gap:10px;max-width:650px;padding:18px;border:1px solid #c7e3ed;border-radius:12px}
+#customer-profile #customerAccountFormV105 input,#customer-profile #customerAccountOtpFormV105 input{width:100%;border:1px solid #b5d7e6;border-radius:10px;padding:12px;background:#edf7fb;color:inherit}
+#customer-profile .customer-account-actions-v105{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+#customer-profile .customer-account-actions-v105 button[type=submit]{background:#0797c5;color:#fff;border-color:#0797c5}
+#customer-profile #customerAccountMessageV105{margin:8px 0;color:#177c98}
+body.dark-mode #customer-profile .customer-security-options-v105 button,
+body.dark-mode #customer-profile .customer-account-actions-v105 button{background:#203d4c;color:#d7f1fd;border-color:#466579}
+</style>
+<script src="customer_account_v105.js?v=105"></script>
