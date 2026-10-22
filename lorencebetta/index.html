@@ -12572,3 +12572,11 @@ body.dark-mode #customer-profile .customer-profile-columns-v107>.card,body.dark-
 body.dark-mode #customer-profile .customer-security-options-v107 button,body.dark #customer-profile .customer-security-options-v107 button{background:#203d4f;color:#e2f3ff;border-color:#365c71}
 body.dark-mode #customer-profile .customer-info-card-v107 .customer-field-v107 input,body.dark #customer-profile .customer-info-card-v107 .customer-field-v107 input{background:#1e4051;color:#f0faff;border-color:#466879}
 </style>
+
+<style>
+/* v109: profile identity overlaps photo controls in same grid cell; stop invisible overlay stealing input clicks. */
+#customer-profile .customer-overview-v107 .customer-overview-identity-v107{pointer-events:none}
+#customer-profile .customer-overview-v107 .profile-photo-editor{position:relative;z-index:2;pointer-events:auto}
+#customer-profile .customer-overview-v107 .profile-photo-editor input[type=file]{position:relative;z-index:3;pointer-events:auto;cursor:pointer;max-width:170px}
+#customer-profile .customer-overview-v107 .profile-photo-editor button{position:relative;z-index:3;pointer-events:auto}
+</style>
