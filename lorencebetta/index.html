@@ -1515,6 +1515,33 @@ body:not(.dark-mode) .hero-kicker{
 </style>
 
 <link rel="stylesheet" href="admin_account_v97.css?v=100"><script defer src="admin_account_v97.js?v=100"></script>
+
+<style id="betta-toasts-fields-v118">
+#toast{display:none!important}
+#btToastStackV118{position:fixed;right:24px;top:92px;z-index:99999;display:flex;flex-direction:column;gap:12px;align-items:flex-end;width:min(390px,calc(100vw - 32px));pointer-events:none}
+.bt-toast-v118{--toast-accent:#087ea4;--toast-tint:#e8f3fb;position:relative;display:grid;grid-template-columns:42px minmax(0,1fr) 24px;gap:12px;align-items:start;width:100%;padding:16px 15px 18px;background:#fff;color:#173746;border:1px solid #e0e9ee;border-left:4px solid var(--toast-accent);border-radius:14px;box-shadow:0 14px 40px rgba(10,48,67,.22);pointer-events:auto;overflow:hidden;animation:btToastEnterV118 .32s cubic-bezier(.2,.8,.2,1)}
+.bt-toast-success{--toast-accent:#15875a;--toast-tint:#e5f6ed}
+.bt-toast-error{--toast-accent:#d34b50;--toast-tint:#fdeced}
+.bt-toast-warning{--toast-accent:#c58a21;--toast-tint:#fff4dc}
+.bt-toast-info{--toast-accent:#187eae;--toast-tint:#e7f3fa}
+.bt-toast-icon-v118{display:grid;place-items:center;border-radius:50%;width:38px;height:38px;background:var(--toast-tint);color:var(--toast-accent);font-weight:900;font-size:21px}
+.bt-toast-copy-v118{min-width:0;display:flex;flex-direction:column;gap:5px;line-height:1.4}
+.bt-toast-copy-v118 strong{font-size:14px}
+.bt-toast-copy-v118 span{font-size:13px;color:#57717d;overflow-wrap:anywhere}
+.bt-toast-close-v118{border:0;background:transparent;color:#687e8a;font-size:22px;line-height:1;cursor:pointer;padding:0}
+.bt-toast-progress-v118{position:absolute;bottom:0;left:0;height:3px;background:var(--toast-accent);width:100%;transform-origin:left;animation:btToastProgressV118 var(--bt-toast-duration,4500ms) linear forwards}
+.bt-toast-leave-v118{opacity:0;transform:translateX(25px);transition:opacity .25s,transform .25s}
+@keyframes btToastEnterV118{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes btToastProgressV118{to{transform:scaleX(0)}}
+.bt-field-invalid-v118{border-color:#d34b50!important;box-shadow:0 0 0 3px rgba(211,75,80,.12)!important}
+.bt-field-error-v118{font-size:12px;color:#bc333e;margin-top:6px;line-height:1.45;font-weight:600}
+.bt-field-error-v118:before{content:"!";display:inline-grid;place-items:center;background:#d34b50;color:#fff;border-radius:50%;width:15px;height:15px;margin-right:7px;font-size:11px}
+body.dark-mode .bt-toast-v118,body.dark .bt-toast-v118,[data-theme="dark"] .bt-toast-v118{background:#192b36;color:#eaf4f8;border-color:#385463;border-left-color:var(--toast-accent)}
+body.dark-mode .bt-toast-copy-v118 span,body.dark .bt-toast-copy-v118 span,[data-theme="dark"] .bt-toast-copy-v118 span{color:#b4cbd4}
+body.dark-mode .bt-field-error-v118,body.dark .bt-field-error-v118,[data-theme="dark"] .bt-field-error-v118{color:#ffa2aa}
+@media(max-width:600px){#btToastStackV118{right:12px;top:74px;width:calc(100vw - 24px)}.bt-toast-v118{padding:13px 12px 17px;gap:9px}}
+@media(prefers-reduced-motion:reduce){.bt-toast-v118,.bt-toast-progress-v118{animation:none}.bt-toast-leave-v118{transition:none}}
+</style>
 </head>
 
 <body>
@@ -2864,8 +2891,10 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
             openCustomer();
         }
     } catch (err) {
-        error.textContent = err.message;
-        error.classList.remove("hidden");
+        const message = String(err.message || "Unable to sign in.");
+        const target = /password/i.test(message) ? document.getElementById("loginPassword") : document.getElementById("loginUsername");
+        setFieldErrorV118(target, message);
+        error.classList.add("hidden");
     }
 });
 
@@ -2880,8 +2909,8 @@ document.getElementById("signupForm").addEventListener("submit", async function(
     const error = document.getElementById("authError");
 
     if (password !== confirm) {
-        error.textContent = "Passwords do not match.";
-        error.classList.remove("hidden");
+        setFieldErrorV118(document.getElementById("signupConfirm"), "Passwords do not match.");
+        error.classList.add("hidden");
         return;
     }
 
@@ -2901,8 +2930,10 @@ document.getElementById("signupForm").addEventListener("submit", async function(
         document.getElementById("signupForm").reset();
         showAuth("login");
     } catch (err) {
-        error.textContent = err.message;
-        error.classList.remove("hidden");
+        const message = String(err.message || "Unable to create account.");
+        const id = /email/i.test(message) ? "signupEmail" : /username/i.test(message) ? "signupUsername" : /password/i.test(message) ? "signupPassword" : "signupName";
+        setFieldErrorV118(document.getElementById(id), message);
+        error.classList.add("hidden");
     }
 });
 
@@ -3967,7 +3998,7 @@ async function saveProfile() {
     if (!field || field.readOnly) return;
     const name = field.value.trim();
     if (!name || name.length > 150) {
-        showToast("Please enter a valid full name (up to 150 characters).");
+        setFieldErrorV118(field, "Enter a valid full name (up to 150 characters).");
         return;
     }
     const saveButton = document.getElementById("customerNameSaveV106");
@@ -4808,13 +4839,18 @@ async function saveProduct() {
     const imageInput = document.getElementById("productImage");
     const imageFile = imageInput.files[0];
 
-    if (!name || !category || price < 0 || stock < 0) {
-        showToast("Please enter valid product information.");
+    const invalidProductField =
+        !name ? ["productName","Product name is required."] :
+        !category ? ["productCategory","Please select a fish category."] :
+        !document.getElementById("productPrice").value.trim() || !Number.isFinite(price) || price < 0 ? ["productPrice","Enter a valid price of zero or more."] :
+        !document.getElementById("productStock").value.trim() || !Number.isInteger(stock) || stock < 0 ? ["productStock","Enter a valid whole-number stock quantity."] : null;
+    if (invalidProductField) {
+        setFieldErrorV118(document.getElementById(invalidProductField[0]), invalidProductField[1]);
         return;
     }
 
     if (!id && !imageFile) {
-        showToast("Please choose a product picture.");
+        setFieldErrorV118(imageInput, "Please choose a product picture.");
         return;
     }
 
@@ -5082,17 +5118,98 @@ async function saveStockOnly() {
    UTILITIES
 ========================================================= */
 
-function showToast(message) {
-    const toast = document.getElementById("toast");
-
-    toast.textContent = message;
-    toast.classList.add("show");
-
-    setTimeout(
-        () => toast.classList.remove("show"),
-        2500
-    );
+// Unified, accessible toast system for customer and admin action feedback.
+function showToast(message, type) {
+    const text = String(message || "Action completed.");
+    const lower = text.toLowerCase();
+    const kind = ["success","error","warning","info"].includes(type) ? type :
+        /error|failed|unable|could not|incorrect|invalid|denied|not found|something went wrong|unexpected/.test(lower) ? "error" :
+        /please |required|cannot|can't|wait |already|limit|stock|must |select |choose |not enough|too many/.test(lower) ? "warning" :
+        /success|added|updated|saved|created|removed|deleted|sent|confirmed|submitted|verified|welcome|logged|completed|copied/.test(lower) ? "success" : "info";
+    let stack = document.getElementById("btToastStackV118");
+    if (!stack) {
+        stack = document.createElement("div");
+        stack.id = "btToastStackV118";
+        stack.setAttribute("aria-label", "System messages");
+        document.body.appendChild(stack);
+    }
+    const item = document.createElement("div");
+    item.className = "bt-toast-v118 bt-toast-" + kind;
+    item.setAttribute("role", kind === "error" ? "alert" : "status");
+    const icon = document.createElement("span");
+    icon.className = "bt-toast-icon-v118";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = {success:"✓",error:"!",warning:"!",info:"i"}[kind];
+    const copy = document.createElement("div");
+    copy.className = "bt-toast-copy-v118";
+    const title = document.createElement("strong");
+    title.textContent = {success:"Success",error:"Action failed",warning:"Please check",info:"Notification"}[kind];
+    const description = document.createElement("span");
+    description.textContent = text;
+    copy.append(title, description);
+    const close = document.createElement("button");
+    close.className = "bt-toast-close-v118";
+    close.type = "button";
+    close.textContent = "×";
+    close.setAttribute("aria-label", "Dismiss notification");
+    close.addEventListener("click", () => item.remove());
+    const progress = document.createElement("div");
+    progress.className = "bt-toast-progress-v118";
+    item.append(icon, copy, close, progress);
+    stack.prepend(item);
+    while (stack.children.length > 4) stack.lastElementChild.remove();
+    const duration = kind === "error" ? 6500 : 4500;
+    item.style.setProperty("--bt-toast-duration", duration + "ms");
+    setTimeout(() => { item.classList.add("bt-toast-leave-v118"); setTimeout(() => item.remove(), 250); }, duration);
 }
+
+function clearFieldErrorV118(field) {
+    if (!field) return;
+    field.classList.remove("bt-field-invalid-v118");
+    field.removeAttribute("aria-invalid");
+    const anchor = field.closest(".form-group") || field.parentElement;
+    const msg = anchor?.querySelector(".bt-field-error-v118[data-for='" + CSS.escape(field.id || "") + "']");
+    if (msg) msg.remove();
+}
+function setFieldErrorV118(field, text, focus = true) {
+    if (!field) { showToast(text, "warning"); return; }
+    clearFieldErrorV118(field);
+    field.classList.add("bt-field-invalid-v118");
+    field.setAttribute("aria-invalid", "true");
+    const anchor = field.closest(".form-group") || field.parentElement;
+    if (anchor) {
+        const msg = document.createElement("div");
+        msg.className = "bt-field-error-v118";
+        msg.dataset.for = field.id || "";
+        msg.setAttribute("role", "alert");
+        msg.textContent = text;
+        anchor.appendChild(msg);
+    }
+    if (focus) {
+        field.scrollIntoView({behavior:"smooth",block:"center"});
+        field.focus({preventScroll:true});
+    }
+}
+document.addEventListener("input", function(event) {
+    const field = event.target;
+    if (field?.matches?.("input, select, textarea") && field.classList.contains("bt-field-invalid-v118")) {
+        if (field.checkValidity() && (field.type !== "number" || field.value.trim() !== "")) clearFieldErrorV118(field);
+    }
+});
+document.addEventListener("change", function(event) {
+    const field = event.target;
+    if (field?.matches?.("input, select, textarea") && field.classList.contains("bt-field-invalid-v118") && field.checkValidity()) clearFieldErrorV118(field);
+});
+// Browser constraint validation blocks submit automatically; show which field needs attention.
+document.addEventListener("invalid", function(event) {
+    const field = event.target;
+    if (!field?.matches?.("input, select, textarea")) return;
+    event.preventDefault();
+    const scope = field.closest("form") || field.closest(".modal") || document;
+    const firstInvalid = [...scope.querySelectorAll("input:invalid, select:invalid, textarea:invalid")][0];
+    setFieldErrorV118(field, field.validationMessage || "Please check this field.", field === firstInvalid);
+}, true);
+
 
 function escapeHTML(value) {
     if (value === null || value === undefined) return "";
