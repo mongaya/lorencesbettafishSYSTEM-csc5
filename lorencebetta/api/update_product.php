@@ -13,6 +13,13 @@ if ($colorsColumn && $colorsColumn->num_rows === 0) {
         respond(false, "Unable to initialize product colors.", [], 500);
     }
 }
+// Keep existing fish records; gender can be assigned when an admin edits a product.
+$genderColumn = $conn->query("SHOW COLUMNS FROM products LIKE 'gender'");
+if ($genderColumn && $genderColumn->num_rows === 0) {
+    if (!$conn->query("ALTER TABLE products ADD COLUMN gender VARCHAR(12) NOT NULL DEFAULT ''")) {
+        respond(false, "Unable to initialize fish gender.", [], 500);
+    }
+}
 $appearanceColumn = $conn->query("SHOW COLUMNS FROM products LIKE 'appearance'");
 if ($appearanceColumn && $appearanceColumn->num_rows === 0) {
     if (!$conn->query("ALTER TABLE products ADD COLUMN appearance VARCHAR(60) NOT NULL DEFAULT ''")) {
@@ -25,6 +32,8 @@ $price = (float)($_POST["price"] ?? 0);
 $stock = (int)($_POST["stock"] ?? 0);
 $description = trim($_POST["description"] ?? "");
 $appearance = trim($_POST["appearance"] ?? "");
+$gender = trim((string)($_POST["gender"] ?? ""));
+if (!in_array($gender, ["", "Male", "Female"], true)) respond(false, "Invalid fish gender.", [], 400);
 $allowedColors = ["Red","Blue","White","Black","Yellow","Orange","Purple","Green","Pink","Gold","Silver","Multicolor"];
 $colorsInput = json_decode($_POST["colors"] ?? "[]", true);
 if (!is_array($colorsInput) || count($colorsInput) > count($allowedColors)) respond(false, "Invalid colors.", [], 400);
@@ -60,17 +69,18 @@ $status = $stock > 0 ? "available" : "out_of_stock";
 
 $stmt = $conn->prepare(
     "UPDATE products
-     SET name = ?, category = ?, appearance = ?, colors = ?, price = ?, stock = ?,
+     SET name = ?, category = ?, appearance = ?, colors = ?, gender = ?, price = ?, stock = ?,
          description = ?, image = ?, status = ?, updated_at = NOW()
      WHERE product_code = ?"
 );
 
 $stmt->bind_param(
-    "ssssdissss",
+    "sssssdissss",
     $name,
     $category,
     $appearance,
     $colors,
+    $gender,
     $price,
     $stock,
     $description,
