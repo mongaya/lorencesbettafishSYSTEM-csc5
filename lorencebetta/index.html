@@ -2299,7 +2299,7 @@ body.dark-mode .bt-field-error-v118,body.dark .bt-field-error-v118,[data-theme="
 <div class="courier-main-v53">
 <div class="courier-board-v53 shipping-panel-v57" data-shipping-panel="ready"><div class="courier-board-head-v53"><div><h3>To Ship Orders</h3><p>Verified payments ready for courier handover.</p></div><input id="courierSearchV50" type="search" placeholder="Search To Ship..." oninput="renderCourierShippingV50()"></div><div id="courierListV50"></div><div class="courier-toolbar-v50 courier-footer-v53"><span id="courierSelectedV50">0 selected</span><button class="action-btn view-btn" onclick="copyCourierV50()">Copy Selected</button><button class="primary-btn" onclick="printCourierV50()">Print Selected</button></div></div>
 <div class="courier-board-v53 courier-second-v56 shipping-panel-v57" data-shipping-panel="receive"><div class="courier-board-head-v53"><div><h3>To Receive Orders</h3><p>Dispatched parcels with tracking details.</p></div><input id="courierHistorySearchV56" type="search" placeholder="Search tracking..." oninput="renderCourierShippingV50()"></div><div id="courierHistoryListV56"></div></div>
-<div class="courier-board-v53 courier-second-v56 shipping-panel-v57" data-shipping-panel="pickup" hidden><div class="courier-board-head-v53"><div><h3>Pick Up Orders</h3><p>Prepare fish for collection and confirm handover.</p></div><input id="pickupSearchV120" placeholder="Search pickup orders..." oninput="renderCourierShippingV50()"></div><div id="pickupListV120"></div></div><div class="courier-board-v53 courier-second-v56 shipping-panel-v57" data-shipping-panel="completed"><div class="courier-board-head-v53"><div><h3>Completed Orders</h3><p>Customer-confirmed deliveries.</p></div></div><div id="courierCompletedListV56"></div></div>
+<div class="courier-board-v53 courier-second-v56 shipping-panel-v57" data-shipping-panel="pickup" hidden><div class="courier-board-head-v53"><div><h3>Pick Up Orders</h3><p>Mark paid orders ready for pickup; customers confirm receipt.</p></div><input id="pickupSearchV120" placeholder="Search pickup orders..." oninput="renderCourierShippingV50()"></div><div id="pickupListV120"></div></div><div class="courier-board-v53 courier-second-v56 shipping-panel-v57" data-shipping-panel="completed"><div class="courier-board-head-v53"><div><h3>Completed Orders</h3><p>Customer-confirmed deliveries.</p></div></div><div id="courierCompletedListV56"></div></div>
 </div>
 <aside class="courier-side-v53" id="courierSideV53"><div class="courier-side-placeholder-v53"><h3>Order Details</h3><p>Select an order to view customer information, order items, and tracking details.</p></div></aside>
 </div>
@@ -3824,7 +3824,7 @@ function orderHTML(order) {
        ["Pending","Confirmed","Preparing","Ready for Pickup","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received","Picked Up"].includes(order.status));
     const pickup = String(order.courier||"").toLowerCase() === "pick up";
     const statuses = pickup
-      ? ["Payment Submitted","Payment Verified","Preparing","Ready for Pickup","Handed Over","Completed"]
+      ? ["Payment Verified","Ready for Pickup","Completed"]
       : order.courier==="J&T Express"
       ? ["Payment Submitted","Payment Verified","To Ship","To Receive","Completed"]
       : payFirst
@@ -3837,7 +3837,7 @@ function orderHTML(order) {
       !verified ? "Payment Submitted" :
       fulfilled ? "Completed" :
       order.status === "Pending" || order.status === "Confirmed" ? "Payment Verified" : order.status;
-    const currentIndex = statuses.indexOf(pickup ? (order.status==="Picked Up"?"Handed Over":order.status==="Order Received"?"Completed":order.payment_status!=="Paid"?"Payment Submitted":["Pending","Confirmed"].includes(order.status)?"Payment Verified":stage) : stage);
+    const currentIndex = statuses.indexOf(pickup ? (order.status==="Order Received"?"Completed":["Ready for Pickup","Picked Up"].includes(order.status)?"Ready for Pickup":order.payment_status==="Paid"?"Payment Verified":"") : stage);
     const progress = order.status === "Cancelled"
       ? '<div class="payment-note">Order cancelled. See the cancellation reason below.</div>'
       : statuses.map((status,index)=>{
@@ -3846,7 +3846,7 @@ function orderHTML(order) {
         }).join("");
     const items=(order.items||[]).map(item=>{
       const product=products.find(p=>Number(p.db_id)===Number(item.productId));
-      const reviewReady=["Delivered","Order Received","Picked Up"].includes(order.status) && product;
+      const reviewReady=["Order Received"].includes(order.status) && product;
       const reviewed=product?alreadyReviewed(product):false;
       return `<div class="order-item-row">${item.image?`<img src="${escapeHTML(item.image)}" alt="${escapeHTML(item.name)}">`:`<div></div>`}<div><div class="order-item-name">${escapeHTML(item.name)}</div><div class="order-item-sub">Qty ${Number(item.quantity)} · ₱${Number(item.price).toFixed(2)}</div></div><div>${reviewReady?`<button class="action-btn view-btn" onclick="openProductDetail('${escapeHTML(product.id)}')">${reviewed?"View Rating":"Rate Product"}</button>`:""}</div></div>`;
     }).join("");
@@ -3863,9 +3863,9 @@ function orderHTML(order) {
           <div class="order-side-card"><h4>Order Summary</h4><div class="summary-row"><span>Subtotal</span><strong>₱${Number(order.subtotal||0).toFixed(2)}</strong></div><div class="summary-row"><span>Shipping</span><strong>${order.shipping_confirmed?'₱'+Number(order.shipping).toFixed(2):'Pending'}</strong></div><div class="summary-row"><span>Total</span><strong>${order.shipping_confirmed?'₱'+Number(order.total).toFixed(2):'Pending final total'}</strong></div></div>
           <div class="order-side-card"><h4>Delivery</h4><p><strong>${escapeHTML(order.courier||"Not specified")}</strong></p>${String(order.courier||"").trim().toLowerCase()==="lalamove"&&order.payment_status==="Paid"&&order.status!=="Cancelled"?`<div class="lalamove-customer-tracking-v20"><strong>Lalamove Tracking</strong>${order.tracking_number?`<p>Booking / Tracking No.: <strong>${escapeHTML(order.tracking_number)}</strong></p>`:""}${order.tracking_url&&/^https?:\/\//i.test(order.tracking_url)?`<a class="primary-btn" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:9px" href="${escapeHTML(order.tracking_url)}" target="_blank" rel="noopener noreferrer">Track Delivery ↗</a>`:""}${!order.tracking_url&&!order.tracking_number?`<p class="payment-note">Tracking details will appear here after the admin books your Lalamove delivery.</p>`:""}</div>`:""}<button class="action-btn view-btn" style="margin-top:10px" onclick="showCustomerPage('chat');loadCustomerChat()">Chat with Admin</button></div>
           <div class="order-side-card"><h4>Payment</h4><p>${escapeHTML(order.payment)}</p><p class="payment-note">Status: <strong>${escapeHTML(order.payment_status==="Payment Submitted"?"Payment Submitted — Waiting for Admin Verification":order.payment_status==="Paid"?"Payment Verified":order.payment_status||"Waiting for shipping fee")}</strong></p>${order.payment_status==="Paid"&&order.payment_screenshot?`<button class="action-btn view-btn" onclick="viewReceipt('${escapeHTML(order.id)}',false)">View Receipt</button>`:""}</div>
-          ${order.status==="Delivered"||(pickup&&order.status==="Picked Up")?`<div class="order-side-card receive-card"><h4>${pickup?"Picked up your order?":"Package delivered?"}</h4><p class="payment-note">Confirm only after you have received and checked your order.</p><button class="primary-btn" onclick="confirmOrderReceived('${escapeHTML(order.id)}')">Order Received</button></div>`:""}
+          ${order.status==="Delivered"||(pickup&&["Ready for Pickup","Picked Up"].includes(order.status))?`<div class="order-side-card receive-card"><h4>${pickup?"Received your pickup order?":"Package delivered?"}</h4><p class="payment-note">Confirm only after you have received and checked your order.</p><button class="primary-btn" onclick="confirmOrderReceived('${escapeHTML(order.id)}')">Order Received</button></div>`:""}
           ${order.status==="Cancelled"?`<div class="order-side-card"><h4>Cancellation Note</h4><p class="payment-note">${escapeHTML(order.payment_rejection_reason||"Order cancelled. Please contact the shop for details.")}</p></div>`:""}
-          ${pickup?`<div class="order-side-card"><h4>Pickup Information</h4><p class="payment-note">${order.status==="Ready for Pickup"?"Your order is ready for collection. Please coordinate with the seller before visiting.":order.status==="Picked Up"?"The seller marked this order as handed over. Please confirm receipt once collected.":"This order is for store pickup. No courier tracking is required."}</p></div>`:`<div class="order-side-card"><h4>Delivery Address</h4><p class="payment-note">${escapeHTML(order.address)}</p></div>`}
+          ${pickup?`<div class="order-side-card"><h4>Pickup Information</h4><p class="payment-note">${order.status==="Ready for Pickup"?"Your order is ready for collection. Please coordinate with the seller before visiting.":order.status==="Picked Up"?"Please confirm receipt once you have collected your order.":"This order is for store pickup. No courier tracking is required."}</p></div>`:`<div class="order-side-card"><h4>Delivery Address</h4><p class="payment-note">${escapeHTML(order.address)}</p></div>`}
         </aside>
       </div>
     </div>`;
@@ -4522,7 +4522,7 @@ function renderAdminOrders() {
     }
 
     const fulfillmentFlow = order => order.courier === "Pick Up"
-        ? ["Confirmed","Preparing","Ready for Pickup","Picked Up"]
+        ? ["Confirmed","Ready for Pickup"]
         : order.courier === "Lalamove"
         ? ["Confirmed","Preparing","Ready for Delivery","Lalamove Booked","Out for Delivery","Delivered","Order Received"]
         : ["Confirmed","Preparing","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received"];
@@ -11022,7 +11022,7 @@ body.dark-mode .payment-readonly-v59 h4,body.dark .payment-readonly-v59 h4,[data
  const original=renderCourierShippingV50;
  let selectedPickupId="";
  const picked=()=>orders.filter(o=>o.courier==="Pick Up"&&o.status!=="Cancelled");
- const pickActions={Confirmed:["Preparing","Start Preparing"],Preparing:["Ready for Pickup","Mark as Ready for Pickup"],"Ready for Pickup":["Picked Up","Confirm Handed Over"]};
+ const pickActions={Confirmed:["Ready for Pickup","Mark as Ready for Pickup"],Preparing:["Ready for Pickup","Mark as Ready for Pickup"]};
  const esc=escapeHTML;
  const selected=()=>picked().find(o=>String(o.id)===String(selectedPickupId));
  const pickupSide=(o)=>{
@@ -11034,11 +11034,11 @@ body.dark-mode .payment-readonly-v59 h4,body.dark .payment-readonly-v59 h4,[data
    side.innerHTML='<div class="pickup-detail-v121">'+
     '<div class="courier-side-title-v53"><h3>Order Details</h3><span>#'+id+'</span></div>'+
     '<div class="pickup-detail-section-v121"><h4>Customer Information</h4><div class="pickup-detail-grid-v121"><div><small>Name</small><strong>'+esc(o.customerName||"Not provided")+'</strong></div><div><small>Phone</small><strong>'+esc(o.phone||"Not provided")+'</strong></div></div></div>'+
-    '<div class="pickup-detail-section-v121"><h4>Fulfillment Details</h4><div class="pickup-detail-grid-v121"><div><small>Method</small><strong>Store Pick Up</strong></div><div><small>Order Status</small><strong>'+esc(o.status==="Picked Up"?"Handed Over":o.status)+'</strong></div><div><small>Order Date</small><strong>'+esc(courierDateV50(o.date))+'</strong></div></div></div>'+
+    '<div class="pickup-detail-section-v121"><h4>Fulfillment Details</h4><div class="pickup-detail-grid-v121"><div><small>Method</small><strong>Store Pick Up</strong></div><div><small>Order Status</small><strong>'+esc(o.status==="Picked Up"?"Ready for Pickup":o.status)+'</strong></div><div><small>Order Date</small><strong>'+esc(courierDateV50(o.date))+'</strong></div></div></div>'+
     '<div class="pickup-detail-section-v121"><h4>Payment Information</h4><div class="pickup-detail-grid-v121"><div><small>Payment Method</small><strong>'+esc(o.payment||"Not provided")+'</strong></div><div><small>Payment Status</small><strong>'+esc(o.payment_status||"Pending")+'</strong></div></div></div>'+
     '<div class="pickup-detail-section-v121"><h4>Order Items</h4>'+items+'<div class="pickup-total-v121"><span>Total</span><strong>₱'+Number(o.total||0).toFixed(2)+'</strong></div></div>'+
-    '<div class="pickup-detail-section-v121"><h4>Pickup Progress</h4><div class="pickup-progress-v121">'+["Payment Verified","Preparing","Ready for Pickup","Handed Over","Completed"].map((label,i)=>{const stage={"Confirmed":0,"Preparing":1,"Ready for Pickup":2,"Picked Up":3,"Order Received":4}[o.status]??0;return '<div class="'+(i<=stage?"done":"")+'"><span>'+(i<stage?"✓":i+1)+'</span><small>'+label+'</small></div>';}).join("")+'</div></div>'+
-    (action?'<button type="button" class="primary-btn pickup-side-action-v121" onclick="pickupAdvanceV120(\''+id+'\',\''+action[0]+'\')">'+action[1]+'</button>': '<p class="pickup-muted-v121">'+(o.status==="Picked Up"?"Handed over — awaiting customer receipt confirmation.":o.status==="Order Received"?"Order completed.":o.payment_status!=="Paid"?"Verify the payment in Orders & Payments first.":"No further admin action.")+'</p>')+
+    '<div class="pickup-detail-section-v121"><h4>Pickup Progress</h4><div class="pickup-progress-v121">'+["Payment Verified","Ready for Pickup","Completed"].map((label,i)=>{const stage={"Confirmed":0,"Preparing":0,"Ready for Pickup":1,"Picked Up":1,"Order Received":2}[o.status]??0;return '<div class="'+(i<=stage?"done":"")+'"><span>'+(i<stage?"✓":i+1)+'</span><small>'+label+'</small></div>';}).join("")+'</div></div>'+
+    (action?'<button type="button" class="primary-btn pickup-side-action-v121" onclick="pickupAdvanceV120(\''+id+'\',\''+action[0]+'\')">'+action[1]+'</button>': '<p class="pickup-muted-v121">'+(o.status==="Picked Up"?"Awaiting customer confirmation.":o.status==="Order Received"?"Order completed.":o.payment_status!=="Paid"?"Verify the payment in Orders & Payments first.":"No further admin action.")+'</p>')+
     '</div>';
  };
  renderCourierShippingV50=function(){
@@ -11066,16 +11066,16 @@ body.dark-mode .payment-readonly-v59 h4,body.dark .payment-readonly-v59 h4,[data
   if(!relevant.some(o=>String(o.id)===selectedPickupId))selectedPickupId="";
   box.innerHTML=relevant.length?relevant.map(o=>{
    const id=esc(o.id),highlight=selectedPickupId===String(o.id);
-   return '<div class="pickup-card-v120 pickup-selectable-v121'+(highlight?' pickup-selected-v121':'')+'" role="button" tabindex="0" aria-pressed="'+highlight+'" onclick="pickupSelectV121(\''+id+'\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();pickupSelectV121(\''+id+'\')}"><div class="pickup-info-v120"><strong>#'+id+'</strong><p>'+esc(o.customerName||"Customer")+'</p><small>₱'+Number(o.total||0).toFixed(2)+' · '+esc(o.payment_status||"Awaiting payment")+'</small></div><span class="pickup-status-v120">'+esc(o.status==="Picked Up"?"Handed Over":o.status)+'</span><span class="pickup-view-v121">View Details →</span></div>';
+   return '<div class="pickup-card-v120 pickup-selectable-v121'+(highlight?' pickup-selected-v121':'')+'" role="button" tabindex="0" aria-pressed="'+highlight+'" onclick="pickupSelectV121(\''+id+'\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();pickupSelectV121(\''+id+'\')}"><div class="pickup-info-v120"><strong>#'+id+'</strong><p>'+esc(o.customerName||"Customer")+'</p><small>₱'+Number(o.total||0).toFixed(2)+' · '+esc(o.payment_status||"Awaiting payment")+'</small></div><span class="pickup-status-v120">'+esc(o.status==="Picked Up"?"Ready for Pickup":o.status)+'</span><span class="pickup-view-v121">View Details →</span></div>';
   }).join(""):'<div class="courier-empty-v50">No pickup orders found.</div>';
   pickupSide(selected());
  };
  window.pickupSelectV121=id=>{selectedPickupId=String(id);renderCourierShippingV50();};
  window.pickupAdvanceV120=async(id,status)=>{
-  const expected={Preparing:"Confirmed","Ready for Pickup":"Preparing","Picked Up":"Ready for Pickup"};
+  const expected={"Ready for Pickup":["Confirmed","Preparing"]};
   if(!Object.prototype.hasOwnProperty.call(expected,status))return;
   const order=picked().find(o=>String(o.id)===String(id));
-  if(!order||order.status!==expected[status]||order.payment_status!=="Paid"){showToast("Pickup order status changed. Refresh and try again.","warning");return;}
+  if(!order||!expected[status].includes(order.status)||order.payment_status!=="Paid"){showToast("Pickup order status changed. Refresh and try again.","warning");return;}
   selectedPickupId=String(id);
   await updateOrderStatus(id,status);
  };
