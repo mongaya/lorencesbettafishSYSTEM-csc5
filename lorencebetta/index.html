@@ -3824,7 +3824,7 @@ function orderHTML(order) {
        ["Pending","Confirmed","Preparing","Ready for Pickup","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received","Picked Up"].includes(order.status));
     const pickup = String(order.courier||"").toLowerCase() === "pick up";
     const statuses = pickup
-      ? ["Payment Verified","Ready for Pickup","Completed"]
+      ? ["Ready for Pickup","Completed"]
       : order.courier==="J&T Express"
       ? ["Payment Submitted","Payment Verified","To Ship","To Receive","Completed"]
       : payFirst
@@ -3837,7 +3837,7 @@ function orderHTML(order) {
       !verified ? "Payment Submitted" :
       fulfilled ? "Completed" :
       order.status === "Pending" || order.status === "Confirmed" ? "Payment Verified" : order.status;
-    const currentIndex = statuses.indexOf(pickup ? (order.status==="Order Received"?"Completed":["Ready for Pickup","Picked Up"].includes(order.status)?"Ready for Pickup":order.payment_status==="Paid"?"Payment Verified":"") : stage);
+    const currentIndex = statuses.indexOf(pickup ? (order.status==="Order Received"?"Completed":["Ready for Pickup","Picked Up"].includes(order.status)?"Ready for Pickup":"") : stage);
     const progress = order.status === "Cancelled"
       ? '<div class="payment-note">Order cancelled. See the cancellation reason below.</div>'
       : statuses.map((status,index)=>{
@@ -11037,7 +11037,7 @@ body.dark-mode .payment-readonly-v59 h4,body.dark .payment-readonly-v59 h4,[data
     '<div class="pickup-detail-section-v121"><h4>Fulfillment Details</h4><div class="pickup-detail-grid-v121"><div><small>Method</small><strong>Store Pick Up</strong></div><div><small>Order Status</small><strong>'+esc(o.status==="Picked Up"?"Ready for Pickup":o.status)+'</strong></div><div><small>Order Date</small><strong>'+esc(courierDateV50(o.date))+'</strong></div></div></div>'+
     '<div class="pickup-detail-section-v121"><h4>Payment Information</h4><div class="pickup-detail-grid-v121"><div><small>Payment Method</small><strong>'+esc(o.payment||"Not provided")+'</strong></div><div><small>Payment Status</small><strong>'+esc(o.payment_status||"Pending")+'</strong></div></div></div>'+
     '<div class="pickup-detail-section-v121"><h4>Order Items</h4>'+items+'<div class="pickup-total-v121"><span>Total</span><strong>₱'+Number(o.total||0).toFixed(2)+'</strong></div></div>'+
-    '<div class="pickup-detail-section-v121"><h4>Pickup Progress</h4><div class="pickup-progress-v121">'+["Payment Verified","Ready for Pickup","Completed"].map((label,i)=>{const stage={"Confirmed":0,"Preparing":0,"Ready for Pickup":1,"Picked Up":1,"Order Received":2}[o.status]??0;return '<div class="'+(i<=stage?"done":"")+'"><span>'+(i<stage?"✓":i+1)+'</span><small>'+label+'</small></div>';}).join("")+'</div></div>'+
+    '<div class="pickup-detail-section-v121"><h4>Pickup Progress</h4><div class="pickup-progress-v121">'+["Ready for Pickup","Completed"].map((label,i)=>{const stage={"Confirmed":-1,"Preparing":-1,"Ready for Pickup":0,"Picked Up":0,"Order Received":1}[o.status]??-1;return '<div class="'+(i<=stage?"done":"")+'"><span>'+(i<stage?"✓":i+1)+'</span><small>'+label+'</small></div>';}).join("")+'</div></div>'+
     (action?'<button type="button" class="primary-btn pickup-side-action-v121" onclick="pickupAdvanceV120(\''+id+'\',\''+action[0]+'\')">'+action[1]+'</button>': '<p class="pickup-muted-v121">'+(o.status==="Picked Up"?"Awaiting customer confirmation.":o.status==="Order Received"?"Order completed.":o.payment_status!=="Paid"?"Verify the payment in Orders & Payments first.":"No further admin action.")+'</p>')+
     '</div>';
  };
