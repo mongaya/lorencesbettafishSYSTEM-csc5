@@ -1922,7 +1922,7 @@ body:not(.dark-mode) .hero-kicker{
  <div class="customer-overview-v107">
    <div class="profile-photo-editor">
                       <img id="customerProfileImage" src="images/logo.png" alt="Profile picture">
-                      <div><h3>Profile Picture</h3><p class="muted">Choose a JPG, PNG, or WEBP image up to 5MB.</p><input id="profileImageInput" type="file" accept="image/jpeg,image/png,image/webp"><button type="button" class="action-btn edit-btn" onclick="uploadProfilePicture()">Update Photo</button></div>
+                      <div><h3>Profile Picture</h3><p class="muted">Choose a JPG, PNG, or WEBP image up to 5MB.</p><input id="profileImageInput" type="file" accept="image/jpeg,image/png,image/webp" onchange="previewCustomerProfilePictureV110()"><div class="customer-photo-actions-v110"><button type="button" id="customerPhotoSaveV110" class="action-btn edit-btn" onclick="uploadProfilePicture()" hidden>Update Photo</button><button type="button" id="customerPhotoCancelV110" class="customer-photo-cancel-v110" onclick="cancelCustomerProfilePictureV110()" hidden>Cancel</button></div><small id="customerPhotoPreviewNoteV110" class="customer-photo-preview-note-v110" hidden>Preview only — not saved yet.</small></div>
                     </div>
    <div class="customer-overview-identity-v107"><h3 id="customerOverviewNameV107">Customer</h3><p id="customerOverviewUsernameV107">@customer</p><span class="customer-role-v107"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg> Customer</span></div>
    <div class="customer-overview-email-v107"><span class="customer-section-icon-v107"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span><div><small>Registered Email</small><strong id="customerOverviewEmailV107"></strong></div></div>
@@ -5061,26 +5061,70 @@ function renderOrderStatusTabs(allOrders){const el=document.getElementById("orde
 function setCustomerOrderFilter(status){customerOrderFilter=status;renderCustomerOrders();}
 function customerAvatar(){const u=users.find(u=>u.username===currentUser?.username);return u?.profile_image||"images/logo.png";}
 function refreshProfileAvatars(){const src=customerAvatar();const a=document.getElementById("customerHeaderAvatar"),b=document.getElementById("customerProfileImage");if(a)a.src=src;if(b)b.src=src;}
+let customerPhotoPreviewUrlV110=null;
+let customerPhotoUploadBusyV110=false;
+function cancelCustomerProfilePictureV110(){
+ if(customerPhotoUploadBusyV110)return;
+ const input=document.getElementById("profileImageInput");
+ if(input)input.value="";
+ const image=document.getElementById("customerProfileImage");
+ if(image)image.src=customerAvatar();
+ if(customerPhotoPreviewUrlV110){URL.revokeObjectURL(customerPhotoPreviewUrlV110);customerPhotoPreviewUrlV110=null;}
+ for(const id of ["customerPhotoSaveV110","customerPhotoCancelV110","customerPhotoPreviewNoteV110"]){
+  const element=document.getElementById(id);if(element)element.hidden=true;
+ }
+}
+function previewCustomerProfilePictureV110(){
+ if(customerPhotoUploadBusyV110)return;
+ const input=document.getElementById("profileImageInput");
+ const file=input?.files?.[0];
+ if(!file){cancelCustomerProfilePictureV110();return;}
+ if(file.size>5*1024*1024||!["image/jpeg","image/png","image/webp"].includes(file.type)){
+  showToast("Choose a JPG, PNG, or WEBP image under 5 MB.","warning");
+  cancelCustomerProfilePictureV110();return;
+ }
+ if(customerPhotoPreviewUrlV110)URL.revokeObjectURL(customerPhotoPreviewUrlV110);
+ customerPhotoPreviewUrlV110=URL.createObjectURL(file);
+ const image=document.getElementById("customerProfileImage");
+ if(image)image.src=customerPhotoPreviewUrlV110;
+ for(const id of ["customerPhotoSaveV110","customerPhotoCancelV110","customerPhotoPreviewNoteV110"]){
+  const element=document.getElementById(id);if(element)element.hidden=false;
+ }
+}
 async function uploadProfilePicture(){
  if(!currentUser||currentUser.type!=="customer")return showToast("Customer login required.","warning");
+ if(customerPhotoUploadBusyV110)return;
  const input=document.getElementById("profileImageInput");
  const file=input?.files?.[0];
  if(!file)return showToast("Choose a profile picture first.","warning");
  if(file.size>5*1024*1024)return showToast("Please choose an image under 5 MB.","warning");
  if(!["image/jpeg","image/png","image/webp"].includes(file.type))return showToast("Choose a JPG, PNG, or WEBP picture.","warning");
- const button=document.querySelector('#customer-profile .profile-photo-editor button');
- if(button){button.disabled=true;button.textContent="Uploading...";}
+ const save=document.getElementById("customerPhotoSaveV110");
+ const cancel=document.getElementById("customerPhotoCancelV110");
+ customerPhotoUploadBusyV110=true;
+ if(save){save.disabled=true;save.textContent="Uploading...";}
+ if(cancel)cancel.disabled=true;
+ if(input)input.disabled=true;
  const form=new FormData();
  form.append("profile_image",file);
  try{
   const result=await apiRequest("upload_profile_photo.php",{method:"POST",body:form,credentials:"same-origin"});
   await loadUsers();
+  if(customerPhotoPreviewUrlV110){URL.revokeObjectURL(customerPhotoPreviewUrlV110);customerPhotoPreviewUrlV110=null;}
   refreshProfileAvatars();
   const avatar=document.getElementById("customerTopAvatar");if(avatar&&result.profile_image)avatar.src=result.profile_image;
   input.value="";
+  for(const id of ["customerPhotoSaveV110","customerPhotoCancelV110","customerPhotoPreviewNoteV110"]){
+   const element=document.getElementById(id);if(element)element.hidden=true;
+  }
   showToast("Profile picture updated.","success");
  }catch(e){showToast(e.message,"error");}
- finally{if(button){button.disabled=false;button.textContent="Update Photo";}}
+ finally{
+  customerPhotoUploadBusyV110=false;
+  if(save){save.disabled=false;save.textContent="Update Photo";}
+  if(cancel)cancel.disabled=false;
+  if(input)input.disabled=false;
+ }
 }
 const _openCustomerUpgrade=openCustomer;openCustomer=async function(){document.getElementById("publicStore")?.classList.add("hidden");await _openCustomerUpgrade();refreshProfileAvatars();showToast("Login successful.","success");};
 const _openAdminUpgrade=openAdmin;openAdmin=async function(){document.getElementById("publicStore")?.classList.add("hidden");await _openAdminUpgrade();showToast("Admin login successful.","success");};
@@ -12579,4 +12623,12 @@ body.dark-mode #customer-profile .customer-info-card-v107 .customer-field-v107 i
 #customer-profile .customer-overview-v107 .profile-photo-editor{position:relative;z-index:2;pointer-events:auto}
 #customer-profile .customer-overview-v107 .profile-photo-editor input[type=file]{position:relative;z-index:3;pointer-events:auto;cursor:pointer;max-width:170px}
 #customer-profile .customer-overview-v107 .profile-photo-editor button{position:relative;z-index:3;pointer-events:auto}
+</style>
+
+<style>
+#customer-profile .customer-photo-actions-v110{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+#customer-profile .customer-photo-actions-v110 button[hidden],#customer-profile .customer-photo-preview-note-v110[hidden]{display:none!important}
+#customer-profile .customer-photo-actions-v110 .customer-photo-cancel-v110{border:1px solid #bad5e7;background:#fff;color:#245370;font-size:12px;font-weight:650;border-radius:8px;padding:7px 11px;cursor:pointer}
+#customer-profile .customer-photo-preview-note-v110{font-size:11px;color:#517e94;line-height:1.3}
+#customer-profile .customer-photo-actions-v110 button:disabled{opacity:.55;cursor:wait}
 </style>
