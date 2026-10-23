@@ -12098,7 +12098,8 @@ viewOrder=function(orderId){
       o.courier==="Lalamove"?["Confirmed","Preparing","Ready for Delivery","Lalamove Booked","Out for Delivery","Delivered","Order Received"]:
       ["Confirmed","Preparing","Ready to Ship","Shipped","Out for Delivery","Delivered","Order Received"];
     const i=flow.indexOf(o.status),expected=i>=0?flow[i+1]:null;
-    if(!expected||next!==expected)return showToast('Invalid order step. Refresh the order before proceeding.','warning');
+    const directPickupReady=pickup&&next==="Ready for Pickup"&&["Confirmed","Preparing"].includes(o.status);
+    if(!directPickupReady&&(!expected||next!==expected))return showToast('Invalid order step. Refresh the order before proceeding.','warning');
     if(o.payment_status!=='Paid')return showToast('Verify the customer payment before updating delivery status.','warning');
     if(jt(o)&&next==='Out for Delivery'&&!String(o.tracking_number||o.tracking_url||'').trim())
       return showToast('Enter the J&T tracking number or link before marking Out for Delivery.','warning');
