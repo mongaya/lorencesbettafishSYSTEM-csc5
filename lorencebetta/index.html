@@ -10706,7 +10706,16 @@ renderCheckoutCouriers();
 <script src="admin_pay_first.js"></script>
 <style id="accurate-notifications-v28-style">
 #adminSidebar .orders-alert-v28{display:inline-flex;margin-left:8px;background:#d83d52;color:white;border-radius:99px;padding:2px 7px;font-size:11px;font-weight:800}
-#adminApp .new-order-toast-v28{position:fixed;right:20px;bottom:24px;z-index:9999;background:#10394a;color:white;border:1px solid #4fb8da;border-radius:12px;padding:15px 18px;box-shadow:0 10px 35px #0003;cursor:pointer;max-width:320px}
+#adminApp .new-order-toast-stack-v138{position:fixed;top:84px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;width:min(380px,calc(100vw - 32px));pointer-events:none}
+#adminApp .new-order-toast-v28{position:relative;box-sizing:border-box;width:100%;display:grid;grid-template-columns:42px 1fr;gap:12px;background:#fff;color:#173b4e;border:1px solid #d9e9ef;border-left:5px solid #1aa5d0;border-radius:12px;padding:15px 14px;box-shadow:0 10px 30px #102d3c30;pointer-events:auto}
+#adminApp .new-order-toast-v28 .order-toast-icon-v138{width:40px;height:40px;border-radius:50%;background:#e9f7fc;display:grid;place-items:center;color:#078eba}
+#adminApp .new-order-toast-v28 .order-toast-icon-v138 svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#adminApp .new-order-toast-v28 .order-toast-title-v138{font-size:14px;font-weight:800;margin:1px 22px 4px 0}
+#adminApp .new-order-toast-v28 .order-toast-message-v138{font-size:13px;line-height:1.5;color:#547184;overflow-wrap:anywhere}
+#adminApp .new-order-toast-v28 .order-toast-actions-v138{display:flex;justify-content:flex-end;margin-top:10px}
+#adminApp .new-order-toast-v28 .order-toast-review-v138{border:0;border-radius:8px;background:#119dc7;color:white;padding:8px 13px;font-size:12px;font-weight:700;cursor:pointer}
+#adminApp .new-order-toast-v28 .order-toast-close-v138{position:absolute;right:11px;top:9px;border:0;background:transparent;color:#647e8c;font-size:20px;cursor:pointer}
+@media(max-width:600px){#adminApp .new-order-toast-stack-v138{top:70px;right:12px;width:calc(100vw - 24px)}}
 </style>
 <script id="accurate-notifications-v28">
 (function(){
@@ -10750,12 +10759,23 @@ renderCheckoutCouriers();
      else badge?.remove();
    }
    if(seeded){
-     const added=fresh.find(o=>!known.has(String(o.id)));
-     if(added&&!document.querySelector(".new-order-toast-v28")){
-       const toast=document.createElement("div");toast.className="new-order-toast-v28";toast.textContent="New order received: "+String(added.id)+" — Click to review";
-       toast.onclick=()=>{toast.remove();showAdminPage("orders");viewOrder(added.id);};
-       document.getElementById("adminApp")?.appendChild(toast);
-       setTimeout(()=>toast.remove(),9000);
+     const added=fresh.filter(o=>!known.has(String(o.id)));
+     if(added.length){
+       let stack=document.querySelector("#adminApp .new-order-toast-stack-v138");
+       if(!stack){stack=document.createElement("div");stack.className="new-order-toast-stack-v138";stack.setAttribute("aria-live","polite");document.getElementById("adminApp")?.appendChild(stack);}
+       added.slice(0,3).forEach(order=>{
+         if(stack.querySelector('[data-order-id="'+CSS.escape(String(order.id))+'"]'))return;
+         const toast=document.createElement("div");toast.className="new-order-toast-v28";toast.dataset.orderId=String(order.id);
+         const icon=document.createElement("div");icon.className="order-toast-icon-v138";icon.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>';
+         const body=document.createElement("div"),title=document.createElement("div"),message=document.createElement("div"),actions=document.createElement("div"),review=document.createElement("button"),close=document.createElement("button");
+         title.className="order-toast-title-v138";title.textContent="New Order Received";
+         message.className="order-toast-message-v138";message.textContent="Order "+String(order.id)+" is ready for review.";
+         actions.className="order-toast-actions-v138";review.type="button";review.className="order-toast-review-v138";review.textContent="Review Order";
+         review.onclick=()=>{toast.remove();showAdminPage("orders");viewOrder(order.id);};
+         close.type="button";close.className="order-toast-close-v138";close.setAttribute("aria-label","Close notification");close.textContent="×";close.onclick=()=>toast.remove();
+         actions.appendChild(review);body.append(title,message,actions);toast.append(icon,body,close);stack.appendChild(toast);
+         setTimeout(()=>toast.remove(),7000);
+       });
      }
    }
    known=ids;seeded=true;
