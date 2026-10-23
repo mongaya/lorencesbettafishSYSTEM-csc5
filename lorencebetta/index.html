@@ -10005,6 +10005,20 @@ body.dark-mode #customerSuspendReasonV85{background:#193e50;border-color:#31566a
    document.getElementById("proSalesV27").textContent=money(sales);
    document.getElementById("proShippingV27").textContent=money(shipping);
    document.getElementById("proPaidV27").textContent=paidOrders.length;
+   // On-demand admin diagnostic. Open Dashboard with ?sales_debug=1; never expose customer details.
+   if(new URLSearchParams(location.search).get("sales_debug")==="1"&&currentUser?.type==="admin"){
+     let dbg=document.getElementById("salesDebugV136");
+     if(!dbg){dbg=document.createElement("div");dbg.id="salesDebugV136";dbg.style.cssText="padding:16px;margin:12px 0 20px;border:1px solid #a7cfdf;border-radius:12px;background:var(--card-bg,#f4fafc);color:var(--text-color,#234)";document.querySelector(".pro-kpis-v27")?.insertAdjacentElement("afterend",dbg);}
+     const records=all.filter(o=>completed(o)||o.completed_at).slice(0,15);
+     const rows=records.map(o=>{
+       const date=completedAt(o),passPaid=paid(o),passStatus=completed(o),passDate=inPeriod(date,start,end);
+       const status=String(o.status||"unknown"),pay=String(o.payment_status||"unknown");
+       const safe=x=>esc(x);
+       return "<tr><td>"+safe(String(o.id||"").slice(-14))+"</td><td>"+safe(status)+"</td><td>"+safe(pay)+"</td><td>"+safe(o.completed_at||o.updated_at||"missing")+"</td><td>"+safe(Number.isFinite(date.getTime())?date.toLocaleString():"invalid date")+"</td><td>"+(passPaid&&passStatus&&passDate?"Included":!passPaid?"Not paid":!passStatus?"Not completed":"Outside range")+"</td></tr>";
+     }).join("");
+     dbg.innerHTML='<strong>Sales Diagnostics (admin only)</strong><p style="margin:6px 0">Period: '+esc(period)+' · Local time: '+esc(now.toLocaleString())+' · Orders loaded: '+all.length+' · Completed statuses: '+all.filter(completed).length+' · Paid + completed in range: '+completedOrders.length+'</p><div style="overflow-x:auto"><table style="width:100%;min-width:660px;text-align:left;font-size:12px"><thead><tr><th>Order (last chars)</th><th>Status</th><th>Payment</th><th>Saved timestamp</th><th>Parsed completion time</th><th>Reason</th></tr></thead><tbody>'+rows+'</tbody></table></div><small>Temporary troubleshooting panel. Remove ?sales_debug=1 from the URL to hide.</small>';
+   }
+
 
    // Keep the agreed two notification types even when the legacy chart refreshes.
    const fresh=orders.filter(o=>o.status!=="Cancelled"&&!o.cancellation&&o.payment_status==="Payment Submitted").length;
