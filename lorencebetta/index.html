@@ -2652,15 +2652,11 @@ body.dark-mode .bt-field-error-v118,body.dark .bt-field-error-v118,[data-theme="
 
         <input type="hidden" id="addressId">
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="form-group">
-                <label>First Name</label>
-                <input id="addressFirstName" type="text" placeholder="First name" maxlength="100">
-            </div>
-            <div class="form-group">
-                <label>Last Name</label>
-                <input id="addressLastName" type="text" placeholder="Last name" maxlength="100">
-            </div>
+        <div class="form-group">
+            <label for="addressFullNameV111">Full Name</label>
+            <input id="addressFullNameV111" type="text" placeholder="Enter recipient's full name" maxlength="200" autocomplete="name">
+            <input id="addressFirstName" type="hidden">
+            <input id="addressLastName" type="hidden">
         </div>
 
         <div class="form-group">
@@ -11274,6 +11270,31 @@ function fulfillmentConfirmV126(kind){
 <link rel="stylesheet" href="admin_product_reviews_v107.css?v=107">
 <script src="admin_product_reviews_v107.js?v=107"></script>
 <style id="quick-reply-auto-v108">.chat-bubble.chat-auto-v108{border-left:3px solid #1589ad!important}.chat-auto-label-v108{display:block;font-weight:700;font-size:11px;letter-spacing:.02em;margin-bottom:7px;color:#168bb1}body.dark-mode .chat-auto-label-v108{color:#81d7ef}</style>
+<script id="address-full-name-v111">
+(function(){
+  const priorOpen=window.openAddressModal;
+  const priorSave=window.saveAddress;
+  function syncRecipientName(){
+    const full=document.getElementById('addressFullNameV111');
+    if(!full)return false;
+    const parts=full.value.trim().replace(/\s+/g,' ').split(' ').filter(Boolean);
+    if(parts.length<2){if(typeof showToast==='function')showToast('Please enter the recipient’s first and last name.');full.focus();return false;}
+    document.getElementById('addressFirstName').value=parts.slice(0,-1).join(' ');
+    document.getElementById('addressLastName').value=parts[parts.length-1];
+    return true;
+  }
+  window.openAddressModal=function(){
+    const result=priorOpen.apply(this,arguments);
+    const full=document.getElementById('addressFullNameV111');
+    if(full)full.value=[document.getElementById('addressFirstName')?.value,document.getElementById('addressLastName')?.value].filter(Boolean).join(' ').trim();
+    return result;
+  };
+  window.saveAddress=function(){
+    if(!syncRecipientName())return;
+    return priorSave.apply(this,arguments);
+  };
+})();
+</script>
 </body>
 </html>
 
