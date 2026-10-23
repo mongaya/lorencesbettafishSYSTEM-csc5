@@ -9822,7 +9822,9 @@ body.dark-mode #customerSuspendReasonV85{background:#193e50;border-color:#31566a
  const createdAt=o=>stamp(o.date||o.created_at);
  const completedAt=o=>{
    const h=(o.status_history||[]).filter(x=>["order received","picked up","completed"].includes(String(x.status||"").toLowerCase()));
-   return h.length?stamp(h[h.length-1].changed_at):createdAt(o);
+   // Customer Order Received updates orders.updated_at without writing a history row.
+   // Use that actual transition timestamp instead of incorrectly counting the original order date.
+   return h.length?stamp(h[h.length-1].changed_at):stamp(o.updated_at||o.date||o.created_at);
  };
  const paidAt=o=>{
    const attempts=(o.payment_attempts||[]).filter(x=>String(x.status||"").toLowerCase()==="approved"||String(x.status||"").toLowerCase()==="paid");
@@ -10012,10 +10014,12 @@ body.dark-mode #customerSuspendReasonV85{background:#193e50;border-color:#31566a
 
    const count=(fn)=>scoped.filter(fn).length;
    const sts=[["New Orders",null],["Payment Review",null],["Confirmed","Confirmed"],["Preparing","Preparing"],["Ready to Ship","Ready to Ship"],["Shipped","Shipped"],["Out for Delivery","Out for Delivery"],["Delivered","Delivered"],["Ready for Pickup","Ready for Pickup"],["Completed",["Order Received","Picked Up"]],["Cancelled","Cancelled"]];
-   document.getElementById("proStatusV27").innerHTML=sts.map(([label,val])=>`<div class="pro-status-item-v27"><b>${label==="New Orders"?count(o=>o.is_new):label==="Payment Review"?count(o=>o.payment_status==="Payment Submitted"):count(o=>Array.isArray(val)?val.includes(o.status):o.status===val)}</b><span>${label}</span></div>`).join("");
+   const statusHost=document.getElementById("proStatusV27");
+   if(statusHost)statusHost.innerHTML=sts.map(([label,val])=>`<div class="pro-status-item-v27"><b>${label==="New Orders"?count(o=>o.is_new):label==="Payment Review"?count(o=>o.payment_status==="Payment Submitted"):count(o=>Array.isArray(val)?val.includes(o.status):o.status===val)}</b><span>${label}</span></div>`).join("");
 
    const recent=[...all].sort((a,b)=>Number(!!b.is_new)-Number(!!a.is_new)||new Date(b.created_at||b.date||0)-new Date(a.created_at||a.date||0)).slice(0,6);
-   document.getElementById("proRecentV27").innerHTML=recent.length?recent.map(o=>`<tr><td>${esc(o.id||o.order_code||"")}${o.is_new?' <span style="color:#d63b55;font-weight:800">NEW</span>':""}</td><td>${esc(o.customer_name||o.name||o.username||"")}</td><td>${esc(o.courier||"—")}</td><td>${money(o.total)}</td><td>${esc(o.payment_method||"—")}</td><td><span class="pro-status-pill-v27">${esc(o.status||"—")}</span></td><td>${esc(o.date||o.created_at||"—")}</td><td><button class="pro-view-v27" onclick="viewOrder('${esc(o.id||o.order_code||"")}')">View</button></td></tr>`).join(""):`<tr><td colspan="8">No orders yet.</td></tr>`;
+   const recentHost=document.getElementById("proRecentV27");
+   if(recentHost)recentHost.innerHTML=recent.length?recent.map(o=>`<tr><td>${esc(o.id||o.order_code||"")}${o.is_new?' <span style="color:#d63b55;font-weight:800">NEW</span>':""}</td><td>${esc(o.customer_name||o.name||o.username||"")}</td><td>${esc(o.courier||"—")}</td><td>${money(o.total)}</td><td>${esc(o.payment_method||"—")}</td><td><span class="pro-status-pill-v27">${esc(o.status||"—")}</span></td><td>${esc(o.date||o.created_at||"—")}</td><td><button class="pro-view-v27" onclick="viewOrder('${esc(o.id||o.order_code||"")}')">View</button></td></tr>`).join(""):`<tr><td colspan="8">No orders yet.</td></tr>`;
    // The Sales Overview has its own independent date-range buttons.
    const chartDays=Number(document.querySelector(".pro-range-v27 button.active")?.getAttribute("data-days")||7);
    drawChartV27(all,chartDays);
