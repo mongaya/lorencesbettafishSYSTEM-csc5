@@ -13143,7 +13143,7 @@ body.dark-mode .auth-switch-link-v127 button{color:#68d4f4}
  window.closeForgotPassword=function(){el('forgotModal')?.classList.add('hidden')};
  window.requestPasswordReset=async function(){
   const email=(el('forgotEmail')?.value||'').trim();
-  if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return showToast('Enter a valid email address.','warning');
+  if(!/^[^\s@]+@[^\s@]+\\.[^\s@]+$/.test(email))return showToast('Enter a valid email address.','warning');
   const button=el('forgotSendV127');if(button?.disabled)return;
   if(button)button.disabled=true;
   try{
@@ -13156,7 +13156,7 @@ body.dark-mode .auth-switch-link-v127 button{color:#68d4f4}
  };
  window.verifyPasswordOtpV127=async function(){
   const email=(el('forgotEmail')?.value||'').trim(),code=(el('forgotCodeV127')?.value||'').trim();
-  if(!/^\\d{6}$/.test(code))return showToast('Enter the 6-digit code.','warning');
+  if(!/^\d{6}$/.test(code))return showToast('Enter the 6-digit code.','warning');
   const btn=el('forgotVerifyBtnV127');if(btn?.disabled)return;if(btn)btn.disabled=true;
   try{
    const result=await apiRequest('forgot_password.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'verify',email,code})});
