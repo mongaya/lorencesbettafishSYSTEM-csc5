@@ -2952,7 +2952,7 @@ function validateSignupFieldsV131(){
  if(name.length<2||name.length>150)errors.push(["signupName","Full name must be 2–150 characters."]);
  if(!/^[A-Za-z0-9_.-]{3,50}$/.test(username)||username.toLowerCase()==="admin")errors.push(["signupUsername","Username must be 3–50 characters using letters, numbers, underscores, periods or hyphens."]);
  if(!get("signupEmail").checkValidity()||!email)errors.push(["signupEmail","Please enter a valid email address."]);
- if(password.length<8||password.length>128)errors.push(["signupPassword","Password must contain 8–128 characters."]);
+ if(password.length<8||password.length>10||!/[0-9]/.test(password)||!/[^A-Za-z0-9]/.test(password))errors.push(["signupPassword","Use 8–10 characters with at least one number and one special character."]);
  if(password!==confirm)errors.push(["signupConfirm","Passwords do not match."]);
  for(const id of ["signupName","signupUsername","signupEmail","signupPassword","signupConfirm"])clearFieldErrorV118(get(id));
  errors.forEach(([id,message],i)=>setFieldErrorV118(get(id),message,i===0));
@@ -3001,7 +3001,7 @@ document.getElementById("signupForm").addEventListener("submit", async function(
             setFieldErrorV118(document.getElementById("signupEmail"), message);
         } else if (/username/i.test(message) && /invalid|valid/i.test(message)) {
             setFieldErrorV118(document.getElementById("signupUsername"), message);
-        } else if (/password/i.test(message) && /invalid|valid/i.test(message)) {
+        } else if (/password/i.test(message) && /invalid|valid|8|special/i.test(message)) {
             setFieldErrorV118(document.getElementById("signupPassword"), message);
         } else {
             showToast(message, "warning");
