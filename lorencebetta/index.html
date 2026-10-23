@@ -1674,12 +1674,14 @@ body.dark-mode .bt-field-error-v118,body.dark .bt-field-error-v118,[data-theme="
             <button type="button" class="text-btn" onclick="openForgotPassword()">
                 Forgot Password?
             </button>
+            <p class="auth-switch-link-v127">Don't have an account? <button type="button" onclick="showAuth('signup')">Sign Up Here</button></p>
 
         </form>
 
         <!-- SIGNUP -->
 
         <form id="signupForm" class="hidden">
+            <p class="auth-switch-link-v127">Already have an account? <button type="button" onclick="showAuth('login')">Login Here</button></p>
 
             <div class="form-group">
                 <label>Full Name</label>
@@ -2586,9 +2588,15 @@ body.dark-mode .bt-field-error-v118,body.dark .bt-field-error-v118,[data-theme="
 <div id="forgotModal" class="modal hidden">
   <div class="modal-box small-modal">
     <div class="modal-head"><h2> Forgot Password</h2><button class="close-btn" onclick="closeForgotPassword()">✕</button></div>
-    <p class="muted">Enter the existing email address registered to your account. A reset link will be sent to it.</p>
-    <div class="form-group"><label>Email Address</label><input id="forgotEmail" type="email" placeholder="you@gmail.com" required></div>
-    <button class="primary-btn full-btn" onclick="requestPasswordReset()">Send Reset Link</button>
+    <p class="muted">Enter your registered email to receive a 6-digit verification code.</p>
+    <div class="form-group"><label for="forgotEmail">Email Address</label><input id="forgotEmail" type="email" placeholder="you@gmail.com" autocomplete="email" required></div>
+    <button type="button" id="forgotSendV127" class="primary-btn full-btn" onclick="requestPasswordReset()">Send Verification Code</button>
+    <div id="forgotVerifyV127" class="hidden">
+      <p class="muted">Check your email. The code expires in 5 minutes.</p>
+      <div class="form-group"><label for="forgotCodeV127">6-digit code</label><input id="forgotCodeV127" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"></div>
+      <button type="button" class="primary-btn full-btn" id="forgotVerifyBtnV127" onclick="verifyPasswordOtpV127()">Verify Code</button>
+      <button type="button" class="text-btn" onclick="requestPasswordReset()">Resend Code</button>
+    </div>
   </div>
 </div>
 
@@ -2596,7 +2604,7 @@ body.dark-mode .bt-field-error-v118,body.dark .bt-field-error-v118,[data-theme="
 <div id="resetModal" class="modal hidden">
   <div class="modal-box small-modal">
     <div class="modal-head"><h2> Reset Password</h2></div>
-    <p class="muted">Create a new password for your account.</p>
+    <p class="muted">Create a new password (at least 8 characters).</p>
     <div class="form-group"><label>New Password</label><input id="resetPassword" type="password" minlength="6"></div>
     <div class="form-group"><label>Confirm Password</label><input id="resetConfirm" type="password" minlength="6"></div>
     <button class="primary-btn full-btn" onclick="resetPassword()">Update Password</button>
@@ -13111,3 +13119,70 @@ body.dark-mode #admin-courier-shipping.pickup-active-v122 .pickup-card-v120 .pic
  #admin-courier-shipping.pickup-active-v122 .pickup-detail-grid-v121{column-gap:14px}
 }
 </style>
+
+<style id="password-recovery-style-v127">
+.auth-switch-link-v127{text-align:center;margin:12px 0;color:#678a9c;font-size:14px}
+.auth-switch-link-v127 button{border:0;background:transparent;color:#008bb8;font-weight:700;cursor:pointer;padding:3px}
+.auth-switch-link-v127 button:hover{text-decoration:underline}
+body.dark-mode .auth-switch-link-v127{color:#c0dbe5}
+body.dark-mode .auth-switch-link-v127 button{color:#68d4f4}
+#forgotVerifyV127{margin-top:16px}
+#forgotVerifyV127 .text-btn{margin-top:7px}
+</style>
+<script id="password-recovery-v127">
+(function(){
+ let verifiedToken=null;
+ const el=id=>document.getElementById(id);
+ window.openForgotPassword=function(){
+  verifiedToken=null;
+  el('forgotVerifyV127')?.classList.add('hidden');
+  el('forgotModal')?.classList.remove('hidden');
+  if(el('forgotCodeV127'))el('forgotCodeV127').value='';
+  el('forgotEmail')?.focus();
+ };
+ window.closeForgotPassword=function(){el('forgotModal')?.classList.add('hidden')};
+ window.requestPasswordReset=async function(){
+  const email=(el('forgotEmail')?.value||'').trim();
+  if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email))return showToast('Enter a valid email address.','warning');
+  const button=el('forgotSendV127');if(button?.disabled)return;
+  if(button)button.disabled=true;
+  try{
+   await apiRequest('forgot_password.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'request',email})});
+   el('forgotVerifyV127')?.classList.remove('hidden');
+   el('forgotCodeV127')?.focus();
+   showToast('If the account exists, a verification code has been sent.','success');
+  }catch(e){showToast(e.message||'Could not send code.','error')}
+  finally{if(button)button.disabled=false}
+ };
+ window.verifyPasswordOtpV127=async function(){
+  const email=(el('forgotEmail')?.value||'').trim(),code=(el('forgotCodeV127')?.value||'').trim();
+  if(!/^\\d{6}$/.test(code))return showToast('Enter the 6-digit code.','warning');
+  const btn=el('forgotVerifyBtnV127');if(btn?.disabled)return;if(btn)btn.disabled=true;
+  try{
+   const result=await apiRequest('forgot_password.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'verify',email,code})});
+   if(!result.resetToken)throw new Error('Verification did not complete.');
+   verifiedToken=result.resetToken;
+   el('forgotModal')?.classList.add('hidden');
+   el('resetModal')?.classList.remove('hidden');
+   el('resetPassword').value='';el('resetConfirm').value='';
+   el('resetPassword')?.focus();
+  }catch(e){showToast(e.message||'Invalid or expired code.','error')}
+  finally{if(btn)btn.disabled=false}
+ };
+ const legacyReset=window.resetPassword;
+ window.resetPassword=async function(){
+  const password=el('resetPassword')?.value||'',confirmation=el('resetConfirm')?.value||'';
+  if(password.length<8||password.length>128||password!==confirmation)return showToast('Use 8–128 characters and matching passwords.','warning');
+  const token=verifiedToken||new URLSearchParams(location.search).get('reset');
+  if(!token)return showToast('Verify your email first.','warning');
+  try{
+   await apiRequest('reset_password.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,password})});
+   verifiedToken=null;
+   el('resetModal')?.classList.add('hidden');
+   if(new URLSearchParams(location.search).has('reset'))history.replaceState({},document.title,location.pathname);
+   showAuth('login');
+   showToast('Password updated. You can now log in.','success');
+  }catch(e){showToast(e.message||'Unable to update password.','error')}
+ };
+})();
+</script>
