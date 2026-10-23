@@ -2144,6 +2144,8 @@ body.dark-mode .bt-field-error-v118,body.dark .bt-field-error-v118,[data-theme="
                 <span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24"><path d="M5 7h14l-1 13H6zM8 7a4 4 0 0 1 8 0"/></svg></span> Products
             </button>
 
+<button class="nav-btn" onclick="showAdminPage('product-reviews',this)"><span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.9L12 17.8l-6.2 3.3L7 14.2 2 9.3l6.9-1z"/></svg></span> Product Reviews</button>
+
 <button class="nav-btn" onclick="showAdminPage('payments',this)">
                 <span class="nav-icon"><svg class="ui-icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span> Payment Method Settings
             </button>
@@ -2294,7 +2296,21 @@ body.dark-mode .bt-field-error-v118,body.dark .bt-field-error-v118,[data-theme="
             </section>
 
 
-            <section id="admin-cancellations" class="page"><div class="page-title"><h2>Cancellation &amp; Refunds</h2></div><div id="cancel-stats-v66" class="cancel-stats-v66"></div><div id="cancellation-manager-v66" class="cancel-manager-v66"></div></section>
+            <section id="admin-product-reviews" class="page">
+<div class="page-title"><h2>Product Reviews</h2></div>
+<div class="ar-stats-v107">
+<div class="ar-stat-v107"><span>Total Reviews</span><strong id="adminReviewTotalV107">0</strong></div>
+<div class="ar-stat-v107"><span>Average Rating</span><strong><span id="adminReviewAverageV107">0.0</span> ★</strong></div>
+<div class="ar-stat-v107"><span>5-Star Reviews</span><strong id="adminReviewFivesV107">0</strong></div>
+</div>
+<div class="ar-controls-v107">
+<input type="search" id="adminReviewSearchV107" placeholder="Search product, customer or review..." aria-label="Search reviews">
+<select id="adminReviewRatingV107" aria-label="Filter reviews by rating"><option value="all">All Ratings</option><option value="5">5 Stars</option><option value="4">4 Stars</option><option value="3">3 Stars</option><option value="2">2 Stars</option><option value="1">1 Star</option></select>
+<button type="button" class="action-btn" id="adminReviewRefreshV107">Refresh</button><span id="adminReviewShownV107" aria-live="polite"></span>
+</div><div id="adminReviewListV107" class="ar-review-list-v107" aria-live="polite"></div>
+</section>
+
+<section id="admin-cancellations" class="page"><div class="page-title"><h2>Cancellation &amp; Refunds</h2></div><div id="cancel-stats-v66" class="cancel-stats-v66"></div><div id="cancellation-manager-v66" class="cancel-manager-v66"></div></section>
 
             <section id="admin-courier-shipping" class="page courier-v53 shipping-v56">
 <div class="page-title"><h2><svg viewBox="0 0 24 24"><path d="M3 6h11v10H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg> Order Fulfillment</h2><p>Manage courier shipments and customer pickups.</p></div>
@@ -11255,6 +11271,8 @@ function fulfillmentConfirmV126(kind){
 #admin-courier-shipping .shipping-panel-v57[hidden]{display:none!important}
 @media(max-width:600px){.pickup-actions-v120{width:100%}.pickup-actions-v120 button{flex:1}}
 </style>
+<link rel="stylesheet" href="admin_product_reviews_v107.css?v=107">
+<script src="admin_product_reviews_v107.js?v=107"></script>
 </body>
 </html>
 
