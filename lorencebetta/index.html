@@ -9812,6 +9812,25 @@ body.dark-mode #customerSuspendReasonV85{background:#193e50;border-color:#31566a
  const money=n=>"₱"+Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
  const paid=o=>String(o.payment_status||"").toLowerCase()==="paid";
  const notCancelled=o=>String(o.status||"").toLowerCase()!=="cancelled";
+ const completed=o=>["order received","picked up","completed"].includes(String(o.status||"").toLowerCase());
+ const stamp=value=>{
+   if(!value)return new Date(NaN);
+   const v=String(value).trim();
+   // Database DATETIME is Philippine wall-clock time. Interpret consistently, avoiding UTC parsing.
+   return new Date(/^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$/.test(v)?v.replace(" ","T"):v);
+ };
+ const createdAt=o=>stamp(o.date||o.created_at);
+ const completedAt=o=>{
+   const h=(o.status_history||[]).filter(x=>["order received","picked up","completed"].includes(String(x.status||"").toLowerCase()));
+   return h.length?stamp(h[h.length-1].changed_at):createdAt(o);
+ };
+ const paidAt=o=>{
+   const attempts=(o.payment_attempts||[]).filter(x=>String(x.status||"").toLowerCase()==="approved"||String(x.status||"").toLowerCase()==="paid");
+   const last=attempts[attempts.length-1];
+   return stamp(last?.reviewed_at||last?.submitted_at||o.date);
+ };
+ const inPeriod=(d,start,end)=>Number.isFinite(d.getTime())&&d>=start&&d<end;
+
  const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 
  function setupProDashboardV27(){
@@ -9860,10 +9879,11 @@ body.dark-mode #customerSuspendReasonV85{background:#193e50;border-color:#31566a
      if(period==="month")start.setDate(1);
      const end=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
      const all=Array.isArray(window.orders)?window.orders:orders||[];
-     const paidOrders=all.filter(o=>{const d=new Date(o.date||o.created_at||0);return d>=start&&d<end&&paid(o)&&notCancelled(o);});
+     const completedOrders=all.filter(o=>paid(o)&&notCancelled(o)&&completed(o)&&inPeriod(completedAt(o),start,end));
+     const paidOrders=all.filter(o=>paid(o)&&notCancelled(o)&&inPeriod(paidAt(o),start,end));
      const selected=Array.from(el.querySelectorAll('input[type="checkbox"]:checked')).map(x=>x.value);
      if(!selected.length){alert("Select report content.");return;}
-     const sales=paidOrders.reduce((n,o)=>n+Number(o.subtotal||0),0),shipping=paidOrders.reduce((n,o)=>n+Number(o.shipping||0),0);
+     const sales=completedOrders.reduce((n,o)=>n+Number(o.subtotal||0),0),shipping=completedOrders.reduce((n,o)=>n+Number(o.shipping||0),0);
      const entries=[["sales","Product Sales",money(sales)],["shipping","Shipping Collected",money(shipping)],["paid","Paid Orders",paidOrders.length]];
      const content=entries.filter(e=>selected.includes(e[0])).map(e=>'<tr><td>'+e[1]+'</td><th>'+e[2]+'</th></tr>').join("");
      const popup=window.open("","_blank");if(!popup){alert("Please allow pop-ups to print.");return;}
@@ -9892,7 +9912,7 @@ body.dark-mode #customerSuspendReasonV85{background:#193e50;border-color:#31566a
        start=new Date(end);start.setDate(end.getDate()-span);
        label=start.toLocaleDateString(undefined,{month:"short",day:"numeric"});
      }
-     const subset=list.filter(o=>{const d=new Date(o.date||o.created_at||0);return d>=start&&d<end&&paid(o)&&notCancelled(o)});
+     const subset=list.filter(o=>paid(o)&&notCancelled(o)&&completed(o)&&inPeriod(completedAt(o),start,end));
      buckets.push({label,sales:subset.reduce((v,o)=>v+Number(o.subtotal||0),0),ship:subset.reduce((v,o)=>v+Number(o.shipping||0),0)});
    }
    const W=900,H=290,left=66,right=22,top=22,bottom=52;
@@ -9969,14 +9989,11 @@ body.dark-mode #customerSuspendReasonV85{background:#193e50;border-color:#31566a
    if(period==="week") start.setDate(start.getDate()-(start.getDay()+6)%7);
    else if(period==="month") start.setDate(1);
    const end=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
-   const scoped=all.filter(o=>{
-     const date=new Date(o.date||o.created_at||0);
-     return Number.isFinite(date.getTime())&&date>=start&&date<end;
-   });
-   const paidOrders=scoped.filter(o=>paid(o)&&notCancelled(o));
-   const sales=paidOrders.reduce((s,o)=>s+Number(o.subtotal||0),0);
-   const shipping=paidOrders.reduce((s,o)=>s+Number(o.shipping||0),0);
-   const attention=scoped.filter(o=>o.status==="Pending Shipping Fee"||o.payment_status==="Payment Submitted");
+   const scoped=all.filter(o=>inPeriod(createdAt(o),start,end));
+   const completedOrders=all.filter(o=>paid(o)&&notCancelled(o)&&completed(o)&&inPeriod(completedAt(o),start,end));
+   const paidOrders=all.filter(o=>paid(o)&&notCancelled(o)&&inPeriod(paidAt(o),start,end));
+   const sales=completedOrders.reduce((n,o)=>n+Number(o.subtotal||0),0);
+   const shipping=completedOrders.reduce((n,o)=>n+Number(o.shipping||0),0);
    document.getElementById("proSalesV27").textContent=money(sales);
    document.getElementById("proShippingV27").textContent=money(shipping);
    document.getElementById("proPaidV27").textContent=paidOrders.length;
@@ -13256,3 +13273,28 @@ async function verifyManualSignupV130(){
  finally{button.disabled=false}
 }
 </script>
+<style id="receipt-clean-v131">
+#receiptModal .receipt-modal-content{box-sizing:border-box;width:min(94vw,760px);max-width:760px;max-height:90vh;overflow-y:auto;padding:0;border-radius:18px;background:#fff;color:#173b4e;box-shadow:0 20px 65px #082e4552}
+#receiptModal .modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 24px;border-bottom:1px solid #dce8ee;background:#fff}
+#receiptModal .modal-head h3{margin:0;font-size:20px;color:#123e55}
+#receiptModal .receipt-sheet{padding:20px 24px 12px;background:#fff}
+#receiptModal .receipt-brand{padding:0 0 18px;margin:0;border-bottom:1px solid #e3edf2}
+#receiptModal .receipt-brand img{width:52px;height:52px}
+#receiptModal .receipt-brand h2{font-size:24px;line-height:1.2}
+#receiptModal .receipt-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0 22px}
+#receiptModal .receipt-meta div{min-width:0;padding:12px 14px;background:#f6fafc;border:1px solid #e1edf3;border-radius:12px}
+#receiptModal .receipt-meta strong{display:block;overflow-wrap:anywhere;font-size:15px;line-height:1.35}
+#receiptModal .receipt-table{width:100%;table-layout:fixed;font-size:14px}
+#receiptModal .receipt-table th{background:#eaf5fa;color:#315f77;font-weight:700}
+#receiptModal .receipt-table th,#receiptModal .receipt-table td{padding:12px 10px;text-align:right}
+#receiptModal .receipt-table th:first-child,#receiptModal .receipt-table td:first-child{text-align:left;width:38%;overflow-wrap:anywhere}
+#receiptModal .receipt-table th:nth-child(2),#receiptModal .receipt-table td:nth-child(2){width:12%;text-align:center}
+#receiptModal .receipt-totals{box-sizing:border-box;width:min(100%,360px);max-width:none;margin:18px 0 10px auto;padding:14px 16px;background:#f6fafc;border:1px solid #e1edf3;border-radius:12px}
+#receiptModal .receipt-totals p{margin:0;padding:7px 0;display:flex;justify-content:space-between;gap:16px;align-items:baseline;line-height:1.35}
+#receiptModal .receipt-totals strong{font-size:15px;text-align:right;overflow-wrap:anywhere}
+#receiptModal .receipt-totals .grand{border-top:1px solid #9fcddd;margin-top:7px;padding-top:14px;color:#075981;font-weight:800}
+#receiptModal .receipt-totals .grand strong{font-size:20px}
+#receiptModal .receipt-totals .grand+p{border-top:1px dashed #c7dae4;margin-top:8px;padding-top:12px;font-size:13px}
+#receiptModal .receipt-actions{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;margin:0;border-top:1px solid #e1edf3;gap:12px}
+@media(max-width:560px){#receiptModal .receipt-sheet{padding:14px}#receiptModal .modal-head,#receiptModal .receipt-actions{padding:12px 14px}#receiptModal .receipt-brand h2{font-size:20px}#receiptModal .receipt-meta{grid-template-columns:1fr}#receiptModal .receipt-table th,#receiptModal .receipt-table td{padding:9px 4px;font-size:12px}#receiptModal .receipt-totals{width:100%}}
+</style>
