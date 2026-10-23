@@ -11,3 +11,29 @@
 .cancel-dialog-v65 .primary-btn,.cancel-dialog-v65 .action-btn{font-size:13px!important;min-height:34px!important;padding:8px 13px!important;line-height:1.25!important}
 body.dark-mode .cancel-stats-v66 .cancel-stat-card-v67{background:#183647;color:#e3f3fa;border-color:#426278}
 body.dark-mode .cancel-stats-v66 .cancel-stat-card-v67.selected,body.dark-mode .cancel-stats-v66 .cancel-stat-card-v67:hover{background:#224a5e;border-color:#48b5d6}
+
+/* v106: GCash refund confirmation, matching light admin UI */
+.refund-confirm-overlay-v106{position:fixed;inset:0;z-index:100100;background:rgba(12,23,42,.62);display:flex;align-items:center;justify-content:center;padding:20px}
+.refund-confirm-dialog-v106{position:relative;background:#fff;color:#182942;width:min(100%,570px);max-height:calc(100vh - 40px);overflow-y:auto;border-radius:18px;padding:32px 28px 28px;box-shadow:0 24px 70px rgba(10,23,46,.28);text-align:center;font-family:inherit}
+.refund-confirm-x-v106{position:absolute;top:15px;right:16px;width:36px;height:36px;border:0;border-radius:50%;background:#edf0f5;color:#4a5b73;font-size:26px;cursor:pointer}
+.refund-confirm-icon-v106{display:flex;align-items:center;justify-content:center;margin:0 auto 19px;width:82px;height:82px;border-radius:50%;background:#ffe7ec;color:#e52f59}
+.refund-confirm-icon-v106 svg{width:37px;height:37px}
+.refund-confirm-dialog-v106 h2{font-size:23px;line-height:1.25;margin:0 20px 12px;font-weight:750;color:#14243e}
+.refund-confirm-dialog-v106>p{font-size:15px;line-height:1.6;color:#61708a;max-width:425px;margin:0 auto 22px}
+.refund-confirm-details-v106{background:#fff1f4;border-radius:13px;padding:17px 20px;display:grid;gap:12px;text-align:left}
+.refund-confirm-details-v106>div{display:grid;grid-template-columns:135px minmax(0,1fr);align-items:start;gap:8px;font-size:14px}
+.refund-confirm-details-v106 span{color:#61708a}
+.refund-confirm-details-v106 strong{font-weight:650;color:#182942;overflow-wrap:anywhere}
+.refund-confirm-actions-v106{display:grid;grid-template-columns:1fr 1.65fr;gap:12px;margin-top:26px}
+.refund-confirm-actions-v106 button{border-radius:11px;padding:13px 15px;min-height:46px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.refund-confirm-cancel-v106{border:1px solid #a5b2c4;background:#fff;color:#5b6c84}
+.refund-confirm-accept-v106{border:1px solid #ef2854;background:#ed2853;color:#fff}
+.refund-confirm-actions-v106 button:focus-visible,.refund-confirm-x-v106:focus-visible{outline:3px solid #168ab3;outline-offset:3px}
+.refund-confirm-accept-v106:hover{background:#d91c49}
+@media(max-width:480px){.refund-confirm-dialog-v106{padding:28px 18px 20px}.refund-confirm-dialog-v106 h2{font-size:20px}.refund-confirm-details-v106>div{grid-template-columns:1fr;gap:3px}.refund-confirm-actions-v106{grid-template-columns:1fr}}
+body.dark-mode .refund-confirm-dialog-v106{background:#172f40;color:#eaf5fc}
+body.dark-mode .refund-confirm-dialog-v106 h2,body.dark-mode .refund-confirm-details-v106 strong{color:#eaf5fc}
+body.dark-mode .refund-confirm-dialog-v106>p,body.dark-mode .refund-confirm-details-v106 span{color:#b5cbdc}
+body.dark-mode .refund-confirm-details-v106{background:#243d50}
+body.dark-mode .refund-confirm-x-v106{background:#30495a;color:#eaf5fc}
+body.dark-mode .refund-confirm-cancel-v106{background:#233d50;color:#eaf5fc;border-color:#668093}
