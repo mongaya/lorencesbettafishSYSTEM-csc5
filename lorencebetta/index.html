@@ -2942,6 +2942,23 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
     }
 });
 
+/* Signup checks match api/signup.php, without changing OTP or backend rules. */
+function validateSignupFieldsV131(){
+ const get=id=>document.getElementById(id);
+ const name=get("signupName").value.trim(),username=get("signupUsername").value.trim();
+ const email=get("signupEmail").value.trim(),password=get("signupPassword").value;
+ const confirm=get("signupConfirm").value;
+ const errors=[];
+ if(name.length<2||name.length>150)errors.push(["signupName","Full name must be 2–150 characters."]);
+ if(!/^[A-Za-z0-9_.-]{3,50}$/.test(username)||username.toLowerCase()==="admin")errors.push(["signupUsername","Username must be 3–50 characters using letters, numbers, underscores, periods or hyphens."]);
+ if(!get("signupEmail").checkValidity()||!email)errors.push(["signupEmail","Please enter a valid email address."]);
+ if(password.length<8||password.length>128)errors.push(["signupPassword","Password must contain 8–128 characters."]);
+ if(password!==confirm)errors.push(["signupConfirm","Passwords do not match."]);
+ for(const id of ["signupName","signupUsername","signupEmail","signupPassword","signupConfirm"])clearFieldErrorV118(get(id));
+ errors.forEach(([id,message],i)=>setFieldErrorV118(get(id),message,i===0));
+ return errors.length===0;
+}
+
 document.getElementById("signupForm").addEventListener("submit", async function(e) {
     e.preventDefault();
 
@@ -2952,8 +2969,7 @@ document.getElementById("signupForm").addEventListener("submit", async function(
     const confirm = document.getElementById("signupConfirm").value;
     const error = document.getElementById("authError");
 
-    if (password !== confirm) {
-        setFieldErrorV118(document.getElementById("signupConfirm"), "Passwords do not match.");
+    if (!validateSignupFieldsV131()) {
         error.classList.add("hidden");
         return;
     }
@@ -2977,8 +2993,19 @@ document.getElementById("signupForm").addEventListener("submit", async function(
         showToast("Verification code sent to your email.","success");
     } catch (err) {
         const message = String(err.message || "Unable to create account.");
-        const id = /email/i.test(message) ? "signupEmail" : /username/i.test(message) ? "signupUsername" : /password/i.test(message) ? "signupPassword" : "signupName";
-        setFieldErrorV118(document.getElementById(id), message);
+        if (/valid name, username, email and password/i.test(message)) {
+            validateSignupFieldsV131();
+        } else if (/username or email already/i.test(message)) {
+            setFieldErrorV118(document.getElementById("signupUsername"), "Username or email is already registered. Check both fields.");
+        } else if (/email/i.test(message) && /invalid|valid|registered/i.test(message)) {
+            setFieldErrorV118(document.getElementById("signupEmail"), message);
+        } else if (/username/i.test(message) && /invalid|valid/i.test(message)) {
+            setFieldErrorV118(document.getElementById("signupUsername"), message);
+        } else if (/password/i.test(message) && /invalid|valid/i.test(message)) {
+            setFieldErrorV118(document.getElementById("signupPassword"), message);
+        } else {
+            showToast(message, "warning");
+        }
         error.classList.add("hidden");
     }
 });
