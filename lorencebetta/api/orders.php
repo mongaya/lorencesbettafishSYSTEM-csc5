@@ -62,6 +62,7 @@ $sql = "
         o.stock_deducted,
         o.shipping_confirmed_at,
         o.status,
+        DATE_FORMAT(o.updated_at, '%Y-%m-%d %H:%i:%s') AS updated_at,
         DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i:%s') AS order_date
     FROM orders o
     LEFT JOIN users u ON u.id = o.user_id
@@ -160,6 +161,7 @@ foreach ($orderRows as $row) {
         "status_history" => $history,
         "shipping_confirmed" => !empty($row["shipping_confirmed_at"]),
         "status" => $row["status"],
+        "updated_at" => $row["updated_at"],
         "date" => $row["order_date"]
     ];
 }
