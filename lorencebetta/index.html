@@ -9997,7 +9997,6 @@ body.dark-mode #customerSuspendReasonV85{background:#193e50;border-color:#31566a
    document.getElementById("proSalesV27").textContent=money(sales);
    document.getElementById("proShippingV27").textContent=money(shipping);
    document.getElementById("proPaidV27").textContent=paidOrders.length;
-   document.getElementById("proPendingV27").textContent=attention.length;
 
    // Keep the agreed two notification types even when the legacy chart refreshes.
    const fresh=orders.filter(o=>o.status!=="Cancelled"&&!o.cancellation&&o.payment_status==="Payment Submitted").length;
