@@ -42,7 +42,7 @@ if($o["courier"]==="J&T Express"&&$status==="Shipped"){
 $stmt->execute();
 if(($o["courier"]==="Pick Up"&&$status==="Ready for Pickup")||
    ($o["courier"]==="J&T Express"&&$status==="Shipped")||
-   ($o["courier"]==="Lalamove"&&$status==="Out for Delivery")){
+   ($o["courier"]==="Lalamove"&&$status==="Lalamove Booked")){
   // Recognize only once, when a paid order first becomes non-cancellable / To Receive.
   $salesTime=(new DateTimeImmutable("now",new DateTimeZone("Asia/Manila")))->format("Y-m-d H:i:s");
   $sale=$conn->prepare("UPDATE orders SET sales_recognized_at=? WHERE id=? AND payment_status='Paid' AND sales_recognized_at IS NULL");
