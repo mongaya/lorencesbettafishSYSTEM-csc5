@@ -2929,6 +2929,7 @@ document.getElementById("signupForm").addEventListener("submit", async function(
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
+                action:"start",
                 name,
                 username,
                 email,
@@ -2936,9 +2937,10 @@ document.getElementById("signupForm").addEventListener("submit", async function(
             })
         });
 
-        showToast("Account created successfully!");
-        document.getElementById("signupForm").reset();
-        showAuth("login");
+        document.getElementById("manualSignupVerifyV130").classList.remove("hidden");
+        document.getElementById("manualSignupCodeV130").value="";
+        document.getElementById("manualSignupCodeV130").focus();
+        showToast("Verification code sent to your email.","success");
     } catch (err) {
         const message = String(err.message || "Unable to create account.");
         const id = /email/i.test(message) ? "signupEmail" : /username/i.test(message) ? "signupUsername" : /password/i.test(message) ? "signupPassword" : "signupName";
@@ -10536,8 +10538,9 @@ function setup(){
   if(password.length<8)return showToast('Password must have at least 8 characters.','warning');
   busy=true;if(signupButton)signupButton.disabled=true;
   try{
-   await api('complete_signup',{name,username,password});
-   modal('otp');el('googleFlowCode').value='';el('googleFlowCode').focus();
+   const response=await api('complete_signup',{name,username,password});
+   if(!response.user)throw Error('No customer account returned.');
+   await verified(response.user);
   }catch(err){showToast(err.message||'Unable to continue Google sign up.','error')}
   finally{busy=false;if(signupButton)signupButton.disabled=false}
  },true);
@@ -10573,7 +10576,7 @@ function setup(){
      if(signupButton)signupButton.textContent='Continue with Google';
      el('signupName').focus();
      showToast('Google email confirmed. Complete the Sign Up form.','success');
-    }else{clearGoogleSignup();modal('otp');el('googleFlowCode').value='';el('googleFlowCode').focus();}
+    }else{clearGoogleSignup();if(!res.user)throw Error('No customer account returned.');await verified(res.user);}
    }catch(e){
     const message=e.message||'Google authentication failed.';
     showToast(message==='Google account already registered.'?'Google account already registered. Please use Login.':message,'warning');
@@ -13212,4 +13215,44 @@ body.dark-mode .auth-switch-link-v127 button{color:#68d4f4}
   }catch(e){showToast(e.message||'Unable to update password.','error')}
  };
 })();
+</script>
+
+<style id="manual-signup-otp-style-v130">
+#manualSignupVerifyV130{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:16px;background:rgba(4,25,40,.64)}
+#manualSignupVerifyV130.hidden{display:none!important}
+#manualSignupVerifyV130 .manual-signup-card-v130{box-sizing:border-box;width:min(100%,420px);background:#f8fcff;color:#173746;border-radius:18px;padding:26px;box-shadow:0 20px 50px #001f3450}
+#manualSignupVerifyV130 h3{font-size:21px;margin:0 0 10px}
+#manualSignupVerifyV130 p{color:#5a7b90;line-height:1.5}
+#manualSignupVerifyV130 input{box-sizing:border-box;width:100%;height:50px;border:1px solid #a8cbdd;border-radius:10px;background:#fff;color:#193d50;text-align:center;font-size:24px;letter-spacing:6px;margin:9px 0 18px}
+#manualSignupVerifyV130 .manual-signup-actions-v130{display:flex;gap:10px}
+#manualSignupVerifyV130 button{flex:1;padding:12px;border-radius:9px}
+</style>
+<div id="manualSignupVerifyV130" class="hidden" role="dialog" aria-modal="true" aria-labelledby="manualSignupTitleV130">
+ <div class="manual-signup-card-v130">
+ <h3 id="manualSignupTitleV130">Verify Your Email</h3>
+ <p>Enter the 6-digit code sent to your registered email. This code expires in 5 minutes.</p>
+ <label for="manualSignupCodeV130">Verification Code</label>
+ <input id="manualSignupCodeV130" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000">
+ <div class="manual-signup-actions-v130">
+ <button type="button" class="secondary-btn" onclick="document.getElementById('manualSignupVerifyV130').classList.add('hidden')">Cancel</button>
+ <button type="button" class="primary-btn" id="manualSignupConfirmV130" onclick="verifyManualSignupV130()">Verify Email</button>
+ </div>
+ </div>
+</div>
+<script id="manual-signup-otp-v130">
+async function verifyManualSignupV130(){
+ const field=document.getElementById('manualSignupCodeV130'),button=document.getElementById('manualSignupConfirmV130');
+ const code=field.value.trim();
+ if(!/^\d{6}$/.test(code))return showToast('Enter a valid 6-digit code.','warning');
+ if(button.disabled)return;
+ button.disabled=true;
+ try{
+  await apiRequest('signup.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'verify',code})});
+  document.getElementById('manualSignupVerifyV130').classList.add('hidden');
+  document.getElementById('signupForm').reset();
+  showAuth('login');
+  showToast('Email verified. Your account has been created.','success');
+ }catch(e){showToast(e.message||'Verification failed.','error')}
+ finally{button.disabled=false}
+}
 </script>
