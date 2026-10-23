@@ -10494,17 +10494,18 @@ body.dark-mode .google-flow-overlay .google-flow-dialog,body.light-mode .google-
 <script>
 (function(){
 const clientId='821976549681-969e5u5de30gu6823tuq8s8jl33dvimn.apps.googleusercontent.com';
-let flow='login',busy=false;
+let flow='login',busy=false,googleSignupPending=false;
 function el(id){return document.getElementById(id)}
 function api(action,extra){return apiRequest('google_auth.php',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({action,...extra})})}
 function error(msg){el('googleFlowError').textContent=msg||'The request could not be completed. Please try again.'}
-function modal(mode){el('googleFlowError').textContent='';el('googleFlowOverlay').classList.add('open');el('googleFlowDetails').hidden=mode!=='details';el('googleFlowOtp').hidden=mode!=='otp';el('googleFlowTitle').textContent=mode==='details'?'Complete Your Google Account':'Email Verification';}
+function modal(mode){el('googleFlowError').textContent='';el('googleFlowOverlay').classList.add('open');el('googleFlowOtp').hidden=false;el('googleFlowTitle').textContent='Email Verification';}
 function close(){el('googleFlowOverlay').classList.remove('open');}
 async function verified(user){
   // The server has already verified the OTP and authenticated the customer.
   currentUser=user;
   localStorage.setItem('lorence_currentUser',JSON.stringify(user));
   close();
+  clearGoogleSignup();
   try {
     await loadAllData();
     await openCustomer();
@@ -10515,27 +10516,43 @@ async function verified(user){
     // Do not rethrow: it would incorrectly show an OTP error after successful verification.
   }
 }
+function clearGoogleSignup(){
+ googleSignupPending=false;
+ const email=el('signupEmail'),button=el('googleSignupContinueV129');
+ if(email){email.readOnly=false;email.removeAttribute('aria-readonly');}
+ if(button)button.textContent='Create Customer Account';
+}
 function setup(){
  const login=el('loginForm'),signup=el('signupForm');if(!login||!signup)return;
+ const signupButton=signup.querySelector('button.primary-btn.full-btn');
+ if(signupButton)signupButton.id='googleSignupContinueV129';
+ // Intercept only Google's signup. Normal email/password registration stays unchanged.
+ signup.addEventListener('submit',async e=>{
+  if(!googleSignupPending)return;
+  e.preventDefault();e.stopImmediatePropagation();
+  if(busy)return;
+  const name=el('signupName').value.trim(),username=el('signupUsername').value.trim(),password=el('signupPassword').value;
+  if(password!==el('signupConfirm').value)return showToast('Passwords do not match.','warning');
+  if(password.length<8)return showToast('Password must have at least 8 characters.','warning');
+  busy=true;if(signupButton)signupButton.disabled=true;
+  try{
+   await api('complete_signup',{name,username,password});
+   modal('otp');el('googleFlowCode').value='';el('googleFlowCode').focus();
+  }catch(err){showToast(err.message||'Unable to continue Google sign up.','error')}
+  finally{busy=false;if(signupButton)signupButton.disabled=false}
+ },true);
  for(const [form,id] of [[login,'googleLoginBtn'],[signup,'googleSignupBtn']]){
    const wrapper=document.createElement('div');wrapper.className='google-auth-action';wrapper.innerHTML='<p>or continue with Google</p><div id="'+id+'"></div>';
    form.insertAdjacentElement('afterend',wrapper);
  }
- const overlay=document.createElement('div');overlay.id='googleFlowOverlay';overlay.className='google-flow-overlay';overlay.innerHTML=`<section class="google-flow-dialog" role="dialog" aria-modal="true" aria-labelledby="googleFlowTitle"><h3 id="googleFlowTitle">Email Verification</h3><div id="googleFlowDetails" hidden><p>Your Google email is confirmed. Complete the details below before creating your account.</p><label>Email (from Google)</label><input id="googleSignupEmail" type="email" readonly><label>Full Name</label><input id="googleSignupName" maxlength="100" autocomplete="name"><label>Username</label><input id="googleSignupUsername" maxlength="50" autocomplete="username"><label>Password</label><input id="googleSignupPassword" type="password" autocomplete="new-password"><label>Confirm Password</label><input id="googleSignupConfirm" type="password" autocomplete="new-password"></div><div id="googleFlowOtp" hidden><p>A 6-digit code was sent to your Google email. The code expires in 5 minutes.</p><label for="googleFlowCode">Verification Code</label><input class="otp-code" id="googleFlowCode" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"></div><p class="google-flow-error" id="googleFlowError" role="alert"></p><div class="flow-actions"><button type="button" class="flow-cancel" id="googleFlowCancel">Cancel</button><button type="button" class="primary-btn" id="googleFlowSubmit">Continue</button></div></section>`;
+ const overlay=document.createElement('div');overlay.id='googleFlowOverlay';overlay.className='google-flow-overlay';overlay.innerHTML=`<section class="google-flow-dialog" role="dialog" aria-modal="true" aria-labelledby="googleFlowTitle"><h3 id="googleFlowTitle">Email Verification</h3><div id="googleFlowOtp" hidden><p>A 6-digit code was sent to your Google email. The code expires in 5 minutes.</p><label for="googleFlowCode">Verification Code</label><input class="otp-code" id="googleFlowCode" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"></div><p class="google-flow-error" id="googleFlowError" role="alert"></p><div class="flow-actions"><button type="button" class="flow-cancel" id="googleFlowCancel">Cancel</button><button type="button" class="primary-btn" id="googleFlowSubmit">Continue</button></div></section>`;
  document.body.appendChild(overlay);
  el('googleFlowCancel').onclick=close;
  el('googleFlowSubmit').onclick=async()=>{
   if(busy)return;busy=true;const btn=el('googleFlowSubmit');btn.disabled=true;error('');
   try{
-   if(!el('googleFlowDetails').hidden){
-    const name=el('googleSignupName').value.trim(),username=el('googleSignupUsername').value.trim(),password=el('googleSignupPassword').value;
-    if(password!==el('googleSignupConfirm').value)throw Error('Passwords do not match.');
-    if(password.length<8)throw Error('Password must have at least 8 characters.');
-    await api('complete_signup',{name,username,password});modal('otp');el('googleFlowCode').value='';el('googleFlowCode').focus();
-   }else{
-    const code=el('googleFlowCode').value.trim();if(!/^\d{6}$/.test(code))throw Error('Enter a valid 6-digit code.');
-    const response=await api('verify',{code});if(!response.user)throw Error('No customer account returned.');await verified(response.user);
-   }
+   const code=el('googleFlowCode').value.trim();if(!/^\d{6}$/.test(code))throw Error('Enter a valid 6-digit code.');
+   const response=await api('verify',{code});if(!response.user)throw Error('No customer account returned.');await verified(response.user);
   }catch(e){error(e.message)}finally{busy=false;btn.disabled=false;}
  };
  const sync=()=>{
@@ -10543,16 +10560,24 @@ function setup(){
    el('googleLoginBtn').parentElement.classList.toggle('hidden',isSignup);
    el('googleSignupBtn').parentElement.classList.toggle('hidden',!isSignup);
  };
- el('loginTab').addEventListener('click',()=>setTimeout(sync,0));el('signupTab').addEventListener('click',()=>setTimeout(sync,0));sync();
+ el('loginTab').addEventListener('click',()=>{clearGoogleSignup();setTimeout(sync,0)});el('signupTab').addEventListener('click',()=>setTimeout(sync,0));sync();
  let tries=0;function init(){
   if(!window.google?.accounts?.id){if(++tries<35)setTimeout(init,300);return;}
   google.accounts.id.initialize({client_id:clientId,callback:async({credential})=>{
    try{
     flow=!signup.classList.contains('hidden')?'signup':'login';
     const res=await api(flow==='signup'?'start_signup':'start_login',{credential});
-    if(flow==='signup'){el('googleSignupEmail').value=res.email;modal('details');}
-    else{modal('otp');el('googleFlowCode').value='';el('googleFlowCode').focus();}
-   }catch(e){alert(e.message||'Google authentication failed.');}
+    if(flow==='signup'){
+     googleSignupPending=true;
+     const email=el('signupEmail');email.value=res.email;email.readOnly=true;email.setAttribute('aria-readonly','true');
+     if(signupButton)signupButton.textContent='Continue with Google';
+     el('signupName').focus();
+     showToast('Google email confirmed. Complete the Sign Up form.','success');
+    }else{clearGoogleSignup();modal('otp');el('googleFlowCode').value='';el('googleFlowCode').focus();}
+   }catch(e){
+    const message=e.message||'Google authentication failed.';
+    showToast(message==='Google account already registered.'?'Google account already registered. Please use Login.':message,'warning');
+   }
   }});
   for(const [id,mode] of [['googleLoginBtn','login'],['googleSignupBtn','signup']]){
     const container=el(id);
