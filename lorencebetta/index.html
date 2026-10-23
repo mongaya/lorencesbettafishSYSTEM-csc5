@@ -9821,6 +9821,7 @@ body.dark-mode #customerSuspendReasonV85{background:#193e50;border-color:#31566a
  };
  const createdAt=o=>stamp(o.date||o.created_at);
  const completedAt=o=>{
+   if(o.completed_at)return stamp(o.completed_at);
    const history=o.status_history||[];
    const received=history.filter(x=>String(x.status||"").toLowerCase()==="order received");
    if(received.length)return stamp(received[received.length-1].changed_at);
