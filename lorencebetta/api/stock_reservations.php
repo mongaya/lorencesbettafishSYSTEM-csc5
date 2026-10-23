@@ -5,6 +5,7 @@ function ensure_order_flow_columns($conn){
         "stock_deducted"=>"TINYINT(1) NOT NULL DEFAULT 1",
         "payment_rejection_reason"=>"VARCHAR(500) NULL",
         "admin_seen_at"=>"DATETIME NULL",
+        "completed_at"=>"DATETIME NULL",
         "tracking_number"=>"VARCHAR(120) NULL",
         "payment_attempt_count"=>"TINYINT UNSIGNED NOT NULL DEFAULT 0",
         "payment_correction_requested"=>"TINYINT(1) NOT NULL DEFAULT 0"
