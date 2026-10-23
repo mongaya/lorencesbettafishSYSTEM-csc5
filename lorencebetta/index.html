@@ -2836,14 +2836,36 @@ async function loadOrders() {
 }
 
 async function loadAllData() {
-    await Promise.all([
-        loadProducts(),
-        loadCategories(),
-        loadPaymentSettings(),
-        loadUsers(),
-        loadOrders(),
-        loadProductReviews()
-    ]);
+    const tasks = [
+        ["Products", loadProducts],
+        ["Categories", loadCategories],
+        ["Payment Methods", loadPaymentSettings],
+        ["Customers", loadUsers],
+        ["Orders", loadOrders],
+        ["Product Reviews", loadProductReviews]
+    ];
+    if (currentUser?.type !== "admin") {
+        await Promise.all(tasks.map(([, load]) => load()));
+        return;
+    }
+    // A failure in a secondary admin module must not hide valid sales/order data.
+    const outcomes = await Promise.allSettled(tasks.map(([, load]) => load()));
+    const failed = outcomes.map((r, i) => r.status === "rejected" ? {
+        name: tasks[i][0],
+        error: r.reason
+    } : null).filter(Boolean);
+    if (failed.length) {
+        console.error("Admin data modules failed:", failed);
+        const orderFailure = failed.find(f => f.name === "Orders");
+        if (orderFailure) {
+            throw new Error("Orders could not load: " + (orderFailure.error?.message || "Please retry."));
+        }
+        // Orders are valid. Render the dashboard even if another module has an error.
+        const names = failed.map(f => f.name).join(", ");
+        if (typeof showToast === "function") {
+            showToast(names + " could not load. Sales and orders are still available.", "warning");
+        }
+    }
 }
 
 /* =========================================================
@@ -5328,7 +5350,7 @@ async function uploadProfilePicture(){
 const _openCustomerUpgrade=openCustomer;openCustomer=async function(){document.getElementById("publicStore")?.classList.add("hidden");await _openCustomerUpgrade();refreshProfileAvatars();showToast("Login successful.","success");};
 const _openAdminUpgrade=openAdmin;openAdmin=async function(){document.getElementById("publicStore")?.classList.add("hidden");await _openAdminUpgrade();showToast("Admin login successful.","success");};
 logout=function(){if(!confirm("Are you sure you want to log out?"))return;currentUser=null;localStorage.removeItem("lorence_currentUser");document.getElementById("customerApp")?.classList.add("hidden");document.getElementById("adminApp")?.classList.add("hidden");document.getElementById("authScreen")?.classList.add("hidden");document.getElementById("publicStore")?.classList.remove("hidden");document.getElementById("loginForm")?.reset();document.getElementById("signupForm")?.reset();const u=document.getElementById("loginUsername"),p=document.getElementById("loginPassword");if(u)u.value="";if(p){p.value="";p.type="password";}showToast("Logged out successfully.","success");window.scrollTo({top:0,behavior:"smooth"});};
-checkLogin=async function(){if(!currentUser){document.getElementById("publicStore")?.classList.remove("hidden");document.getElementById("authScreen")?.classList.add("hidden");await initPublicStorefront();return;}try{await loadAllData();if(currentUser.type==="admin")await openAdmin();else await openCustomer();}catch(e){console.error("Session refresh: data initialization failed; preserving signed-in user.",e);document.getElementById("publicStore")?.classList.add("hidden");document.getElementById("authScreen")?.classList.add("hidden");if(currentUser?.type==="admin"){document.getElementById("adminApp")?.classList.remove("hidden");}else{document.getElementById("customerApp")?.classList.remove("hidden");}if(typeof showToast==="function")showToast("Some data failed to load. Please try refreshing again.","error");}};
+checkLogin=async function(){if(!currentUser){document.getElementById("publicStore")?.classList.remove("hidden");document.getElementById("authScreen")?.classList.add("hidden");await initPublicStorefront();return;}try{await loadAllData();if(currentUser.type==="admin")await openAdmin();else await openCustomer();}catch(e){console.error("Session refresh: data initialization failed; preserving signed-in user.",e);document.getElementById("publicStore")?.classList.add("hidden");document.getElementById("authScreen")?.classList.add("hidden");if(currentUser?.type==="admin"){document.getElementById("adminApp")?.classList.remove("hidden");if(String(e?.message||"").startsWith("Orders could not load:")){["proSalesV27","proShippingV27","proPaidV27","proPendingV27"].forEach(id=>{const node=document.getElementById(id);if(node)node.textContent="—";});}}else{document.getElementById("customerApp")?.classList.remove("hidden");}if(typeof showToast==="function")showToast(e?.message||"Some data failed to load. Please try refreshing again.","error");}};
 // V119: Do not replace the unified toast handler with the legacy #toast element.
 // All prior showToast(message, type) calls now use the modern stacked toast UI.
 // Chat bubbles include avatars. Customer image comes from the user profile; admin uses the shop logo.
