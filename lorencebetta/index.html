@@ -9844,13 +9844,13 @@ body.dark-mode #customerSuspendReasonV85{background:#193e50;border-color:#31566a
    const pickup=String(o.courier||"").toLowerCase()==="pick up";
    return paid(o)&&notCancelled(o)&&(pickup
      ? ["ready for pickup","picked up","order received"].includes(st)
-     : ["shipped","out for delivery","delivered","order received"].includes(st));
+     : ["lalamove booked","shipped","out for delivery","delivered","order received"].includes(st));
  };
  const salesDate=o=>{
    if(o.sales_recognized_at)return stamp(o.sales_recognized_at);
    // Earlier orders: date of first irreversible stage from recorded status history.
    const pickup=String(o.courier||"").toLowerCase()==="pick up";
-   const trigger=pickup?["ready for pickup"]:["shipped","out for delivery"];
+   const trigger=pickup?["ready for pickup"]:(String(o.courier||"").toLowerCase()==="lalamove"?["lalamove booked","out for delivery"]:["shipped","out for delivery"]);
    const first=(o.status_history||[]).find(x=>trigger.includes(String(x.status||"").toLowerCase()));
    return first?stamp(first.changed_at):stamp(o.updated_at||o.date||o.created_at);
  };
