@@ -5696,10 +5696,10 @@ if (new URLSearchParams(location.search).get("reset")) {
 /* One consolidated customer-order workflow. No renderer wrappers. */
 /* Customer tabs follow payment approval and courier handover, not internal admin stages. */
 function smartOrderBucket(order){
- const status=String(order.status||"");
+ const status=String(order.status||"").trim();
  const payment=String(order.payment_status||"");
  if(status==="Cancelled")return "Cancelled";
- if(status==="Order Received")return "Completed";
+ if(status==="Order Received"||status==="Completed")return "Completed";
  if(String(order.courier||"").trim().toLowerCase()==="pick up"){
    if(["Ready for Pickup","Picked Up"].includes(status)&&payment==="Paid")return "Ready to Pick Up";
    return payment==="Paid"?"To Ship":"To Pay";
@@ -5761,7 +5761,21 @@ function showRatingOnce(orderId){
 }
 confirmOrderReceived=async function(orderId){
  if(!(await smartConfirm("Order received?","Confirm only after you have physically received and checked your order. This cannot be undone.","Yes, I Received It")))return;
- try{await apiRequest("receive_order.php",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:currentUser.username,orderId})});await loadOrders();renderCustomerOrders();showToast("Order completed. You may rate your purchase.","success");setTimeout(()=>showRatingOnce(orderId),200)}catch(e){showToast(e.message,"error")}
+ try{
+  await apiRequest("receive_order.php",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:currentUser.username,orderId})});
+  await loadOrders();
+  const received=(orders||[]).find(o=>String(o.id)===String(orderId));
+  if(!received||String(received.status).trim()!=="Order Received"){
+   renderCustomerOrders();
+   showToast("Order status could not be verified. Please refresh your orders.","warning");
+   return;
+  }
+  // The confirmed order belongs only to Completed, never to To Receive.
+  customerOrderFilter="Completed";
+  renderCustomerOrders();
+  showToast("Order completed. You may rate your purchase.","success");
+  setTimeout(()=>showRatingOnce(orderId),200);
+ }catch(e){showToast(e.message,"error")}
 };
 </script>
 
