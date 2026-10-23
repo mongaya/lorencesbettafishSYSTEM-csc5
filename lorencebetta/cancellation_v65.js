@@ -23,6 +23,39 @@ window.cancellationFilterV66='Pending Review';document.addEventListener('click',
 const oldShowAdminPage=showAdminPage;showAdminPage=function(page,button){oldShowAdminPage(page,button);if(page==='cancellations')renderCancellationManagerV66()};
 const originalAdmin=renderAdminOrders;
 renderAdminOrders=function(){originalAdmin();const t=document.getElementById('adminOrdersTable');if(!t)return;Array.from(t.querySelectorAll('tr')).forEach(tr=>{const id=tr.querySelector('td strong')?.textContent;const o=orders.find(x=>String(x.id)===id);if(o?.cancellation){const td=tr.lastElementChild;td.insertAdjacentHTML('beforeend','<button class="action-btn view-btn" style="margin-top:6px" onclick="openCancellationAdminV65('+JSON.stringify(o.id)+')">Cancellation: '+esc(o.cancellation.status)+'</button>')}})};
+
+function confirmRefundV106(o,ref){
+ return new Promise(resolve=>{
+  const old=document.querySelector('.refund-confirm-overlay-v106');if(old)old.remove();
+  const overlay=document.createElement('div');overlay.className='refund-confirm-overlay-v106';
+  overlay.setAttribute('role','presentation');
+  overlay.innerHTML='<section class="refund-confirm-dialog-v106" role="dialog" aria-modal="true" aria-labelledby="refund-confirm-title-v106" aria-describedby="refund-confirm-desc-v106">'+
+   '<button type="button" class="refund-confirm-x-v106" aria-label="Close confirmation">&times;</button>'+
+   '<div class="refund-confirm-icon-v106" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 21h20L12 3Z"/><path d="M12 9v5M12 17h.01"/></svg></div>'+
+   '<h2 id="refund-confirm-title-v106">Confirm Refund Already Sent?</h2>'+
+   '<p id="refund-confirm-desc-v106">Confirm the GCash refund has already been sent for this cancellation request.</p>'+
+   '<div class="refund-confirm-details-v106">'+
+    '<div><span>Order ID:</span><strong>'+esc(o.id)+'</strong></div>'+
+    '<div><span>Customer:</span><strong>'+esc(o.customerName)+'</strong></div>'+
+    '<div><span>Reason:</span><strong>'+esc(o.cancellation?.reason)+'</strong></div>'+
+    '<div><span>Payment:</span><strong>₱'+Number(o.total).toFixed(2)+'</strong></div>'+
+    '<div><span>GCash Reference:</span><strong>'+esc(ref)+'</strong></div>'+
+   '</div>'+
+   '<div class="refund-confirm-actions-v106"><button type="button" class="refund-confirm-cancel-v106">Cancel</button><button type="button" class="refund-confirm-accept-v106">Yes, Confirm Refund</button></div>'+
+  '</section>';
+  document.body.appendChild(overlay);
+  const previouslyFocused=document.activeElement;
+  const close=answer=>{document.removeEventListener('keydown',keyHandler);overlay.remove();if(previouslyFocused?.isConnected)previouslyFocused.focus();resolve(answer)};
+  const keyHandler=e=>{if(e.key==='Escape'){e.preventDefault();close(false)}else if(e.key==='Tab'){const focusable=[...overlay.querySelectorAll('button')];const first=focusable[0],last=focusable[focusable.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}};
+  document.addEventListener('keydown',keyHandler);
+  overlay.querySelector('.refund-confirm-x-v106').onclick=()=>close(false);
+  overlay.querySelector('.refund-confirm-cancel-v106').onclick=()=>close(false);
+  overlay.querySelector('.refund-confirm-accept-v106').onclick=()=>close(true);
+  overlay.addEventListener('click',e=>{if(e.target===overlay)close(false)});
+  overlay.querySelector('.refund-confirm-accept-v106').focus();
+ });
+}
+
 window.openCancellationAdminV65=function(id){
  const o=orders.find(x=>String(x.id)===String(id));if(!o?.cancellation)return;const c=o.cancellation;
  const modal=document.createElement('div');modal.className='cancel-modal-v65';
@@ -33,6 +66,6 @@ window.openCancellationAdminV65=function(id){
  if(c.refund_proof)body+='<p>Refund reference: '+esc(c.refund_reference)+'</p><a target="_blank" rel="noopener noreferrer" href="'+esc(c.refund_proof)+'">View refund screenshot</a>';
  modal.innerHTML='<div class="cancel-dialog-v65">'+body+'<div class="cancel-actions-v65"><button class="action-btn" id="cancel-admin-close-v65">Close</button></div></div>';document.body.appendChild(modal);modal.querySelector('#cancel-admin-close-v65').onclick=()=>modal.remove();
  modal.querySelectorAll('[data-action]').forEach(btn=>btn.onclick=async()=>{const action=btn.dataset.action,note=modal.querySelector('#cancel-admin-note-v65').value.trim();if(action==='reject'&&note.length<5)return showToast('Explain why the request was rejected.');btn.disabled=true;try{await apiRequest('review_cancellation.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:id,action,note})});modal.remove();await loadOrders();renderAdminOrders();renderAdminDashboard();renderCancellationManagerV66();showToast('Cancellation reviewed.')}catch(e){showToast(e.message);btn.disabled=false}});
- const refund=modal.querySelector('#refund-send-v65');if(refund)refund.onclick=async()=>{const ref=modal.querySelector('#refund-ref-v65').value.trim(),file=modal.querySelector('#refund-proof-v65').files[0];if(ref.length<6||!file)return showToast('Enter GCash reference and upload screenshot.');if(!confirm('Confirm the GCash refund has already been sent?'))return;const fd=new FormData();fd.append('orderId',id);fd.append('reference',ref);fd.append('proof',file);refund.disabled=true;try{await apiRequest('record_refund.php',{method:'POST',body:fd});modal.remove();await loadOrders();renderAdminOrders();renderAdminDashboard();renderCancellationManagerV66();showToast('Refund proof saved.')}catch(e){showToast(e.message);refund.disabled=false}};
+ const refund=modal.querySelector('#refund-send-v65');if(refund)refund.onclick=async()=>{const ref=modal.querySelector('#refund-ref-v65').value.trim(),file=modal.querySelector('#refund-proof-v65').files[0];if(ref.length<6||!file)return showToast('Enter GCash reference and upload screenshot.');if(!await confirmRefundV106(o,ref))return;const fd=new FormData();fd.append('orderId',id);fd.append('reference',ref);fd.append('proof',file);refund.disabled=true;try{await apiRequest('record_refund.php',{method:'POST',body:fd});modal.remove();await loadOrders();renderAdminOrders();renderAdminDashboard();renderCancellationManagerV66();showToast('Refund proof saved.')}catch(e){showToast(e.message);refund.disabled=false}};
 };
 })();
