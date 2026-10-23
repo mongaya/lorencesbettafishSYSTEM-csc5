@@ -12,7 +12,8 @@ $data=json_input();$action=(string)($data['action']??'start');
 if($action==='start'){
  $name=trim((string)($data['name']??''));$username=trim((string)($data['username']??''));
  $email=strtolower(trim((string)($data['email']??'')));$password=(string)($data['password']??'');
- if(mb_strlen($name)<2||mb_strlen($name)>150||!preg_match('/^[A-Za-z0-9_.-]{3,50}$/D',$username)||strtolower($username)==='admin'||!filter_var($email,FILTER_VALIDATE_EMAIL)||strlen($password)<8||strlen($password)>128)respond(false,'Enter a valid name, username, email and password (8–128 characters).',[],400);
+ if(mb_strlen($name)<2||mb_strlen($name)>150||!preg_match('/^[A-Za-z0-9_.-]{3,50}$/D',$username)||strtolower($username)==='admin'||!filter_var($email,FILTER_VALIDATE_EMAIL))respond(false,'Enter a valid name, username and email.',[],400);
+ if(strlen($password)<8||strlen($password)>10||!preg_match('/[0-9]/',$password)||!preg_match('/[^A-Za-z0-9]/',$password))respond(false,'Password must contain 8–10 characters, at least one number and one special character.',[],400);
  $check=$conn->prepare('SELECT id FROM users WHERE username=? OR email=? LIMIT 1');
  $check->bind_param('ss',$username,$email);$check->execute();$taken=stmt_has_rows_compat($check);$check->close();
  if($taken)respond(false,'Username or email already exists.',[],409);
