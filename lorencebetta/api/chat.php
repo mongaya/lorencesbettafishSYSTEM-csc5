@@ -17,9 +17,10 @@ if($quickReply){
  try{
   $lock=$conn->prepare("SELECT id FROM users WHERE id=? FOR UPDATE");
   $lock->bind_param('i',$user['id']);$lock->execute();
-  $latest=$conn->prepare("SELECT sender_role,message FROM chat_messages WHERE user_id=? ORDER BY id DESC LIMIT 1");
-  $latest->bind_param('i',$user['id']);$latest->execute();
-  $previous=stmt_fetch_assoc_compat($latest);
+  // Consume the SELECT result before preparing another statement (mysqli without mysqlnd).
+  $lock->store_result();
+  $lock->free_result();
+  $lock->close();
   $ack="[Automated Reply] Thank you for contacting BettaTrack Support! Your inquiry has been received. Please wait for an admin to respond. We will assist you as soon as possible.";
   // If the most recent message is from a human admin, start a fresh response cycle.
   // Otherwise acknowledge only when no previous auto-response exists since that admin reply.
