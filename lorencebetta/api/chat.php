@@ -25,18 +25,30 @@ if($quickReply){
   // If the most recent message is from a human admin, start a fresh response cycle.
   // Otherwise acknowledge only when no previous auto-response exists since that admin reply.
   $shouldAck=true;
-  $history=$conn->prepare("SELECT sender_role,message FROM chat_messages WHERE user_id=? ORDER BY id DESC");
-  $history->bind_param('i',$user['id']);$history->execute();
-  foreach(stmt_fetch_all_assoc_compat($history) as $row){
-   if($row['sender_role']==='admin' && $row['message']!==$ack)break;
-   if($row['sender_role']==='admin' && $row['message']===$ack){$shouldAck=false;break;}
-  }
+  // The latest admin-authored row determines whether an acknowledgement is pending.
+  // Fetch a single row rather than the entire chat history for every quick reply.
+  $history=$conn->prepare("SELECT message FROM chat_messages WHERE user_id=? AND sender_role='admin' ORDER BY id DESC LIMIT 1");
+  if(!$history)throw new RuntimeException("Unable to prepare chat history query");
+  $history->bind_param('i',$user['id']);
+  if(!$history->execute())throw new RuntimeException("Unable to query chat history");
+  $lastAdmin=stmt_fetch_assoc_compat($history);
+  $history->close();
+  $shouldAck=(!$lastAdmin || $lastAdmin['message']!==$ack);
   $st=$conn->prepare("INSERT INTO chat_messages(user_id,username,sender_role,message,created_at) VALUES(?,?,?,?,NOW())");
-  $st->bind_param('isss',$user['id'],$username,$sender,$message);$st->execute();
-  if($shouldAck){$auto='admin';$st->bind_param('isss',$user['id'],$username,$auto,$ack);$st->execute();}
-  $conn->commit();
+  $st->bind_param('isss',$user['id'],$username,$sender,$message);
+  if(!$st->execute())throw new RuntimeException("Customer chat insert failed");
+  if($shouldAck){
+   $auto='admin';$st->bind_param('isss',$user['id'],$username,$auto,$ack);
+   if(!$st->execute())throw new RuntimeException("Automatic reply insert failed");
+  }
+  $st->close();
+  if(!$conn->commit())throw new RuntimeException("Chat transaction commit failed");
   respond(true,'Message sent.', ['automatedReplySent'=>$shouldAck]);
- }catch(Throwable $e){$conn->rollback();respond(false,'Unable to send message.',[],500);}
+ }catch(Throwable $e){
+  $conn->rollback();
+  error_log("Customer quick reply transaction failed: ".$e->getMessage());
+  respond(false,'Unable to send chat message. Please try again.',[],500);
+ }
 }
 $st=$conn->prepare("INSERT INTO chat_messages(user_id,username,sender_role,message,created_at) VALUES(?,?,?,?,NOW())");$st->bind_param('isss',$user['id'],$username,$sender,$message);$st->execute();respond(true,'Message sent.');
 ?>
