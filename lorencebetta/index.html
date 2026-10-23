@@ -9821,10 +9821,15 @@ body.dark-mode #customerSuspendReasonV85{background:#193e50;border-color:#31566a
  };
  const createdAt=o=>stamp(o.date||o.created_at);
  const completedAt=o=>{
-   const h=(o.status_history||[]).filter(x=>["order received","picked up","completed"].includes(String(x.status||"").toLowerCase()));
-   // Customer Order Received updates orders.updated_at without writing a history row.
-   // Use that actual transition timestamp instead of incorrectly counting the original order date.
-   return h.length?stamp(h[h.length-1].changed_at):stamp(o.updated_at||o.date||o.created_at);
+   const history=o.status_history||[];
+   const received=history.filter(x=>String(x.status||"").toLowerCase()==="order received");
+   if(received.length)return stamp(received[received.length-1].changed_at);
+   // Legacy history may contain "Picked Up" before customer presses Order Received.
+   // That earlier event must never override the final confirmation timestamp.
+   if(String(o.status||"").toLowerCase()==="order received")
+     return stamp(o.updated_at||o.date||o.created_at);
+   const completedHistory=history.filter(x=>["picked up","completed"].includes(String(x.status||"").toLowerCase()));
+   return completedHistory.length?stamp(completedHistory[completedHistory.length-1].changed_at):stamp(o.updated_at||o.date||o.created_at);
  };
  const paidAt=o=>{
    const attempts=(o.payment_attempts||[]).filter(x=>String(x.status||"").toLowerCase()==="approved"||String(x.status||"").toLowerCase()==="paid");
