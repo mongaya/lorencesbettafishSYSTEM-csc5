@@ -13143,7 +13143,7 @@ body.dark-mode .auth-switch-link-v127 button{color:#68d4f4}
  window.closeForgotPassword=function(){el('forgotModal')?.classList.add('hidden')};
  window.requestPasswordReset=async function(){
   const email=(el('forgotEmail')?.value||'').trim();
-  if(!/^[^\s@]+@[^\s@]+\\.[^\s@]+$/.test(email))return showToast('Enter a valid email address.','warning');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return showToast('Enter a valid email address.','warning');
   const button=el('forgotSendV127');if(button?.disabled)return;
   if(button)button.disabled=true;
   try{
