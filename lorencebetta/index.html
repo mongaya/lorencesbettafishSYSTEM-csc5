@@ -6235,46 +6235,10 @@ let phAddressCache={regions:null};
 let pendingAddressLocationV2=null;
 
 async function psgcFetch(path){
- let lastError;
- for(let attempt=0;attempt<3;attempt++){
-  try{
-   const r=await fetch(PSGC_V2+path,{headers:{"Accept":"application/json"},cache:"no-store"});
-   if(!r.ok)throw new Error("Address service returned HTTP "+r.status);
-   const j=await r.json();
-   const items=Array.isArray(j)?j:j?.data;
-   if(!Array.isArray(items))throw new Error("Invalid address service response");
-   return items;
-  }catch(err){
-   lastError=err;
-   if(attempt<2)await new Promise(resolve=>setTimeout(resolve,350*(attempt+1)));
-  }
- }
- console.warn("Philippine address lookup failed:",path,lastError);
- throw new Error("Unable to load Philippine address list.");
-}
-function showPHAddressLoadErrorV112(){
- const modal=document.getElementById("addressModal");
- if(!modal||modal.classList.contains("hidden"))return;
- let notice=modal.querySelector("#addressLoadErrorV112");
- if(!notice){
-  notice=document.createElement("div");
-  notice.id="addressLoadErrorV112";
-  notice.setAttribute("role","alert");
-  notice.style.cssText="padding:12px 14px;border:1px solid #e8b6b6;border-radius:10px;background:#fff1f1;color:#9e3131;margin:8px 0;font-size:13px;";
-  const region=document.getElementById("addressRegion");
-  const formGroup=region?.closest(".form-group");
-  (formGroup||region?.parentElement||modal.querySelector(".modal-box")).insertAdjacentElement("beforebegin",notice);
- }
- notice.innerHTML='Address options could not be loaded. <button type="button" id="addressRetryV112" style="margin-left:8px;padding:7px 11px;border-radius:7px;background:#c23b4b;color:white">Retry Loading</button>';
- notice.querySelector("#addressRetryV112").onclick=async()=>{
-  notice.querySelector("button").disabled=true;
-  const addressId=document.getElementById("addressId")?.value;
-  const address=addressId?savedAddresses.find(x=>String(x.id)===String(addressId)):null;
-  await initializePHAddressFormV3(address||null);
- };
-}
-function clearPHAddressLoadErrorV112(){
- document.getElementById("addressLoadErrorV112")?.remove();
+ const r=await fetch(PSGC_V2+path,{headers:{"Accept":"application/json"}});
+ if(!r.ok)throw new Error("Unable to load Philippine address list.");
+ const j=await r.json();
+ return Array.isArray(j)?j:(j.data||[]);
 }
 function setAddressOptions(id,items,placeholder,selected=""){
  const el=document.getElementById(id);if(!el)return;
@@ -6285,8 +6249,7 @@ function selectedAddressName(id){
  const el=document.getElementById(id);return el?.selectedOptions?.[0]?.dataset?.name||el?.selectedOptions?.[0]?.text||"";
 }
 async function loadPHRegions(selected=""){
- const items=phAddressCache.regions||(await psgcFetch("/regions"));
- phAddressCache.regions=items;
+ const items=phAddressCache.regions||(phAddressCache.regions=await psgcFetch("/regions"));
  setAddressOptions("addressRegion",items,"Select Region",selected);
 }
 async function loadPHProvinces(regionCode,selected=""){
@@ -6320,8 +6283,7 @@ document.addEventListener("change",async e=>{
   if(e.target.id==="addressRegion"){await loadPHProvinces(e.target.value)}
   if(e.target.id==="addressProvince"){await loadPHCities(document.getElementById("addressRegion").value,e.target.value)}
   if(e.target.id==="addressCity"){await loadPHBarangays(e.target.value)}
-  clearPHAddressLoadErrorV112();
- }catch(err){showPHAddressLoadErrorV112()}
+ }catch(err){showToast(err.message||"Unable to load address list.")}
 });
 function updateAddressPinLabel(){
  const s=document.getElementById("addressPinStatus");if(!s)return;
@@ -6349,8 +6311,7 @@ async function initializePHAddressFormV3(address=null){
      document.getElementById("addressSubdivision").value=address.subdivision||"";
      document.getElementById("addressLandmark").value=address.landmark||"";
    }
-   clearPHAddressLoadErrorV112();
- }catch(err){showPHAddressLoadErrorV112()}
+ }catch(err){showToast(err.message||"Unable to load Philippine address list.")}
 }
 const _phOpenAddressModalV3=openAddressModal;
 openAddressModal=function(addressId=null){
