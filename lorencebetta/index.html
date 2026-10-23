@@ -9839,6 +9839,23 @@ body.dark-mode #customerSuspendReasonV85{background:#193e50;border-color:#31566a
  };
  const inPeriod=(d,start,end)=>Number.isFinite(d.getTime())&&d>=start&&d<end;
 
+ const saleQualified=o=>{
+   const st=String(o.status||"").toLowerCase();
+   const pickup=String(o.courier||"").toLowerCase()==="pick up";
+   return paid(o)&&notCancelled(o)&&(pickup
+     ? ["ready for pickup","picked up","order received"].includes(st)
+     : ["lalamove booked","shipped","out for delivery","delivered","order received"].includes(st));
+ };
+ const salesDate=o=>{
+   if(o.sales_recognized_at)return stamp(o.sales_recognized_at);
+   // Earlier orders: date of first irreversible stage from recorded status history.
+   const pickup=String(o.courier||"").toLowerCase()==="pick up";
+   const trigger=pickup?["ready for pickup"]:(String(o.courier||"").toLowerCase()==="lalamove"?["lalamove booked","out for delivery"]:["shipped","out for delivery"]);
+   const first=(o.status_history||[]).find(x=>trigger.includes(String(x.status||"").toLowerCase()));
+   return first?stamp(first.changed_at):stamp(o.updated_at||o.date||o.created_at);
+ };
+
+
  const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 
  function setupProDashboardV27(){
@@ -9887,7 +9904,7 @@ body.dark-mode #customerSuspendReasonV85{background:#193e50;border-color:#31566a
      if(period==="month")start.setDate(1);
      const end=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
      const all=Array.isArray(window.orders)?window.orders:orders||[];
-     const completedOrders=all.filter(o=>paid(o)&&notCancelled(o)&&completed(o)&&inPeriod(completedAt(o),start,end));
+     const completedOrders=all.filter(o=>saleQualified(o)&&inPeriod(salesDate(o),start,end));
      const paidOrders=all.filter(o=>paid(o)&&notCancelled(o)&&inPeriod(paidAt(o),start,end));
      const selected=Array.from(el.querySelectorAll('input[type="checkbox"]:checked')).map(x=>x.value);
      if(!selected.length){alert("Select report content.");return;}
@@ -9920,7 +9937,7 @@ body.dark-mode #customerSuspendReasonV85{background:#193e50;border-color:#31566a
        start=new Date(end);start.setDate(end.getDate()-span);
        label=start.toLocaleDateString(undefined,{month:"short",day:"numeric"});
      }
-     const subset=list.filter(o=>paid(o)&&notCancelled(o)&&completed(o)&&inPeriod(completedAt(o),start,end));
+     const subset=list.filter(o=>saleQualified(o)&&inPeriod(salesDate(o),start,end));
      buckets.push({label,sales:subset.reduce((v,o)=>v+Number(o.subtotal||0),0),ship:subset.reduce((v,o)=>v+Number(o.shipping||0),0)});
    }
    const W=900,H=290,left=66,right=22,top=22,bottom=52;
@@ -9998,7 +10015,7 @@ body.dark-mode #customerSuspendReasonV85{background:#193e50;border-color:#31566a
    else if(period==="month") start.setDate(1);
    const end=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
    const scoped=all.filter(o=>inPeriod(createdAt(o),start,end));
-   const completedOrders=all.filter(o=>paid(o)&&notCancelled(o)&&completed(o)&&inPeriod(completedAt(o),start,end));
+   const completedOrders=all.filter(o=>saleQualified(o)&&inPeriod(salesDate(o),start,end));
    const paidOrders=all.filter(o=>paid(o)&&notCancelled(o)&&inPeriod(paidAt(o),start,end));
    const sales=completedOrders.reduce((n,o)=>n+Number(o.subtotal||0),0);
    const shipping=completedOrders.reduce((n,o)=>n+Number(o.shipping||0),0);
