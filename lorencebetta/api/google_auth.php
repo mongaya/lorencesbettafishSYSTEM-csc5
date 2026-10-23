@@ -50,22 +50,32 @@ try{
    if($existing)google_fail('Google account already registered.',409);
    if(google_lookup($conn,'SELECT id FROM users WHERE email=? LIMIT 1','s',$identity['email']))google_fail('Email already registered.',409);
    $_SESSION['google_signup_identity']=$identity;
+   $_SESSION['google_signup_started_at']=time();
    unset($_SESSION['google_pending'],$_SESSION['google_signup_details']);
    respond(true,'Google email confirmed. Complete your account.',['email'=>$identity['email']]);
   }
   if(!$existing||$existing['role']!=='customer'||$existing['status']!=='active')google_fail('No active Google customer account found.',404);
-  if(time()-(int)($_SESSION['google_otp_last_start']??0)<60)google_fail('Wait before requesting another code.',429);
-  google_otp_send($conn,$identity,'login');
+  $user=google_lookup($conn,"SELECT id,name,username,email,phone,address,role,status FROM users WHERE google_sub=? AND role='customer' AND status='active' LIMIT 1",'s',$identity['sub']);
+  if(!$user)google_fail('Customer account unavailable.',401);
+  unset($_SESSION['google_pending']);
+  session_regenerate_id(true);$_SESSION['user_id']=(int)$user['id'];$_SESSION['role']='customer';session_write_close();
+  respond(true,'Google sign-in successful.',['user'=>['id'=>(int)$user['id'],'type'=>'customer','username'=>$user['username'],'name'=>$user['name'],'email'=>$user['email'],'phone'=>$user['phone']??'','address'=>$user['address']??'']]);
  }
  if($action==='complete_signup'){
   $identity=$_SESSION['google_signup_identity']??null;
-  if(!is_array($identity))google_fail('Choose your Google account again.',401);
+  if(!is_array($identity)||time()-(int)($_SESSION['google_signup_started_at']??0)>600)google_fail('Choose your Google account again.',401);
   $name=trim((string)($data['name']??''));$username=trim((string)($data['username']??''));$password=(string)($data['password']??'');
   if(mb_strlen($name)<2||mb_strlen($name)>100||!preg_match('/^[A-Za-z0-9_.-]{3,50}$/D',$username)||strlen($password)<8||strlen($password)>128)google_fail('Invalid signup details.');
   if(google_lookup($conn,'SELECT id FROM users WHERE email=? LIMIT 1','s',$identity['email'])||google_lookup($conn,'SELECT id FROM users WHERE username=? LIMIT 1','s',$username))google_fail('Email or username already registered.',409);
-  if(time()-(int)($_SESSION['google_otp_last_start']??0)<60)google_fail('Wait before requesting another code.',429);
-  $_SESSION['google_signup_details']=['name'=>$name,'username'=>$username,'password_hash'=>password_hash($password,PASSWORD_DEFAULT)];
-  google_otp_send($conn,$identity,'signup');
+  $hash=password_hash($password,PASSWORD_DEFAULT);
+  try{
+   $s=$conn->prepare("INSERT INTO users (name,username,email,password,google_sub,role,status,created_at) VALUES (?,?,?,?,?,'customer','active',NOW())");
+   $s->bind_param('sssss',$name,$username,$identity['email'],$hash,$identity['sub']);$s->execute();$s->close();
+  }catch(Throwable $e){error_log('Google signup insert: '.$e->getMessage());google_fail('Account could not be created.',409);}
+  $user=google_lookup($conn,"SELECT id,name,username,email,phone,address FROM users WHERE google_sub=? LIMIT 1",'s',$identity['sub']);
+  unset($_SESSION['google_signup_identity'],$_SESSION['google_signup_started_at'],$_SESSION['google_pending'],$_SESSION['google_signup_details']);
+  session_regenerate_id(true);$_SESSION['user_id']=(int)$user['id'];$_SESSION['role']='customer';session_write_close();
+  respond(true,'Google account created successfully.',['user'=>['id'=>(int)$user['id'],'type'=>'customer','username'=>$user['username'],'name'=>$user['name'],'email'=>$user['email'],'phone'=>$user['phone']??'','address'=>$user['address']??'']]);
  }
  if($action==='verify'){
   $pending=$_SESSION['google_pending']??null;
