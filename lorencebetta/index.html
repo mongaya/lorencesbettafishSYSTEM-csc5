@@ -3522,7 +3522,7 @@ function productHTML(product) {
     return `
         <div class="product-card customer-product-click" onclick="openProductDetail('${escapeHTML(product.id)}')">
             <div class="product-image">
-                <span class="stock-tag">${Number(product.stock) > 0 ? "In Stock" : "Out of Stock"}</span>
+                <span class="stock-tag">${Number(product.stock) > 0 ? "In Stock" : "SOLD OUT"}</span>
                 ${productImage(product, "")}
             </div>
             <div class="product-info">
@@ -3531,7 +3531,7 @@ function productHTML(product) {
                 ${ratingSummaryHTML(product)}
                 <div><span class="price">₱${Number(product.price).toLocaleString(undefined,{minimumFractionDigits:2})}</span></div>
                 <div class="product-bottom">
-                    <small>${Number(product.stock)} available</small>
+                    <small>${Number(product.stock)>0?"In Stock":"SOLD OUT"}</small>
                     <div class="product-card-actions-v44">
                         <button type="button" class="add-btn product-card-add-v44" onclick="event.stopPropagation();addToCart('${escapeHTML(product.id)}')" ${Number(product.stock)<=0?"disabled":""}>Add to Cart</button>
                         <button type="button" class="product-card-buy-v44" onclick="event.stopPropagation();buyProductNow('${escapeHTML(product.id)}')" ${Number(product.stock)<=0?"disabled":""}>Buy Now</button>
@@ -3581,7 +3581,7 @@ function openProductDetail(productCode) {
           <h2 class="product-detail-title">${escapeHTML(product.name)}</h2>
           ${ratingSummaryHTML(product)}
           <div class="product-detail-price">₱${Number(product.price).toLocaleString(undefined,{minimumFractionDigits:2})}</div>
-          <div class="product-detail-meta"><span>${Number(product.stock)} available</span><span>${Number(product.stock)>0?"In Stock":"Out of Stock"}</span></div>
+          <div class="product-detail-meta"><span>${Number(product.stock)>0?"In Stock":"SOLD OUT"}</span><span>${Number(product.stock)>0?"In Stock":"SOLD OUT"}</span></div>
           <section class="fish-details-v116" aria-label="Fish Details"><h4>Fish Details</h4><div class="fish-details-grid-v116">${detailsHTML}</div></section>
           <h4>Description</h4><p class="product-detail-description">${escapeHTML(product.description||"No product description yet.")}</p>
           ${currentUser?`<div class="product-detail-actions-v116"><button type="button" class="product-detail-add-v116" onclick="closeProductDetail();addToCart('${escapeHTML(product.id)}')" ${Number(product.stock)<=0?"disabled":""}>Add to Cart</button><button type="button" class="primary-btn" onclick="closeProductDetail();buyProductNow('${escapeHTML(product.id)}')" ${Number(product.stock)<=0?"disabled":""}>Buy Now</button></div>`:`<button class="primary-btn" onclick="closeProductDetail();requireLoginToOrder()">Log in to order</button>`}
@@ -3655,7 +3655,7 @@ function renderProducts(){
  const colorSelections=[...document.querySelectorAll("#shopColorDetails input:checked")].map(el=>el.value);
  const price=document.getElementById("shopPriceFilter")?.value||"";
  const gender=document.getElementById("shopGenderFilterV115")?.value||"";
- const availability="available";
+ const availability="all";
  const sort=document.getElementById("shopSortFilter")?.value||"default";
  const filtered=products.filter(p=>{
   const available=String(p.status||"available").toLowerCase()==="available"&&Number(p.stock)>0;
@@ -3706,7 +3706,7 @@ function openProductQuantityDialog(productId, isBuyNow) {
     }
     document.getElementById("cartQuantityOverlayV45")?.remove();
     const existing = getCart().find(item => String(item.productId) === String(productId));
-    const remaining = isBuyNow ? Number(product.stock) : Number(product.stock) - (Number(existing?.quantity) || 0);
+    const remaining = Number(product.stock)>0 ? 999 : 0;
     if (remaining <= 0) return showToast("You reached the available stock.");
     const overlay = document.createElement("div");
     overlay.id = "cartQuantityOverlayV45";
@@ -3723,21 +3723,26 @@ function openProductQuantityDialog(productId, isBuyNow) {
       '<div class="cart-quantity-actions-v45"><button type="button" data-cart-quantity-close>Cancel</button>' +
       '<button type="button" data-cart-quantity-confirm>' + (isBuyNow ? 'Buy Now' : 'Add to Cart') + '</button></div></div>';
     overlay.querySelector(".cart-quantity-product-v45").textContent = product.name;
-    overlay.querySelector(".cart-quantity-stock-v45").textContent = remaining + " more available to add";
+    overlay.querySelector(".cart-quantity-stock-v45").textContent = "Choose the quantity you want to order.";
     const input = overlay.querySelector("#cartQuantityInputV45");
-    input.max = String(remaining);
+    input.removeAttribute("max");
     const close = () => overlay.remove();
     overlay.querySelectorAll("[data-cart-quantity-close]").forEach(button => button.addEventListener("click", close));
     overlay.addEventListener("click", event => { if (event.target === overlay) close(); });
     overlay.querySelector("[data-qty-minus]").addEventListener("click", () => { input.value = String(Math.max(1, (Number(input.value) || 1) - 1)); });
-    overlay.querySelector("[data-qty-plus]").addEventListener("click", () => { input.value = String(Math.min(remaining, (Number(input.value) || 0) + 1)); });
+    overlay.querySelector("[data-qty-plus]").addEventListener("click", () => { input.value = String(Math.min(999, (Number(input.value) || 0) + 1)); });
     const confirm = async () => {
         const quantity = input.value.trim() === "" ? 1 : Number(input.value);
-        if (!Number.isInteger(quantity) || quantity < 1 || quantity > remaining) {
-            showToast("Enter a whole number between 1 and " + remaining + ".");
+        if (!Number.isInteger(quantity) || quantity < 1 || quantity > 999) {
+            showToast("Enter a valid quantity.");
             input.focus();
             return;
         }
+        const existingCount=isBuyNow?0:Number(existing?.quantity||0);
+        try {
+            const stock=await apiRequest("check_stock.php",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items:[{productId,quantity:existingCount+quantity}]})});
+            if(!stock.available){showToast("Requested quantity is unavailable. Please lower the quantity or choose another fish.","warning");return;}
+        } catch(err){showToast(err.message||"Unable to check stock. Please try again.","warning");return;}
         const cart = getCart();
         const item = cart.find(entry => String(entry.productId) === String(productId));
         if (isBuyNow) {
@@ -3794,10 +3799,11 @@ function changeQuantity(productId, change) {
         cart.splice(index, 1);
     }
 
-    if (item.quantity > Number(product.stock)) {
-        item.quantity = Number(product.stock);
-        showToast("Maximum available stock reached.");
+    if (item.quantity > 999) {
+        item.quantity = 999;
+        showToast("Please choose a smaller quantity.");
     }
+    // Exact availability is verified by the server before checkout.
 
     saveCart(cart);
     renderCart();
@@ -3868,7 +3874,14 @@ function goToProfileAddressEditV49(addressId){
 function closeCheckoutAddressPicker(){document.getElementById("checkoutAddressPicker")?.classList.add("hidden");}
 function chooseCheckoutAddress(id){selectedAddressId=Number(id);renderCheckoutAddress();closeCheckoutAddressPicker();}
 
-async function openCheckout(){if(!getSelectedCartItems().length)return showToast("Select at least one product to checkout.");await loadAddresses();if(!savedAddresses.length){showToast("Please add a delivery address first.");showCustomerPage("profile");return;}showCustomerPage("checkout");renderCheckout();}
+async function openCheckout(){
+ const selected=getSelectedCartItems();
+ if(!selected.length)return showToast("Select at least one product to checkout.");
+ try{
+  const result=await apiRequest("check_stock.php",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items:selected.map(i=>({productId:i.productId,quantity:Number(i.quantity)}))})});
+  if(!result.available){showToast("One or more products are sold out or the requested quantity is unavailable. Please adjust your cart.","warning");return;}
+ }catch(e){showToast("Stock availability could not be checked. Please try again.","warning");return;}
+ await loadAddresses();if(!savedAddresses.length){showToast("Please add a delivery address first.");showCustomerPage("profile");return;}showCustomerPage("checkout");renderCheckout();}
 function renderCheckout(){const cart=getSelectedCartItems(),el=document.getElementById("checkoutSummary");if(!el)return;let subtotal=0,html="";cart.forEach(i=>{const p=products.find(x=>String(x.id)===String(i.productId));if(!p)return;const t=Number(p.price)*Number(i.quantity);subtotal+=t;html+=`<div class="summary-row"><span>${escapeHTML(p.name)} × ${i.quantity}</span><strong>₱${t.toFixed(2)}</strong></div>`});el.innerHTML=html+`<hr><div class="summary-row"><span>Subtotal</span><strong>₱${subtotal.toFixed(2)}</strong></div><div class="summary-row"><span>Shipping</span><strong>To be confirmed by admin</strong></div><div class="summary-total">Final total: Waiting for shipping fee</div>`;renderCheckoutAddress();renderCheckoutMethodsV89();}
 
 async function placeOrder(){
@@ -3882,6 +3895,10 @@ async function placeOrder(){
  if(!screenshot)return showToast("Upload your payment screenshot before placing the order.","warning");
  if(screenshot.size>5*1024*1024)return showToast("Payment screenshot must be 5MB or smaller.","warning");
  if(!["image/jpeg","image/png","image/webp"].includes(screenshot.type))return showToast("Upload a JPG, PNG, or WEBP payment screenshot.","warning");
+ try {
+   const stock=await apiRequest("check_stock.php",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items:selected.map(i=>({productId:i.productId,quantity:Number(i.quantity)}))})});
+   if(!stock.available){showToast("Some items are sold out or the requested quantity is unavailable. Please review your cart.","warning");return;}
+ } catch(e){showToast("Unable to verify stock. "+(e.message||"Please retry."),"warning");return;}
  const form=new FormData();
  form.append("username",currentUser.username);
  form.append("customerName",`${a.first_name} ${a.last_name}`.trim());
@@ -5351,12 +5368,12 @@ function setGuestCategory(c){const s=document.getElementById("guestCategorySelec
 function renderGuestProducts(){const grid=document.getElementById("guestProductGrid");if(!grid)return;const q=(document.getElementById("guestSearchInput")?.value||"").trim().toLowerCase(),cat=document.getElementById("guestCategorySelect")?.value||"all";const appearance=[...document.querySelectorAll("#guestAppearanceDetails input:checked")].map(el=>el.value);
 const colors=[...document.querySelectorAll("#guestColorDetails input:checked")].map(el=>el.value);
 const price=document.getElementById("guestPriceFilter")?.value||"";
-const availability="available";
+const availability="all";
 const sort=document.getElementById("guestSortFilter")?.value||"default";
 const list=products.filter(p=>{const available=String(p.status||"available").toLowerCase()==="available"&&Number(p.stock)>0;const cost=Number(p.price);return (availability==="all"||(availability==="available"?available:!available))&&String(p.name||"").toLowerCase().includes(q)&&(cat==="all"||p.category===cat)&&(!appearance.length||appearance.includes(p.appearance))&&(!colors.length||colors.some(color=>Array.isArray(p.colors)&&p.colors.includes(color)))&&(!price||(price==="0-50"?cost>=0&&cost<=50:price==="50-150"?cost>50&&cost<=150:price==="150-250"?cost>150&&cost<=250:price==="250-500"?cost>250&&cost<=500:price==="500-1000"?cost>500&&cost<=1000:cost>1000));});
 if(sort==="low")list.sort((a,b)=>Number(a.price)-Number(b.price));
 if(sort==="high")list.sort((a,b)=>Number(b.price)-Number(a.price));
-if(sort==="az")list.sort((a,b)=>String(a.name).localeCompare(String(b.name)));grid.innerHTML=list.length?list.map(p=>`<article class="store-product-card customer-product-click" onclick="openProductDetail('${escapeHTML(p.id)}')"><div class="store-product-image">${p.image?`<img src="${escapeHTML(p.image)}" alt="${escapeHTML(p.name)}" onerror="this.style.display='none'">`:''}<span class="store-stock">${Number(p.stock)} available</span></div><div class="store-product-info"><span class="store-product-category">${escapeHTML(p.category||"Betta Fish")}</span><h3>${escapeHTML(p.name)}</h3>${ratingSummaryHTML(p)}<div class="store-product-bottom"><span class="store-price">₱${Number(p.price).toLocaleString(undefined,{minimumFractionDigits:2})}</span><button class="store-order-btn" onclick="event.stopPropagation();requireLoginToOrder()">Log in to order</button></div></div></article>`).join(""):'<div class="store-loading">No products match your search.</div>';renderGuestCategories();}
+if(sort==="az")list.sort((a,b)=>String(a.name).localeCompare(String(b.name)));grid.innerHTML=list.length?list.map(p=>`<article class="store-product-card customer-product-click" onclick="openProductDetail('${escapeHTML(p.id)}')"><div class="store-product-image">${p.image?`<img src="${escapeHTML(p.image)}" alt="${escapeHTML(p.name)}" onerror="this.style.display='none'">`:''}<span class="store-stock">${Number(p.stock)>0?"In Stock":"SOLD OUT"}</span></div><div class="store-product-info"><span class="store-product-category">${escapeHTML(p.category||"Betta Fish")}</span><h3>${escapeHTML(p.name)}</h3>${ratingSummaryHTML(p)}<div class="store-product-bottom"><span class="store-price">₱${Number(p.price).toLocaleString(undefined,{minimumFractionDigits:2})}</span><button class="store-order-btn" ${Number(p.stock)<=0?"disabled":""} onclick="event.stopPropagation();requireLoginToOrder()">${Number(p.stock)<=0?"SOLD OUT":"Log in to order"}</button></div></div></article>`).join(""):'<div class="store-loading">No products match your search.</div>';renderGuestCategories();}
 function requireLoginToOrder(){showToast("Log in or create an account to order.","info");openAuthScreen("login");}
 function renderOrderStatusTabs(allOrders){const el=document.getElementById("orderStatusTabs");if(!el)return;const statuses=["Pending","Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Shipped","Delivered","Order Received","Ready for Pickup","Picked Up","Cancelled"];if(!statuses.includes(customerOrderFilter)||!allOrders.some(o=>o.status===customerOrderFilter)){customerOrderFilter=statuses.find(st=>allOrders.some(o=>o.status===st))||statuses[0];}el.innerHTML=statuses.map(st=>{const count=allOrders.filter(o=>o.status===st).length;return `<button class="order-status-tab ${customerOrderFilter===st?'active':''}" onclick="setCustomerOrderFilter('${escapeHTML(st)}')">${escapeHTML(st==="Pending"?"Pending Verification":st)} <b>${count}</b></button>`}).join("");}
 function setCustomerOrderFilter(status){customerOrderFilter=status;renderCustomerOrders();}
@@ -13617,6 +13634,80 @@ body.dark-mode .bt-password-eye-v137{color:#c9e6f5!important}
    const refresh=()=>{const passwordMode=(id==='customerAccountValueV105'?document.getElementById('customerAccountHeadingV105')?.textContent?.includes('Password'):document.getElementById('adminProfileTypeV97')?.value==='password');button.hidden=!passwordMode;if(!passwordMode){button.dataset.visible='no';sync();}};
    document.addEventListener('click',()=>setTimeout(refresh,0));document.getElementById('adminProfileTypeV97')?.addEventListener('change',refresh);refresh();
   }
+ }
+})();
+</script>
+
+<style id="sold-out-store-v138">
+#productGrid .product-card:has(.stock-tag):has(button:disabled) .product-image img,#guestProductGrid .store-product-card:has(.store-stock) .store-product-image img{transition:filter .2s}
+#productGrid .product-card:has(.product-card-buy-v44:disabled) .product-image img{filter:grayscale(.75);opacity:.65}
+#productGrid .product-card:has(.product-card-buy-v44:disabled) .stock-tag{background:#6c7280!important;color:#fff!important}
+</style>
+
+
+<script id="stock-smart-refresh-v139">
+(function(){
+ let lastChecked=0;
+ let ongoing=null;
+ const minGap=30000;
+ async function refreshAvailability(){
+  if(document.hidden||ongoing||Date.now()-lastChecked<minGap)return;
+  const customerVisible=!document.getElementById('customerApp')?.classList.contains('hidden');
+  const guestVisible=!customerVisible&&document.getElementById('guestProductGrid')?.offsetParent!==null;
+  const viewingProducts=!!document.getElementById('customer-home')?.classList.contains('active')||!!document.getElementById('customer-products')?.classList.contains('active');
+  if(!guestVisible&&!(customerVisible&&viewingProducts))return;
+  lastChecked=Date.now();
+  ongoing=(async()=>{
+   // Explicitly bypass the short-lived product display cache for an availability refresh.
+   const response=await apiRequestRawV133('products.php',{cache:'no-store'});
+   if(!Array.isArray(response.products))return;
+   products=response.products;
+   if(customerVisible&&viewingProducts){
+    if(typeof renderProducts==='function')renderProducts();
+   }
+   if(!customerVisible&&typeof renderGuestProducts==='function')renderGuestProducts();
+  })().catch(err=>console.warn('Stock refresh skipped:',err)).finally(()=>{ongoing=null;});
+  return ongoing;
+ }
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshAvailability();});
+ window.addEventListener('focus',refreshAvailability);
+ const originalShowCustomerPage=window.showCustomerPage;
+ if(typeof originalShowCustomerPage==='function')window.showCustomerPage=function(page,button){const result=originalShowCustomerPage.apply(this,arguments);if(page==='home'||page==='products')refreshAvailability();return result;};
+})();
+</script>
+
+<script id="stock-refresh-v139">
+/* Refresh storefront availability on navigation/tab return without high-frequency polling. */
+(function(){
+ let lastCheck=0,active=null;
+ async function refreshAvailability(force){
+  if(document.hidden || (typeof currentUser!=='undefined'&&currentUser?.type==='admin'))return;
+  if(!force&&Date.now()-lastCheck<30000)return;
+  if(active)return active;
+  lastCheck=Date.now();
+  active=(async()=>{
+   try{
+    // Bypass short-lived display cache only for this explicit availability refresh.
+    const data=await apiRequestRawV133('products.php',{cache:'no-store'});
+    if(Array.isArray(data.products)){
+     products=data.products;
+     if(typeof renderProducts==='function')renderProducts();
+     if(typeof renderGuestProducts==='function')renderGuestProducts();
+    }
+   }catch(err){console.warn('Storefront availability refresh unavailable:',err);}
+   finally{active=null;}
+  })();
+  return active;
+ }
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshAvailability(false);});
+ window.addEventListener('focus',()=>refreshAvailability(false));
+ const priorShowCustomerPage=window.showCustomerPage;
+ if(typeof priorShowCustomerPage==='function'){
+  window.showCustomerPage=function(page,button){
+   const value=priorShowCustomerPage.apply(this,arguments);
+   if(page==='home'||page==='products')refreshAvailability(false);
+   return value;
+  };
  }
 })();
 </script>

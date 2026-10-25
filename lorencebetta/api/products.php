@@ -1,5 +1,7 @@
 <?php
 require_once "db.php";
+require_once __DIR__."/auth.php";
+$isAdminStockView=(($_SESSION["role"]??"")==="admin" && !empty($_SESSION["user_id"]));
 
 // Ensure appearance is available on existing installations without resetting products.
 $colorsColumn = $conn->query("SHOW COLUMNS FROM products LIKE 'colors'");
@@ -49,7 +51,7 @@ while ($row = $result->fetch_assoc()) {
         "gender" => $row["gender"],
         "colors" => $row["colors"] === "" ? [] : explode(",", $row["colors"]),
         "price" => (float)$row["price"],
-        "stock" => (int)$row["stock"],
+        "stock" => $isAdminStockView ? (int)$row["stock"] : ((int)$row["stock"] > 0 ? 1 : 0),
         "description" => $row["description"],
         "image" => $image,
         "status" => $row["status"]
