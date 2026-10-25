@@ -4636,70 +4636,7 @@ function printCourierV50(){
  const safe=escapeHTML(courierTextV50(list));
  popup.document.open();
  popup.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Courier Shipping List</title><style>body{font:14px Arial,sans-serif;margin:30px}h2{margin-bottom:5px}pre{font:13px/1.5 Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}.note{font-weight:bold}@media print{@page{margin:15mm}}</style></head><body><h2>Lorence&#39;s Betta Fish</h2><h3>Courier Shipping List</h3><pre>'+safe+'</pre><p class="note">Confirm the courier accepts live fish before handover.</p>
-<style id="bt-unified-completed-v140-style">
-#admin-courier-shipping .bt-completed-controls-v140{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:13px 16px;border-bottom:1px solid #dbe9f0}
-#admin-courier-shipping .bt-completed-controls-v140 input{flex:1 1 180px;min-width:0}
-#admin-courier-shipping .bt-completed-controls-v140 select{min-height:40px;border:1px solid #c5deea;border-radius:9px;padding:7px 11px;background:#fff;color:#16445a}
-#admin-courier-shipping .bt-completed-count-v140{font-size:12px;color:#66879a}
-#admin-courier-shipping .bt-completed-method-v140{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-size:12px;font-weight:700}
-#admin-courier-shipping .bt-completed-method-v140 svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-#admin-courier-shipping .bt-completed-selected-v140{background:#e9f7fc}
-body.dark-mode #admin-courier-shipping .bt-completed-controls-v140 select{background:#183e51;color:#e6f8ff;border-color:#376a81}
-body.dark-mode #admin-courier-shipping .bt-completed-selected-v140{background:#235166}
-@media(max-width:650px){#admin-courier-shipping .bt-completed-controls-v140 input,#admin-courier-shipping .bt-completed-controls-v140 select{width:100%;flex:1 1 100%}}
-</style>
-<script id="bt-unified-completed-v140-script">
-(function(){
- let search="",method="all",selectedId="";
- const isPickup=o=>String(o.courier||"").trim().toLowerCase()==="pick up";
- const completed=()=>Array.isArray(orders)?orders.filter(o=>o.status==="Order Received" && o.courier):[];
- const iconPickup='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-2-5H5L3 9v11h18V9M9 20v-8h6v8"/></svg>';
- const iconDelivery='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h11v11H3zM14 10h4l3 4v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>';
- function showDetails(o){
-   const side=document.getElementById("courierSideV53");if(!side||!o)return;
-   const esc=escapeHTML;
-   const items=(o.items||[]).map(i=>'<div class="courier-item-v53"><strong>'+esc(i.name||"Product")+'</strong><span>Qty: '+Number(i.quantity||0)+'</span></div>').join("");
-   const pickup=isPickup(o);
-   side.innerHTML='<div class="courier-side-title-v53"><h3>Order Details</h3><span>#'+esc(o.id)+'</span></div>'+
-    '<div class="courier-side-section-v53"><h4>Customer Information</h4><div class="courier-info-v53"><div><small>Name</small><strong>'+esc(o.customerName||"Not provided")+'</strong></div><div><small>Phone</small><strong>'+esc(o.phone||"Not provided")+'</strong></div>'+(pickup?'':'<div class="courier-wide-v53"><small>Address</small><strong>'+esc(o.address||"Not provided")+'</strong></div>')+'</div></div>'+
-    '<div class="courier-side-section-v53"><h4>Order Items</h4>'+items+'<div class="courier-total-v53"><span>Total</span><strong>₱'+Number(o.total||0).toFixed(2)+'</strong></div></div>'+
-    '<div class="courier-side-section-v53"><h4>Payment Information</h4><div class="courier-info-v53"><div><small>Method</small><strong>'+esc(o.payment||"Not provided")+'</strong></div><div><small>Status</small><strong>'+esc(o.payment_status||"Pending")+'</strong></div></div></div>'+
-    '<div class="courier-side-section-v53"><h4>Fulfillment Details</h4><div class="courier-info-v53"><div><small>Method</small><strong>'+(pickup?'Store Pick Up':'Delivery · J&amp;T Express')+'</strong></div><div><small>Order Status</small><strong>Completed</strong></div></div>'+
-    (pickup?'<p>Customer confirmed pickup receipt.</p>':'<div class="courier-tracking-read-v53"><small>Tracking Number</small><strong>'+esc(o.tracking_number||"Not provided")+'</strong>'+(o.tracking_url&&/^https?:\/\//i.test(o.tracking_url)?'<a href="'+esc(o.tracking_url)+'" target="_blank" rel="noopener noreferrer">Track Package</a>':'')+'</div>')+'</div>';
- }
- function redraw(){
-  const dest=document.getElementById("courierCompletedListV56");
-  if(!dest)return;
-  const list=completed();
-  const shown=list.filter(o=>(method==="all"||(method==="pickup"?isPickup(o):!isPickup(o)))&&(!search||[o.id,o.customerName,o.username,o.tracking_number].some(v=>String(v||"").toLowerCase().includes(search))));
-  const esc=escapeHTML;
-  const rows=shown.map(o=>{
-   const pickup=isPickup(o),id=esc(o.id);
-   return '<tr class="'+(String(o.id)===selectedId?'bt-completed-selected-v140':'')+'"><td><strong>#'+id+'</strong></td><td>'+esc(o.customerName||"Customer")+'</td><td><span class="bt-completed-method-v140">'+(pickup?iconPickup:iconDelivery)+(pickup?'Pick Up':'Delivery')+'</span></td><td>'+esc(pickup?'—':(o.tracking_number||"Not provided"))+'</td><td><span class="shipping-status-v56 done">Completed</span></td><td><button type="button" class="action-btn view-btn bt-completed-view-v140" data-id="'+id+'">View Details</button></td></tr>';
-  }).join("");
-  dest.innerHTML='<div class="bt-completed-controls-v140"><input type="search" id="btCompletedSearchV140" aria-label="Search completed orders" placeholder="Search Order ID or customer..."><select id="btCompletedMethodV140" aria-label="Filter completed orders"><option value="all">All Methods</option><option value="delivery">Delivery</option><option value="pickup">Pick Up</option></select><span class="bt-completed-count-v140">'+shown.length+' of '+list.length+' orders</span></div>'+
-  (shown.length?'<div class="courier-table-scroll-v53"><table class="courier-table-v53"><thead><tr><th>Order ID</th><th>Customer</th><th>Method</th><th>Tracking Number</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<div class="courier-empty-v50">No completed orders match your filters.</div>');
-  const si=dest.querySelector("#btCompletedSearchV140"),sel=dest.querySelector("#btCompletedMethodV140");
-  si.value=search;sel.value=method;
-  si.addEventListener("input",()=>{const start=si.selectionStart;search=si.value.toLowerCase().trim();redraw();const next=dest.querySelector("#btCompletedSearchV140");next.focus();next.setSelectionRange(Math.min(start,next.value.length),Math.min(start,next.value.length));});
-  sel.addEventListener("change",()=>{method=sel.value;redraw();});
-  dest.querySelectorAll(".bt-completed-view-v140").forEach(btn=>btn.addEventListener("click",()=>{selectedId=btn.dataset.id;const order=list.find(o=>String(o.id)===selectedId);if(order)showDetails(order);redraw();}));
-  if(shippingActiveTabV57==="completed"){
-   const order=list.find(o=>String(o.id)===selectedId);
-   if(order&&shown.includes(order))showDetails(order);
-   else document.getElementById("courierSideV53").innerHTML='<div class="courier-side-placeholder-v53"><h3>Order Details</h3><p>Select an order to see its details.</p></div>';
-  }
- }
- const original=renderCourierShippingV50;
- renderCourierShippingV50=function(){
-   const result=original.apply(this,arguments);
-   const title=document.querySelector('[data-shipping-panel="completed"] .courier-board-head-v53 p');
-   if(title)title.textContent="Customer-confirmed deliveries and pickups.";
-   redraw();
-   return result;
- };
-})();
-</script>
+
 
 </body></html>');
  popup.document.close();popup.focus();popup.print();
@@ -13920,5 +13857,70 @@ body.dark-mode #customerApp .bt-order-picker-v137 button,body.dark-mode #custome
  };
  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>{setupCustomer();setupAdmin();});
  else {setupCustomer();setupAdmin();}
+})();
+</script>
+
+<style id="bt-unified-completed-v140-style">
+#admin-courier-shipping .bt-completed-controls-v140{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:13px 16px;border-bottom:1px solid #dbe9f0}
+#admin-courier-shipping .bt-completed-controls-v140 input{flex:1 1 180px;min-width:0}
+#admin-courier-shipping .bt-completed-controls-v140 select{min-height:40px;border:1px solid #c5deea;border-radius:9px;padding:7px 11px;background:#fff;color:#16445a}
+#admin-courier-shipping .bt-completed-count-v140{font-size:12px;color:#66879a}
+#admin-courier-shipping .bt-completed-method-v140{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-size:12px;font-weight:700}
+#admin-courier-shipping .bt-completed-method-v140 svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#admin-courier-shipping .bt-completed-selected-v140{background:#e9f7fc}
+body.dark-mode #admin-courier-shipping .bt-completed-controls-v140 select{background:#183e51;color:#e6f8ff;border-color:#376a81}
+body.dark-mode #admin-courier-shipping .bt-completed-selected-v140{background:#235166}
+@media(max-width:650px){#admin-courier-shipping .bt-completed-controls-v140 input,#admin-courier-shipping .bt-completed-controls-v140 select{width:100%;flex:1 1 100%}}
+</style>
+<script id="bt-unified-completed-v140-script">
+(function(){
+ let search="",method="all",selectedId="";
+ const isPickup=o=>String(o.courier||"").trim().toLowerCase()==="pick up";
+ const completed=()=>Array.isArray(orders)?orders.filter(o=>o.status==="Order Received" && o.courier):[];
+ const iconPickup='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-2-5H5L3 9v11h18V9M9 20v-8h6v8"/></svg>';
+ const iconDelivery='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h11v11H3zM14 10h4l3 4v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>';
+ function showDetails(o){
+   const side=document.getElementById("courierSideV53");if(!side||!o)return;
+   const esc=escapeHTML;
+   const items=(o.items||[]).map(i=>'<div class="courier-item-v53"><strong>'+esc(i.name||"Product")+'</strong><span>Qty: '+Number(i.quantity||0)+'</span></div>').join("");
+   const pickup=isPickup(o);
+   side.innerHTML='<div class="courier-side-title-v53"><h3>Order Details</h3><span>#'+esc(o.id)+'</span></div>'+
+    '<div class="courier-side-section-v53"><h4>Customer Information</h4><div class="courier-info-v53"><div><small>Name</small><strong>'+esc(o.customerName||"Not provided")+'</strong></div><div><small>Phone</small><strong>'+esc(o.phone||"Not provided")+'</strong></div>'+(pickup?'':'<div class="courier-wide-v53"><small>Address</small><strong>'+esc(o.address||"Not provided")+'</strong></div>')+'</div></div>'+
+    '<div class="courier-side-section-v53"><h4>Order Items</h4>'+items+'<div class="courier-total-v53"><span>Total</span><strong>₱'+Number(o.total||0).toFixed(2)+'</strong></div></div>'+
+    '<div class="courier-side-section-v53"><h4>Payment Information</h4><div class="courier-info-v53"><div><small>Method</small><strong>'+esc(o.payment||"Not provided")+'</strong></div><div><small>Status</small><strong>'+esc(o.payment_status||"Pending")+'</strong></div></div></div>'+
+    '<div class="courier-side-section-v53"><h4>Fulfillment Details</h4><div class="courier-info-v53"><div><small>Method</small><strong>'+(pickup?'Store Pick Up':'Delivery · J&amp;T Express')+'</strong></div><div><small>Order Status</small><strong>Completed</strong></div></div>'+
+    (pickup?'<p>Customer confirmed pickup receipt.</p>':'<div class="courier-tracking-read-v53"><small>Tracking Number</small><strong>'+esc(o.tracking_number||"Not provided")+'</strong>'+(o.tracking_url&&/^https?:\/\//i.test(o.tracking_url)?'<a href="'+esc(o.tracking_url)+'" target="_blank" rel="noopener noreferrer">Track Package</a>':'')+'</div>')+'</div>';
+ }
+ function redraw(){
+  const dest=document.getElementById("courierCompletedListV56");
+  if(!dest)return;
+  const list=completed();
+  const shown=list.filter(o=>(method==="all"||(method==="pickup"?isPickup(o):!isPickup(o)))&&(!search||[o.id,o.customerName,o.username,o.tracking_number].some(v=>String(v||"").toLowerCase().includes(search))));
+  const esc=escapeHTML;
+  const rows=shown.map(o=>{
+   const pickup=isPickup(o),id=esc(o.id);
+   return '<tr class="'+(String(o.id)===selectedId?'bt-completed-selected-v140':'')+'"><td><strong>#'+id+'</strong></td><td>'+esc(o.customerName||"Customer")+'</td><td><span class="bt-completed-method-v140">'+(pickup?iconPickup:iconDelivery)+(pickup?'Pick Up':'Delivery')+'</span></td><td>'+esc(pickup?'—':(o.tracking_number||"Not provided"))+'</td><td><span class="shipping-status-v56 done">Completed</span></td><td><button type="button" class="action-btn view-btn bt-completed-view-v140" data-id="'+id+'">View Details</button></td></tr>';
+  }).join("");
+  dest.innerHTML='<div class="bt-completed-controls-v140"><input type="search" id="btCompletedSearchV140" aria-label="Search completed orders" placeholder="Search Order ID or customer..."><select id="btCompletedMethodV140" aria-label="Filter completed orders"><option value="all">All Methods</option><option value="delivery">Delivery</option><option value="pickup">Pick Up</option></select><span class="bt-completed-count-v140">'+shown.length+' of '+list.length+' orders</span></div>'+
+  (shown.length?'<div class="courier-table-scroll-v53"><table class="courier-table-v53"><thead><tr><th>Order ID</th><th>Customer</th><th>Method</th><th>Tracking Number</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<div class="courier-empty-v50">No completed orders match your filters.</div>');
+  const si=dest.querySelector("#btCompletedSearchV140"),sel=dest.querySelector("#btCompletedMethodV140");
+  si.value=search;sel.value=method;
+  si.addEventListener("input",()=>{const start=si.selectionStart;search=si.value.toLowerCase().trim();redraw();const next=dest.querySelector("#btCompletedSearchV140");next.focus();next.setSelectionRange(Math.min(start,next.value.length),Math.min(start,next.value.length));});
+  sel.addEventListener("change",()=>{method=sel.value;redraw();});
+  dest.querySelectorAll(".bt-completed-view-v140").forEach(btn=>btn.addEventListener("click",()=>{selectedId=btn.dataset.id;const order=list.find(o=>String(o.id)===selectedId);if(order)showDetails(order);redraw();}));
+  if(shippingActiveTabV57==="completed"){
+   const order=list.find(o=>String(o.id)===selectedId);
+   if(order&&shown.includes(order))showDetails(order);
+   else document.getElementById("courierSideV53").innerHTML='<div class="courier-side-placeholder-v53"><h3>Order Details</h3><p>Select an order to see its details.</p></div>';
+  }
+ }
+ const original=renderCourierShippingV50;
+ renderCourierShippingV50=function(){
+   const result=original.apply(this,arguments);
+   const title=document.querySelector('[data-shipping-panel="completed"] .courier-board-head-v53 p');
+   if(title)title.textContent="Customer-confirmed deliveries and pickups.";
+   redraw();
+   return result;
+ };
 })();
 </script>
