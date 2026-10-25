@@ -2768,7 +2768,21 @@ let currentUser = JSON.parse(
    API HELPER
 ========================================================= */
 
+const apiReadPendingV133=new Map();
 async function apiRequest(endpoint, options = {}) {
+    const method=String(options.method||"GET").toUpperCase();
+    // Share concurrent read requests; never cache responses or deduplicate writes.
+    if(method==="GET" && !options.signal){
+        const key=API+endpoint;
+        if(!apiReadPendingV133.has(key)){
+            const pending=apiRequestRawV133(endpoint,options).finally(()=>apiReadPendingV133.delete(key));
+            apiReadPendingV133.set(key,pending);
+        }
+        return apiReadPendingV133.get(key);
+    }
+    return apiRequestRawV133(endpoint,options);
+}
+async function apiRequestRawV133(endpoint, options = {}) {
     try {
         // Retry only read-only GET calls; never replay payments, orders, or other writes.
         const method=String(options.method||"GET").toUpperCase();
@@ -3333,6 +3347,8 @@ async function sendAdminMessage(){
 
 // Poll messages so customer/admin chats update without refreshing the page.
 setInterval(()=>{
+    // Do not poll messages in hidden tabs.
+    if(document.hidden)return;
     if(currentUser?.type==="customer"){
         loadCustomerChat();
         renderNotifications("customer");
