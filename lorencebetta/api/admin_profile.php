@@ -23,7 +23,7 @@ if($action==='start'){
   $q=$conn->prepare('SELECT id FROM users WHERE username=? AND id<>? LIMIT 1');$q->bind_param('si',$value,$adminId);$q->execute();$duplicate=stmt_fetch_assoc_compat($q);$q->close();if($duplicate)respond(false,'Username is already taken.',[],409);
   $newHash=null;
  }elseif($type==='password'){
-  if(strlen($value)<8||strlen($value)>128)respond(false,'New password must be 8–128 characters.',[],400);
+  if(strlen($value)<8||strlen($value)>10||!preg_match('/[0-9]/',$value)||!preg_match('/[^A-Za-z0-9]/',$value))respond(false,'New password must contain 8–10 characters, one number and one special character.',[],400);
   if(password_verify($value,$admin['password']))respond(false,'Choose a different password.',[],400);
   $newHash=password_hash($value,PASSWORD_DEFAULT);$value='';
  }else respond(false,'Invalid account change.',[],400);
