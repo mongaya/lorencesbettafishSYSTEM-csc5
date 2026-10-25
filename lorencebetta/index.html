@@ -2776,6 +2776,7 @@ let displayReadGenerationV134=0;
 function invalidateDisplayReadCacheV134(){
     displayReadGenerationV134++;
     displayReadCacheV134.clear();
+    apiReadPendingV133.clear();
 }
 async function apiRequest(endpoint, options = {}) {
     const method=String(options.method||"GET").toUpperCase();
@@ -2798,7 +2799,7 @@ async function apiRequest(endpoint, options = {}) {
                 if(ttl&&generation===displayReadGenerationV134)
                     displayReadCacheV134.set(key,{data,expires:Date.now()+ttl});
                 return data;
-            }).finally(()=>apiReadPendingV133.delete(key));
+            }).finally(()=>{if(apiReadPendingV133.get(key)===pending)apiReadPendingV133.delete(key);});
             apiReadPendingV133.set(key,pending);
         }
         return apiReadPendingV133.get(key);
