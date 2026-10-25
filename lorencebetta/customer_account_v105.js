@@ -39,7 +39,7 @@
   el.type=type==='password'?'password':type==='email'?'email':'text';
   el.autocomplete=type==='password'?'new-password':type==='email'?'email':'off';
   el.minLength=type==='password'?8:3;
-  el.maxLength=type==='password'?128:type==='email'?254:50;
+  el.maxLength=type==='password'?10:type==='email'?254:50;
   $('customerAccountFormV105').hidden=false;
  };
  window.customerAccountStartV105=async function(event){
@@ -48,7 +48,7 @@
   const valueId='customerAccountValueV105';
   if(kind==='username'&&!/^[A-Za-z0-9_.-]{3,50}$/.test(val))return showError(valueId,'Username must be 3–50 characters using letters, numbers, dots, underscores or hyphens.');
   if(kind==='email'&&!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(val))return showError(valueId,'Please enter a valid email address.');
-  if(kind==='password'&&(val.length<8||val.length>128))return showError(valueId,'Password must contain 8–128 characters.');
+  if(kind==='password'&&(val.length<8||val.length>10||!/[0-9]/.test(val)||!/[^A-Za-z0-9]/.test(val)))return showError(valueId,'Password must contain 8–10 characters, one number and one special character.');
   ['customerAccountValueV105','customerAccountPasswordV105'].forEach(clearError);
   const button=$('customerAccountSendV105');
   button.disabled=true;message('Sending verification code...');
