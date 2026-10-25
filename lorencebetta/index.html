@@ -3799,10 +3799,11 @@ function changeQuantity(productId, change) {
         cart.splice(index, 1);
     }
 
-    if (item.quantity > Number(product.stock)) {
-        item.quantity = Number(product.stock);
-        showToast("Maximum available stock reached.");
+    if (item.quantity > 999) {
+        item.quantity = 999;
+        showToast("Please choose a smaller quantity.");
     }
+    // Exact availability is verified by the server before checkout.
 
     saveCart(cart);
     renderCart();
@@ -3873,7 +3874,14 @@ function goToProfileAddressEditV49(addressId){
 function closeCheckoutAddressPicker(){document.getElementById("checkoutAddressPicker")?.classList.add("hidden");}
 function chooseCheckoutAddress(id){selectedAddressId=Number(id);renderCheckoutAddress();closeCheckoutAddressPicker();}
 
-async function openCheckout(){if(!getSelectedCartItems().length)return showToast("Select at least one product to checkout.");await loadAddresses();if(!savedAddresses.length){showToast("Please add a delivery address first.");showCustomerPage("profile");return;}showCustomerPage("checkout");renderCheckout();}
+async function openCheckout(){
+ const selected=getSelectedCartItems();
+ if(!selected.length)return showToast("Select at least one product to checkout.");
+ try{
+  const result=await apiRequest("check_stock.php",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({items:selected.map(i=>({productId:i.productId,quantity:Number(i.quantity)}))})});
+  if(!result.available){showToast("One or more products are sold out or the requested quantity is unavailable. Please adjust your cart.","warning");return;}
+ }catch(e){showToast("Stock availability could not be checked. Please try again.","warning");return;}
+ await loadAddresses();if(!savedAddresses.length){showToast("Please add a delivery address first.");showCustomerPage("profile");return;}showCustomerPage("checkout");renderCheckout();}
 function renderCheckout(){const cart=getSelectedCartItems(),el=document.getElementById("checkoutSummary");if(!el)return;let subtotal=0,html="";cart.forEach(i=>{const p=products.find(x=>String(x.id)===String(i.productId));if(!p)return;const t=Number(p.price)*Number(i.quantity);subtotal+=t;html+=`<div class="summary-row"><span>${escapeHTML(p.name)} × ${i.quantity}</span><strong>₱${t.toFixed(2)}</strong></div>`});el.innerHTML=html+`<hr><div class="summary-row"><span>Subtotal</span><strong>₱${subtotal.toFixed(2)}</strong></div><div class="summary-row"><span>Shipping</span><strong>To be confirmed by admin</strong></div><div class="summary-total">Final total: Waiting for shipping fee</div>`;renderCheckoutAddress();renderCheckoutMethodsV89();}
 
 async function placeOrder(){
@@ -5365,7 +5373,7 @@ const sort=document.getElementById("guestSortFilter")?.value||"default";
 const list=products.filter(p=>{const available=String(p.status||"available").toLowerCase()==="available"&&Number(p.stock)>0;const cost=Number(p.price);return (availability==="all"||(availability==="available"?available:!available))&&String(p.name||"").toLowerCase().includes(q)&&(cat==="all"||p.category===cat)&&(!appearance.length||appearance.includes(p.appearance))&&(!colors.length||colors.some(color=>Array.isArray(p.colors)&&p.colors.includes(color)))&&(!price||(price==="0-50"?cost>=0&&cost<=50:price==="50-150"?cost>50&&cost<=150:price==="150-250"?cost>150&&cost<=250:price==="250-500"?cost>250&&cost<=500:price==="500-1000"?cost>500&&cost<=1000:cost>1000));});
 if(sort==="low")list.sort((a,b)=>Number(a.price)-Number(b.price));
 if(sort==="high")list.sort((a,b)=>Number(b.price)-Number(a.price));
-if(sort==="az")list.sort((a,b)=>String(a.name).localeCompare(String(b.name)));grid.innerHTML=list.length?list.map(p=>`<article class="store-product-card customer-product-click" onclick="openProductDetail('${escapeHTML(p.id)}')"><div class="store-product-image">${p.image?`<img src="${escapeHTML(p.image)}" alt="${escapeHTML(p.name)}" onerror="this.style.display='none'">`:''}<span class="store-stock">${Number(p.stock)>0?"In Stock":"SOLD OUT"}</span></div><div class="store-product-info"><span class="store-product-category">${escapeHTML(p.category||"Betta Fish")}</span><h3>${escapeHTML(p.name)}</h3>${ratingSummaryHTML(p)}<div class="store-product-bottom"><span class="store-price">₱${Number(p.price).toLocaleString(undefined,{minimumFractionDigits:2})}</span><button class="store-order-btn" onclick="event.stopPropagation();requireLoginToOrder()">Log in to order</button></div></div></article>`).join(""):'<div class="store-loading">No products match your search.</div>';renderGuestCategories();}
+if(sort==="az")list.sort((a,b)=>String(a.name).localeCompare(String(b.name)));grid.innerHTML=list.length?list.map(p=>`<article class="store-product-card customer-product-click" onclick="openProductDetail('${escapeHTML(p.id)}')"><div class="store-product-image">${p.image?`<img src="${escapeHTML(p.image)}" alt="${escapeHTML(p.name)}" onerror="this.style.display='none'">`:''}<span class="store-stock">${Number(p.stock)>0?"In Stock":"SOLD OUT"}</span></div><div class="store-product-info"><span class="store-product-category">${escapeHTML(p.category||"Betta Fish")}</span><h3>${escapeHTML(p.name)}</h3>${ratingSummaryHTML(p)}<div class="store-product-bottom"><span class="store-price">₱${Number(p.price).toLocaleString(undefined,{minimumFractionDigits:2})}</span><button class="store-order-btn" ${Number(p.stock)<=0?"disabled":""} onclick="event.stopPropagation();requireLoginToOrder()">${Number(p.stock)<=0?"SOLD OUT":"Log in to order"}</button></div></div></article>`).join(""):'<div class="store-loading">No products match your search.</div>';renderGuestCategories();}
 function requireLoginToOrder(){showToast("Log in or create an account to order.","info");openAuthScreen("login");}
 function renderOrderStatusTabs(allOrders){const el=document.getElementById("orderStatusTabs");if(!el)return;const statuses=["Pending","Pending Shipping Fee","Awaiting Payment","Confirmed","Preparing","Shipped","Delivered","Order Received","Ready for Pickup","Picked Up","Cancelled"];if(!statuses.includes(customerOrderFilter)||!allOrders.some(o=>o.status===customerOrderFilter)){customerOrderFilter=statuses.find(st=>allOrders.some(o=>o.status===st))||statuses[0];}el.innerHTML=statuses.map(st=>{const count=allOrders.filter(o=>o.status===st).length;return `<button class="order-status-tab ${customerOrderFilter===st?'active':''}" onclick="setCustomerOrderFilter('${escapeHTML(st)}')">${escapeHTML(st==="Pending"?"Pending Verification":st)} <b>${count}</b></button>`}).join("");}
 function setCustomerOrderFilter(status){customerOrderFilter=status;renderCustomerOrders();}
