@@ -2769,13 +2769,37 @@ let currentUser = JSON.parse(
 ========================================================= */
 
 const apiReadPendingV133=new Map();
+// Short-lived, memory-only cache for public display reads; never store orders, payments or stock decisions.
+const displayReadCacheV134=new Map();
+const displayReadTtlV134={"products.php":30000,"categories.php":300000,"product_reviews.php":60000};
+let displayReadGenerationV134=0;
+function invalidateDisplayReadCacheV134(){
+    displayReadGenerationV134++;
+    displayReadCacheV134.clear();
+    apiReadPendingV133.clear();
+}
 async function apiRequest(endpoint, options = {}) {
     const method=String(options.method||"GET").toUpperCase();
-    // Share concurrent read requests; never cache responses or deduplicate writes.
-    if(method==="GET" && !options.signal){
+    if(method!=="GET"){
+        // Even an ambiguous server failure can have committed a write.
+        invalidateDisplayReadCacheV134();
+        return apiRequestRawV133(endpoint,options);
+    }
+    if(!options.signal){
         const key=API+endpoint;
+        const ttl=Object.prototype.hasOwnProperty.call(displayReadTtlV134,endpoint)?displayReadTtlV134[endpoint]:0;
+        if(ttl){
+            const cached=displayReadCacheV134.get(key);
+            if(cached&&cached.expires>Date.now())return cached.data;
+            if(cached)displayReadCacheV134.delete(key);
+        }
         if(!apiReadPendingV133.has(key)){
-            const pending=apiRequestRawV133(endpoint,options).finally(()=>apiReadPendingV133.delete(key));
+            const generation=displayReadGenerationV134;
+            const pending=apiRequestRawV133(endpoint,options).then(data=>{
+                if(ttl&&generation===displayReadGenerationV134)
+                    displayReadCacheV134.set(key,{data,expires:Date.now()+ttl});
+                return data;
+            }).finally(()=>{if(apiReadPendingV133.get(key)===pending)apiReadPendingV133.delete(key);});
             apiReadPendingV133.set(key,pending);
         }
         return apiReadPendingV133.get(key);
@@ -3078,6 +3102,7 @@ function logout() {
     if (!confirm("Are you sure you want to log out?")) return;
     currentUser = null;
     localStorage.removeItem("lorence_currentUser");
+    invalidateDisplayReadCacheV134();
 
     document.getElementById("customerApp").classList.add("hidden");
     document.getElementById("adminApp").classList.add("hidden");
