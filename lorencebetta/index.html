@@ -13516,108 +13516,6 @@ async function verifyManualSignupV130(){
 #customerApp #productGrid .product-card .product-bottom{margin-top:auto;padding-top:12px}
 </style>
 
-<style id="bt-chat-order-support-v137-style">
-#customerApp .bt-order-chat-tools-v137{padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-top:1px solid #dcebf0}
-#customerApp .bt-order-chat-tools-v137 button,#adminApp .bt-admin-replies-v137 button{border:1px solid #95cbdd;background:#effaff;color:#075c79;border-radius:999px;padding:9px 13px;font-size:12px;font-weight:700;cursor:pointer}
-#customerApp .bt-order-picker-v137{padding:12px 16px;border-top:1px solid #dcebf0;max-height:270px;overflow:auto}
-#customerApp .bt-order-picker-v137[hidden]{display:none!important}
-#customerApp .bt-order-picker-v137 button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;text-align:left;border:1px solid #c7e1ec;background:#fff;border-radius:12px;padding:12px;margin:6px 0;cursor:pointer;color:#184b60}
-.bt-linked-order-v137{border:1px solid #a4cfdf;background:#f2fbff;border-radius:13px;padding:12px;margin:6px 0;max-width:350px;font-size:12px;color:#15465a}
-.bt-linked-order-v137 strong,.bt-linked-order-v137 span{display:block;overflow-wrap:anywhere}
-.bt-linked-order-v137 strong{margin-bottom:5px;font-size:13px}
-#adminApp .bt-admin-replies-v137{display:flex;flex-wrap:wrap;gap:7px;padding:10px 0}
-body.dark-mode .bt-linked-order-v137{background:#183c4c;color:#e9f9ff;border-color:#4b8298}
-body.dark-mode #customerApp .bt-order-picker-v137 button,body.dark-mode #customerApp .bt-order-chat-tools-v137 button,body.dark-mode #adminApp .bt-admin-replies-v137 button{background:#1c4659;color:#eaf8ff;border-color:#426e80}
-@media(max-width:560px){#customerApp .bt-order-chat-tools-v137{padding:9px}#customerApp .bt-order-picker-v137{padding:9px}}
-</style>
-<script id="bt-chat-order-support-v137-script">
-(function(){
- const ORDER_TAG="[Order Concern: ";
- const customerOrders=()=>Array.isArray(orders)&&currentUser?orders.filter(o=>String(o.username)===String(currentUser.username)):[];
- function sendOrderConcern(id){
-   const order=customerOrders().find(o=>String(o.id)===String(id));if(!order)return showToast("Order not found. Please refresh and try again.");
-   const message=ORDER_TAG+String(order.id)+"] Hi Admin! I need assistance with this order.";
-   const input=document.getElementById("customerChatInput");
-   if(input&&input.value.trim()&&!confirm("Send an order inquiry? Your unsent message will be kept."))return;
-   const picker=document.getElementById("btOrderPickerV137");if(picker)picker.hidden=true;
-   if(typeof window.sendQuickCustomerMessageV31==="function")window.sendQuickCustomerMessageV31(message);
- }
- function openOrderPicker(){
-   const picker=document.getElementById("btOrderPickerV137");if(!picker)return;
-   const next=picker.hidden;picker.hidden=!next;if(!next)return;
-   const found=customerOrders();picker.replaceChildren();
-   const label=document.createElement("strong");label.textContent="Choose an order to discuss";picker.append(label);
-   if(!found.length){const p=document.createElement("p");p.textContent="No orders found in your account.";picker.append(p);return;}
-   found.forEach(order=>{
-     const b=document.createElement("button");b.type="button";
-     const name=document.createElement("strong");name.textContent=String(order.id);
-     const details=document.createElement("small");details.textContent="Status: "+String(order.status||"Pending")+" · "+String((order.items||[]).length)+" product(s)";
-     b.append(name,details);b.addEventListener("click",()=>sendOrderConcern(order.id));picker.append(b);
-   });
- }
- function setupCustomer(){
-   const pane=document.querySelector("#customer-chat .chat-panel");if(!pane||document.getElementById("btOrderToolsV137"))return;
-   const tools=document.createElement("div");tools.className="bt-order-chat-tools-v137";tools.id="btOrderToolsV137";
-   const button=document.createElement("button");button.type="button";button.textContent="Choose an Order";button.addEventListener("click",openOrderPicker);
-   const caption=document.createElement("small");caption.textContent="Attach your order details when asking admin for help.";
-   tools.append(button,caption);
-   const picker=document.createElement("div");picker.className="bt-order-picker-v137";picker.id="btOrderPickerV137";picker.hidden=true;
-   const compose=pane.querySelector(".chat-compose");if(compose){compose.before(tools,picker);}
-   const quick=document.querySelector('#customerQuickV27 .quick-reply-card-v27[data-message*="ask about my order"]');
-   if(quick){quick.removeAttribute("onclick");quick.addEventListener("click",openOrderPicker);}
- }
- function setupAdmin(){
-   const input=document.getElementById("adminChatInput");if(!input||document.getElementById("btAdminRepliesV137"))return;
-   const wrap=document.createElement("div");wrap.className="bt-admin-replies-v137";wrap.id="btAdminRepliesV137";
-   ["Thank you for contacting BettaTrack.","We are checking your concern. Please wait for our response.","Please provide more details about your concern.","You can check your order's latest status under My Orders."].forEach(reply=>{
-     const b=document.createElement("button");b.type="button";b.textContent=reply.length>38?reply.slice(0,37)+"…":reply;b.title=reply;
-     b.addEventListener("click",()=>{input.value=reply;input.focus();});wrap.append(b);
-   });
-   input.closest(".chat-compose")?.before(wrap);
- }
- function addOrderCards(container,messages){
-   if(!container||!Array.isArray(messages))return;
-   const bubbles=[...container.querySelectorAll(".chat-bubble")];
-   messages.forEach((m,i)=>{
-     const match=String(m.message||"").match(/^\[Order Concern: ([A-Za-z0-9_-]{1,80})\]/);
-     if(!match||!bubbles[i])return;
-     const id=match[1];
-     const record=(Array.isArray(orders)?orders:[]).find(o=>String(o.id)===id&&(currentUser?.type==="admin"||String(o.username)===String(currentUser?.username)));
-     const card=document.createElement("div");card.className="bt-linked-order-v137";
-     const heading=document.createElement("strong");heading.textContent="Order · "+id;card.append(heading);
-     const line=document.createElement("span");line.textContent=record?"Status: "+String(record.status||"Pending")+" · "+(record.items||[]).length+" product(s)":"Order reference shared with admin";
-     card.append(line);
-     bubbles[i].prepend(card);
-   });
- }
- const originalRenderChat=renderChatMessages;
- renderChatMessages=function(container,messages,customerUsername){
-   const result=originalRenderChat.apply(this,arguments);
-   addOrderCards(container,messages);
-   return result;
- };
- window.btContactAdminOrderV137=function(id){
-   if(!customerOrders().some(o=>String(o.id)===String(id)))return;
-   showCustomerPage("chat");
-   sendOrderConcern(id);
- };
- const originalRenderOrders=renderCustomerOrders;
- renderCustomerOrders=function(){
-   const result=originalRenderOrders.apply(this,arguments);
-   const root=document.getElementById("customerOrders");if(!root)return result;
-   root.querySelectorAll(".bt-order-view-v135 > .order-card").forEach(card=>{
-     if(card.querySelector(".bt-contact-admin-v137"))return;
-     const id=card.querySelector(".order-id")?.textContent?.trim();if(!id)return;
-     const b=document.createElement("button");b.type="button";b.className="bt-contact-admin-v137 action-btn view-btn";b.textContent="Contact Admin About This Order";
-     b.addEventListener("click",()=>window.btContactAdminOrderV137(id));
-     const head=card.querySelector(".order-head");if(head)head.append(b);else card.prepend(b);
-   });
-   return result;
- };
- if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>{setupCustomer();setupAdmin();});
- else {setupCustomer();setupAdmin();}
-})();
-</script>
 <style id="customer-compact-orders-v135-style">
 #customerOrders .bt-orders-list-v135{display:grid;gap:14px}
 #customerOrders .bt-compact-card-v135{border:1px solid #c8e2ee;border-radius:15px;background:#f9fdff;padding:16px;box-shadow:0 2px 10px rgba(7,70,100,.04)}
@@ -13825,5 +13723,108 @@ body.dark-mode .bt-password-eye-v137{color:#c9e6f5!important}
    return value;
   };
  }
+})();
+</script>
+
+<style id="bt-chat-order-support-v137-style">
+#customerApp .bt-order-chat-tools-v137{padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-top:1px solid #dcebf0}
+#customerApp .bt-order-chat-tools-v137 button,#adminApp .bt-admin-replies-v137 button{border:1px solid #95cbdd;background:#effaff;color:#075c79;border-radius:999px;padding:9px 13px;font-size:12px;font-weight:700;cursor:pointer}
+#customerApp .bt-order-picker-v137{padding:12px 16px;border-top:1px solid #dcebf0;max-height:270px;overflow:auto}
+#customerApp .bt-order-picker-v137[hidden]{display:none!important}
+#customerApp .bt-order-picker-v137 button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;text-align:left;border:1px solid #c7e1ec;background:#fff;border-radius:12px;padding:12px;margin:6px 0;cursor:pointer;color:#184b60}
+.bt-linked-order-v137{border:1px solid #a4cfdf;background:#f2fbff;border-radius:13px;padding:12px;margin:6px 0;max-width:350px;font-size:12px;color:#15465a}
+.bt-linked-order-v137 strong,.bt-linked-order-v137 span{display:block;overflow-wrap:anywhere}
+.bt-linked-order-v137 strong{margin-bottom:5px;font-size:13px}
+#adminApp .bt-admin-replies-v137{display:flex;flex-wrap:wrap;gap:7px;padding:10px 0}
+body.dark-mode .bt-linked-order-v137{background:#183c4c;color:#e9f9ff;border-color:#4b8298}
+body.dark-mode #customerApp .bt-order-picker-v137 button,body.dark-mode #customerApp .bt-order-chat-tools-v137 button,body.dark-mode #adminApp .bt-admin-replies-v137 button{background:#1c4659;color:#eaf8ff;border-color:#426e80}
+@media(max-width:560px){#customerApp .bt-order-chat-tools-v137{padding:9px}#customerApp .bt-order-picker-v137{padding:9px}}
+</style>
+<script id="bt-chat-order-support-v137-script">
+(function(){
+ const ORDER_TAG="[Order Concern: ";
+ const customerOrders=()=>Array.isArray(orders)&&currentUser?orders.filter(o=>String(o.username)===String(currentUser.username)):[];
+ function sendOrderConcern(id){
+   const order=customerOrders().find(o=>String(o.id)===String(id));if(!order)return showToast("Order not found. Please refresh and try again.");
+   const message=ORDER_TAG+String(order.id)+"] Hi Admin! I need assistance with this order.";
+   const input=document.getElementById("customerChatInput");
+   if(input&&input.value.trim()&&!confirm("Send an order inquiry? Your unsent message will be kept."))return;
+   const picker=document.getElementById("btOrderPickerV137");if(picker)picker.hidden=true;
+   if(typeof window.sendQuickCustomerMessageV31==="function")window.sendQuickCustomerMessageV31(message);
+ }
+ function openOrderPicker(){
+   const picker=document.getElementById("btOrderPickerV137");if(!picker)return;
+   const next=picker.hidden;picker.hidden=!next;if(!next)return;
+   const found=customerOrders();picker.replaceChildren();
+   const label=document.createElement("strong");label.textContent="Choose an order to discuss";picker.append(label);
+   if(!found.length){const p=document.createElement("p");p.textContent="No orders found in your account.";picker.append(p);return;}
+   found.forEach(order=>{
+     const b=document.createElement("button");b.type="button";
+     const name=document.createElement("strong");name.textContent=String(order.id);
+     const details=document.createElement("small");details.textContent="Status: "+String(order.status||"Pending")+" · "+String((order.items||[]).length)+" product(s)";
+     b.append(name,details);b.addEventListener("click",()=>sendOrderConcern(order.id));picker.append(b);
+   });
+ }
+ function setupCustomer(){
+   const pane=document.querySelector("#customer-chat .chat-panel");if(!pane||document.getElementById("btOrderToolsV137"))return;
+   const tools=document.createElement("div");tools.className="bt-order-chat-tools-v137";tools.id="btOrderToolsV137";
+   const button=document.createElement("button");button.type="button";button.textContent="Choose an Order";button.addEventListener("click",openOrderPicker);
+   const caption=document.createElement("small");caption.textContent="Attach your order details when asking admin for help.";
+   tools.append(button,caption);
+   const picker=document.createElement("div");picker.className="bt-order-picker-v137";picker.id="btOrderPickerV137";picker.hidden=true;
+   const compose=pane.querySelector(".chat-compose");if(compose){compose.before(tools,picker);}
+   const quick=document.querySelector('#customerQuickV27 .quick-reply-card-v27[data-message*="ask about my order"]');
+   if(quick){quick.removeAttribute("onclick");quick.addEventListener("click",openOrderPicker);}
+ }
+ function setupAdmin(){
+   const input=document.getElementById("adminChatInput");if(!input||document.getElementById("btAdminRepliesV137"))return;
+   const wrap=document.createElement("div");wrap.className="bt-admin-replies-v137";wrap.id="btAdminRepliesV137";
+   ["Thank you for contacting BettaTrack.","We are checking your concern. Please wait for our response.","Please provide more details about your concern.","You can check your order's latest status under My Orders."].forEach(reply=>{
+     const b=document.createElement("button");b.type="button";b.textContent=reply.length>38?reply.slice(0,37)+"…":reply;b.title=reply;
+     b.addEventListener("click",()=>{input.value=reply;input.focus();});wrap.append(b);
+   });
+   input.closest(".chat-compose")?.before(wrap);
+ }
+ function addOrderCards(container,messages){
+   if(!container||!Array.isArray(messages))return;
+   const bubbles=[...container.querySelectorAll(".chat-bubble")];
+   messages.forEach((m,i)=>{
+     const match=String(m.message||"").match(/^\[Order Concern: ([A-Za-z0-9_-]{1,80})\]/);
+     if(!match||!bubbles[i])return;
+     const id=match[1];
+     const record=(Array.isArray(orders)?orders:[]).find(o=>String(o.id)===id&&(currentUser?.type==="admin"||String(o.username)===String(currentUser?.username)));
+     const card=document.createElement("div");card.className="bt-linked-order-v137";
+     const heading=document.createElement("strong");heading.textContent="Order · "+id;card.append(heading);
+     const line=document.createElement("span");line.textContent=record?"Status: "+String(record.status||"Pending")+" · "+(record.items||[]).length+" product(s)":"Order reference shared with admin";
+     card.append(line);
+     bubbles[i].prepend(card);
+   });
+ }
+ const originalRenderChat=renderChatMessages;
+ renderChatMessages=function(container,messages,customerUsername){
+   const result=originalRenderChat.apply(this,arguments);
+   addOrderCards(container,messages);
+   return result;
+ };
+ window.btContactAdminOrderV137=function(id){
+   if(!customerOrders().some(o=>String(o.id)===String(id)))return;
+   showCustomerPage("chat");
+   sendOrderConcern(id);
+ };
+ const originalRenderOrders=renderCustomerOrders;
+ renderCustomerOrders=function(){
+   const result=originalRenderOrders.apply(this,arguments);
+   const root=document.getElementById("customerOrders");if(!root)return result;
+   root.querySelectorAll(".bt-order-view-v135 > .order-card").forEach(card=>{
+     if(card.querySelector(".bt-contact-admin-v137"))return;
+     const id=card.querySelector(".order-id")?.textContent?.trim();if(!id)return;
+     const b=document.createElement("button");b.type="button";b.className="bt-contact-admin-v137 action-btn view-btn";b.textContent="Contact Admin About This Order";
+     b.addEventListener("click",()=>window.btContactAdminOrderV137(id));
+     const head=card.querySelector(".order-head");if(head)head.append(b);else card.prepend(b);
+   });
+   return result;
+ };
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>{setupCustomer();setupAdmin();});
+ else {setupCustomer();setupAdmin();}
 })();
 </script>
