@@ -41,7 +41,7 @@ if ($action==='start'){
   if($taken) respond(false,'Username is already taken.',[],409);
   $hash=null;
  }elseif($type==='password'){
-  if(strlen($value)<8||strlen($value)>128||password_verify($value,$customer['password'])) respond(false,'Choose a different password containing 8–128 characters.',[],400);
+  if(strlen($value)<8||strlen($value)>10||!preg_match('/[0-9]/',$value)||!preg_match('/[^A-Za-z0-9]/',$value)||password_verify($value,$customer['password'])) respond(false,'Use a different password with 8–10 characters, one number and one special character.',[],400);
   $hash=password_hash($value,PASSWORD_DEFAULT);$value='';
  }elseif($type==='email'){
   $value=strtolower($value);
