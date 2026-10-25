@@ -13538,6 +13538,13 @@ body.dark-mode #customerOrders .bt-compact-head-v135,body.dark-mode #customerOrd
 <script id="customer-compact-orders-v135-script">
 (function(){
  let activeOrderId=null;
+ // A navigation action always starts My Orders from its compact order list.
+ // Clear only the selected detail view, never the underlying order data.
+ const originalShowCustomerPage=showCustomerPage;
+ showCustomerPage=function(){
+   activeOrderId=null;
+   return originalShowCustomerPage.apply(this,arguments);
+ };
  const originalRender=renderCustomerOrders;
  function showView(id){
    const root=document.getElementById("customerOrders");
