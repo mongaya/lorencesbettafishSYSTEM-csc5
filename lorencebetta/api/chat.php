@@ -21,15 +21,21 @@ if($quickReply){
   $lock->store_result();
   $lock->free_result();
   $lock->close();
-  $ack="[Automated Reply] Thank you for contacting BettaTrack Support! Your inquiry has been received. Please wait for an admin to respond. We will assist you as soon as possible.";
-  // If the most recent message is from a human admin, start a fresh response cycle.
-  // Otherwise acknowledge only when no previous auto-response exists since that admin reply.
+  // Each distinct order inquiry gets an order-specific acknowledgment;
+  // generic questions retain a single acknowledgment per human-admin reply cycle.
+  $orderConcern=preg_match('/^\\[Order Concern: ([A-Za-z0-9_-]{1,80})\\]/', $message, $orderMatches)===1;
+  $ack=$orderConcern
+    ? "[Automated Reply] We received your concern about order ".$orderMatches[1].". Our admin will review your question and respond here. You can check the latest status under My Orders."
+    : "[Automated Reply] Thank you for contacting BettaTrack Support! Your inquiry has been received. Please wait for an admin to respond. We will assist you as soon as possible.";
   $shouldAck=true;
   $history=$conn->prepare("SELECT sender_role,message FROM chat_messages WHERE user_id=? ORDER BY id DESC");
   $history->bind_param('i',$user['id']);$history->execute();
   foreach(stmt_fetch_all_assoc_compat($history) as $row){
-   if($row['sender_role']==='admin' && $row['message']!==$ack)break;
-   if($row['sender_role']==='admin' && $row['message']===$ack){$shouldAck=false;break;}
+   if($row['sender_role']!=='admin')continue;
+   if($row['message']===$ack){$shouldAck=false;break;}
+   // Other automated responses do not count as human admin replies.
+   if(strpos($row['message'],'[Automated Reply] ')===0)continue;
+   break;
   }
   $st=$conn->prepare("INSERT INTO chat_messages(user_id,username,sender_role,message,created_at) VALUES(?,?,?,?,NOW())");
   $st->bind_param('isss',$user['id'],$username,$sender,$message);$st->execute();
