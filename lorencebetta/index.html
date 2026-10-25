@@ -13412,7 +13412,7 @@ body.dark-mode .auth-switch-link-v127 button{color:#68d4f4}
  const legacyReset=window.resetPassword;
  window.resetPassword=async function(){
   const password=el('resetPassword')?.value||'',confirmation=el('resetConfirm')?.value||'';
-  if(password.length<8||password.length>128||password!==confirmation)return showToast('Use 8–128 characters and matching passwords.','warning');
+  if(password.length<8||password.length>10||!/[0-9]/.test(password)||!/[^A-Za-z0-9]/.test(password)||password!==confirmation)return showToast('Use 8–10 characters with a number, special character and matching passwords.','warning');
   const token=verifiedToken||new URLSearchParams(location.search).get('reset');
   if(!token)return showToast('Verify your email first.','warning');
   try{
@@ -13584,3 +13584,38 @@ body.dark-mode #customerOrders .bt-compact-head-v135,body.dark-mode #customerOrd
 .bt-account-invalid-v136{border:2px solid #d63c4f!important;outline-color:#d63c4f!important}
 body.dark-mode .bt-account-error-v136{color:#ff94a1}
 </style>
+
+
+<style id="password-visibility-v137-style">
+.bt-password-wrap-v137{position:relative!important;display:block;width:100%}
+.bt-password-wrap-v137>input{padding-right:46px!important;box-sizing:border-box}
+.bt-password-eye-v137{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:0!important;border-radius:7px;background:transparent!important;color:#47748b!important;cursor:pointer;padding:4px!important;z-index:2}
+.bt-password-eye-v137 svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+body.dark-mode .bt-password-eye-v137{color:#c9e6f5!important}
+</style>
+<script id="password-visibility-v137">
+(function(){
+ const ids=['loginPassword','signupPassword','signupConfirm','resetPassword','resetConfirm','customerAccountValueV105','customerAccountPasswordV105','adminProfileValueV97','adminProfileCurrentPasswordV97'];
+ const eyeOpen='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
+ const eyeClosed='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 6.2A10.7 10.7 0 0 1 12 6c6.5 0 10 6 10 6a15 15 0 0 1-3.4 3.8M6.2 6.3C3.6 8 2 12 2 12s3.5 6 10 6c1.4 0 2.7-.3 3.8-.8"/><path d="M10 10a3 3 0 0 0 4 4"/></svg>';
+ for(const id of ids){
+  const input=document.getElementById(id);
+  if(!input||input.closest('.bt-password-wrap-v137'))continue;
+  if(id==='loginPassword'&&input.parentElement?.querySelector('#loginPasswordEye'))continue;
+  const wrap=document.createElement('span');wrap.className='bt-password-wrap-v137';
+  input.parentNode.insertBefore(wrap,input);wrap.appendChild(input);
+  const button=document.createElement('button');button.type='button';button.className='bt-password-eye-v137';
+  const sync=()=>{const visible=input.type==='text'&&button.dataset.visible==='yes';button.setAttribute('aria-label',visible?'Hide password':'Show password');button.setAttribute('title',visible?'Hide password':'Show password');button.innerHTML=visible?eyeClosed:eyeOpen;};
+  button.addEventListener('click',()=>{
+   // Username/email mode remains plain text without password-toggle action.
+   if((id==='customerAccountValueV105'||id==='adminProfileValueV97')&&input.type!=='password'&&button.dataset.visible!=='yes')return;
+   const visible=input.type==='password';input.type=visible?'text':'password';button.dataset.visible=visible?'yes':'no';sync();input.focus();
+  });
+  wrap.appendChild(button);sync();
+  if(id==='customerAccountValueV105'||id==='adminProfileValueV97'){
+   const refresh=()=>{const passwordMode=(id==='customerAccountValueV105'?document.getElementById('customerAccountHeadingV105')?.textContent?.includes('Password'):document.getElementById('adminProfileTypeV97')?.value==='password');button.hidden=!passwordMode;if(!passwordMode){button.dataset.visible='no';sync();}};
+   document.addEventListener('click',()=>setTimeout(refresh,0));document.getElementById('adminProfileTypeV97')?.addEventListener('change',refresh);refresh();
+  }
+ }
+})();
+</script>
