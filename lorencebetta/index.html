@@ -13653,9 +13653,9 @@ body.dark-mode .bt-password-eye-v137{color:#c9e6f5!important}
  async function refreshAvailability(){
   if(document.hidden||ongoing||Date.now()-lastChecked<minGap)return;
   const customerVisible=!document.getElementById('customerApp')?.classList.contains('hidden');
-  const guestVisible=!document.getElementById('authScreen')?.classList.contains('hidden') || !customerVisible;
+  const guestVisible=!customerVisible&&document.getElementById('guestProductGrid')?.offsetParent!==null;
   const viewingProducts=!!document.getElementById('customer-home')?.classList.contains('active')||!!document.getElementById('customer-products')?.classList.contains('active');
-  if(!viewingProducts&&!guestVisible)return;
+  if(!guestVisible&&!(customerVisible&&viewingProducts))return;
   lastChecked=Date.now();
   ongoing=(async()=>{
    // Explicitly bypass the short-lived product display cache for an availability refresh.
@@ -13671,8 +13671,7 @@ body.dark-mode .bt-password-eye-v137{color:#c9e6f5!important}
  }
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshAvailability();});
  window.addEventListener('focus',refreshAvailability);
- document.addEventListener('click',event=>{
-  if(event.target.closest('#customerSidebar .nav-btn, #guestProducts, #guestProductGrid, #productGrid, #customer-home'))refreshAvailability();
- });
+ const originalShowCustomerPage=window.showCustomerPage;
+ if(typeof originalShowCustomerPage==='function')window.showCustomerPage=function(page,button){const result=originalShowCustomerPage.apply(this,arguments);if(page==='home'||page==='products')refreshAvailability();return result;};
 })();
 </script>
