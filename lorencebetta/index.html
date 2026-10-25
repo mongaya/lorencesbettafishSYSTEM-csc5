@@ -13802,7 +13802,14 @@ body.dark-mode #customerApp .bt-order-picker-v137 button,body.dark-mode #custome
  }
  const originalRenderChat=renderChatMessages;
  renderChatMessages=function(container,messages,customerUsername){
-   const result=originalRenderChat.apply(this,arguments);
+   // Show the linked order card without exposing the internal reference marker.
+   const displayMessages=Array.isArray(messages)?messages.map(m=>{
+     const content=String(m.message||"");
+     return /^\\[Order Concern: [A-Za-z0-9_-]{1,80}\\]/.test(content)
+       ? {...m,message:content.replace(/^\\[Order Concern: [A-Za-z0-9_-]{1,80}\\]\\s*/, "")}
+       : m;
+   }):messages;
+   const result=originalRenderChat.call(this,container,displayMessages,customerUsername);
    addOrderCards(container,messages);
    return result;
  };
