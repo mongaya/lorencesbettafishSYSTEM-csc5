@@ -13643,3 +13643,36 @@ body.dark-mode .bt-password-eye-v137{color:#c9e6f5!important}
 #productGrid .product-card:has(.product-card-buy-v44:disabled) .product-image img{filter:grayscale(.75);opacity:.65}
 #productGrid .product-card:has(.product-card-buy-v44:disabled) .stock-tag{background:#6c7280!important;color:#fff!important}
 </style>
+
+
+<script id="stock-smart-refresh-v139">
+(function(){
+ let lastChecked=0;
+ let ongoing=null;
+ const minGap=30000;
+ async function refreshAvailability(){
+  if(document.hidden||ongoing||Date.now()-lastChecked<minGap)return;
+  const customerVisible=!document.getElementById('customerApp')?.classList.contains('hidden');
+  const guestVisible=!document.getElementById('authScreen')?.classList.contains('hidden') || !customerVisible;
+  const viewingProducts=!!document.getElementById('customer-home')?.classList.contains('active')||!!document.getElementById('customer-products')?.classList.contains('active');
+  if(!viewingProducts&&!guestVisible)return;
+  lastChecked=Date.now();
+  ongoing=(async()=>{
+   // Explicitly bypass the short-lived product display cache for an availability refresh.
+   const response=await apiRequestRawV133('products.php',{cache:'no-store'});
+   if(!Array.isArray(response.products))return;
+   products=response.products;
+   if(customerVisible&&viewingProducts){
+    if(typeof renderProducts==='function')renderProducts();
+   }
+   if(!customerVisible&&typeof renderGuestProducts==='function')renderGuestProducts();
+  })().catch(err=>console.warn('Stock refresh skipped:',err)).finally(()=>{ongoing=null;});
+  return ongoing;
+ }
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshAvailability();});
+ window.addEventListener('focus',refreshAvailability);
+ document.addEventListener('click',event=>{
+  if(event.target.closest('#customerSidebar .nav-btn, #guestProducts, #guestProductGrid, #productGrid, #customer-home'))refreshAvailability();
+ });
+})();
+</script>
