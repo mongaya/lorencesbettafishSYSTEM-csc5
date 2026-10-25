@@ -13675,3 +13675,39 @@ body.dark-mode .bt-password-eye-v137{color:#c9e6f5!important}
  if(typeof originalShowCustomerPage==='function')window.showCustomerPage=function(page,button){const result=originalShowCustomerPage.apply(this,arguments);if(page==='home'||page==='products')refreshAvailability();return result;};
 })();
 </script>
+
+<script id="stock-refresh-v139">
+/* Refresh storefront availability on navigation/tab return without high-frequency polling. */
+(function(){
+ let lastCheck=0,active=null;
+ async function refreshAvailability(force){
+  if(document.hidden || (typeof currentUser!=='undefined'&&currentUser?.type==='admin'))return;
+  if(!force&&Date.now()-lastCheck<30000)return;
+  if(active)return active;
+  lastCheck=Date.now();
+  active=(async()=>{
+   try{
+    // Bypass short-lived display cache only for this explicit availability refresh.
+    const data=await apiRequestRawV133('products.php',{cache:'no-store'});
+    if(Array.isArray(data.products)){
+     products=data.products;
+     if(typeof renderProducts==='function')renderProducts();
+     if(typeof renderGuestProducts==='function')renderGuestProducts();
+    }
+   }catch(err){console.warn('Storefront availability refresh unavailable:',err);}
+   finally{active=null;}
+  })();
+  return active;
+ }
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshAvailability(false);});
+ window.addEventListener('focus',()=>refreshAvailability(false));
+ const priorShowCustomerPage=window.showCustomerPage;
+ if(typeof priorShowCustomerPage==='function'){
+  window.showCustomerPage=function(page,button){
+   const value=priorShowCustomerPage.apply(this,arguments);
+   if(page==='home'||page==='products')refreshAvailability(false);
+   return value;
+  };
+ }
+})();
+</script>
