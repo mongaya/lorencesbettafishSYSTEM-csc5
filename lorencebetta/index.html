@@ -12476,8 +12476,9 @@ body.dark-mode #productModal .product-colors-v25 label:has(input:checked){backgr
    const firstChat=!Array.isArray(messages)||messages.length===0;
    root.classList.toggle("customer-quick-first-v27",firstChat);
    t.hidden=firstChat;
+   // Preserve a panel the customer opened; do not close it on chat polling.
    if(firstChat)p.hidden=false;
-   else p.hidden=true;
+   else if(root.dataset.initialized!=="1")p.hidden=true;
    root.dataset.initialized="1";
    t.setAttribute("aria-expanded",String(!p.hidden));
  };
@@ -13805,12 +13806,32 @@ body.dark-mode #customerApp .bt-order-picker-v137 button,body.dark-mode #custome
    // Show the linked order card without exposing the internal reference marker.
    const displayMessages=Array.isArray(messages)?messages.map(m=>{
      const content=String(m.message||"");
-     return /^\\[Order Concern: [A-Za-z0-9_-]{1,80}\\]/.test(content)
-       ? {...m,message:content.replace(/^\\[Order Concern: [A-Za-z0-9_-]{1,80}\\]\\s*/, "")}
+     return /^\[Order Concern: [A-Za-z0-9_-]{1,80}\]/.test(content)
+       ? {...m,message:content.replace(/^\[Order Concern: [A-Za-z0-9_-]{1,80}\]\s*/, "")}
        : m;
    }):messages;
+   // Polling happens every 5 seconds: avoid resetting the conversation
+   // or kicking the user to the bottom when nothing has changed.
+   const signature=JSON.stringify((messages||[]).map(m=>[m.id,m.sender_role,m.message,m.created_at]));
+   const identity=String(customerUsername||"");
+   if(container&&container.dataset.btChatSignature===signature&&container.dataset.btChatIdentity===identity)return;
+   const stayNearBottom=container?!container.scrollHeight||container.scrollHeight-container.scrollTop-container.clientHeight<100:true;
+   const previousScroll=container?.scrollTop||0;
    const result=originalRenderChat.call(this,container,displayMessages,customerUsername);
    addOrderCards(container,messages);
+   if(container){
+     container.dataset.btChatSignature=signature;
+     container.dataset.btChatIdentity=identity;
+     container.scrollTop=stayNearBottom?container.scrollHeight:previousScroll;
+     container.querySelectorAll(".chat-bubble").forEach(b=>{
+       const txt=b.textContent||"";
+       if(!txt.includes("[Automated Reply] "))return;
+       const nodes=[...b.childNodes];
+       nodes.forEach(n=>{if(n.nodeType===Node.TEXT_NODE)n.textContent=n.textContent.replace("[Automated Reply] ","");});
+       const label=document.createElement("span");label.className="chat-auto-label-v108";label.textContent="Automated Reply";
+       b.prepend(label);
+     });
+   }
    return result;
  };
  window.btContactAdminOrderV137=function(id){
