@@ -82,42 +82,22 @@ if (!is_array($orderRows)) {
     respond(false, "Unable to load orders.", [], 500);
 }
 
-$orders = [];
-
-foreach ($orderRows as $row) {
-    $orderId = (int)$row["id"];
-
-    $stmt = $conn->prepare(
-        "SELECT
-            oi.product_id,
-            oi.product_name AS name,
-            oi.price,
-            oi.quantity,
-            p.image
-         FROM order_items oi
-         LEFT JOIN products p ON p.id = oi.product_id
-         WHERE oi.order_id = ?
-         ORDER BY oi.id ASC"
-    );
-
-    if (!$stmt) {
-        respond(false, "Unable to prepare order items.", [], 500);
-    }
-
-    $stmt->bind_param("i", $orderId);
-
-    if (!$stmt->execute()) {
-        $stmt->close();
-        respond(false, "Unable to load order items.", [], 500);
-    }
-
-    $itemRows = stmt_fetch_all_assoc_compat($stmt);
-    $stmt->close();
-
-    $items = [];
-
-    foreach ($itemRows as $item) {
-        $items[] = [
+// Fetch related records in batches rather than issuing four queries per order.
+// Only IDs from the already authorized order listing are used.
+$itemsByOrder = [];
+$historyByOrder = [];
+$attemptsByOrder = [];
+$cancellationsByOrder = [];
+$orderIds = array_map(static function ($row) { return (int)$row["id"]; }, $orderRows);
+foreach (array_chunk($orderIds, 200) as $idChunk) {
+    $ids = implode(",", $idChunk);
+    $itemResult = $conn->query("SELECT oi.order_id,oi.product_id,oi.product_name AS name,oi.price,oi.quantity,p.image
+        FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id
+        WHERE oi.order_id IN ($ids) ORDER BY oi.id ASC");
+    if (!$itemResult) respond(false, "Unable to load order items.", [], 500);
+    while ($item = $itemResult->fetch_assoc()) {
+        $orderId = (int)$item["order_id"];
+        $itemsByOrder[$orderId][] = [
             "productId" => (int)$item["product_id"],
             "name" => $item["name"],
             "price" => (float)$item["price"],
@@ -125,15 +105,47 @@ foreach ($orderRows as $row) {
             "image" => $item["image"]
         ];
     }
+    $itemResult->free();
 
-    $hist=$conn->prepare("SELECT status,DATE_FORMAT(changed_at, '%Y-%m-%d %H:%i:%s') changed_at FROM order_status_history WHERE order_id=? ORDER BY id ASC");
-    $hist->bind_param("i",$orderId);$hist->execute();$history=stmt_fetch_all_assoc_compat($hist);$hist->close();
+    $historyResult = $conn->query("SELECT order_id,status,DATE_FORMAT(changed_at,'%Y-%m-%d %H:%i:%s') changed_at
+        FROM order_status_history WHERE order_id IN ($ids) ORDER BY id ASC");
+    if (!$historyResult) respond(false, "Unable to load order history.", [], 500);
+    while ($entry = $historyResult->fetch_assoc()) {
+        $orderId = (int)$entry["order_id"];
+        unset($entry["order_id"]);
+        $historyByOrder[$orderId][] = $entry;
+    }
+    $historyResult->free();
 
-    $attemptStmt=$conn->prepare("SELECT attempt_number,payment_reference,payment_screenshot,status,rejection_reason,submitted_at,reviewed_at FROM payment_attempts WHERE order_id=? ORDER BY attempt_number ASC");
-    $attemptStmt->bind_param("i",$orderId);$attemptStmt->execute();
-    $paymentAttempts=stmt_fetch_all_assoc_compat($attemptStmt);$attemptStmt->close();
-    $cancellationStmt=$conn->prepare("SELECT reason,explanation,status,admin_reason,refund_reference,refund_proof,refund_amount,requested_at,reviewed_at,refunded_at FROM cancellation_requests WHERE order_id=? LIMIT 1");
-    $cancellationStmt->bind_param("i",$orderId);$cancellationStmt->execute();$cancellation=stmt_fetch_assoc_compat($cancellationStmt);$cancellationStmt->close();
+    $attemptResult = $conn->query("SELECT order_id,attempt_number,payment_reference,payment_screenshot,status,rejection_reason,submitted_at,reviewed_at
+        FROM payment_attempts WHERE order_id IN ($ids) ORDER BY attempt_number ASC");
+    if (!$attemptResult) respond(false, "Unable to load payment attempts.", [], 500);
+    while ($entry = $attemptResult->fetch_assoc()) {
+        $orderId = (int)$entry["order_id"];
+        unset($entry["order_id"]);
+        $attemptsByOrder[$orderId][] = $entry;
+    }
+    $attemptResult->free();
+
+    $cancelResult = $conn->query("SELECT order_id,reason,explanation,status,admin_reason,refund_reference,refund_proof,refund_amount,requested_at,reviewed_at,refunded_at
+        FROM cancellation_requests WHERE order_id IN ($ids) ORDER BY id ASC");
+    if (!$cancelResult) respond(false, "Unable to load cancellations.", [], 500);
+    while ($entry = $cancelResult->fetch_assoc()) {
+        $orderId = (int)$entry["order_id"];
+        unset($entry["order_id"]);
+        // Match the previous LIMIT 1 behavior if older data contains duplicates.
+        if (!isset($cancellationsByOrder[$orderId])) $cancellationsByOrder[$orderId] = $entry;
+    }
+    $cancelResult->free();
+}
+
+$orders = [];
+foreach ($orderRows as $row) {
+    $orderId = (int)$row["id"];
+    $items = $itemsByOrder[$orderId] ?? [];
+    $history = $historyByOrder[$orderId] ?? [];
+    $paymentAttempts = $attemptsByOrder[$orderId] ?? [];
+    $cancellation = $cancellationsByOrder[$orderId] ?? null;
     $orders[] = [
         "cancellation" => $cancellation ?: null,
         "id" => $row["order_code"],
