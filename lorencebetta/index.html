@@ -2912,7 +2912,12 @@ async function loadAllData() {
         ["Orders",loadOrders],
         ["Reviews",loadProductReviews]
     ];
-    const outcomes=await Promise.allSettled(loaders.map(([,load])=>load()));
+    // Limit initial concurrent database requests on shared hosting.
+    const outcomes=[];
+    for(let i=0;i<loaders.length;i+=2){
+        const batch=await Promise.allSettled(loaders.slice(i,i+2).map(([,load])=>load()));
+        outcomes.push(...batch);
+    }
     const failed=outcomes.flatMap((r,i)=>r.status==="rejected"?[{name:loaders[i][0],reason:r.reason}]:[]);
     if(!failed.length)return;
     console.error("Data loading failed by module:",failed);
@@ -3390,17 +3395,22 @@ async function sendAdminMessage(){
 }
 
 // Poll messages so customer/admin chats update without refreshing the page.
-setInterval(()=>{
-    // Do not poll messages in hidden tabs.
-    if(document.hidden)return;
-    if(currentUser?.type==="customer"){
-        loadCustomerChat();
-        renderNotifications("customer");
-    }
-    if(currentUser?.type==="admin"){
-        loadAdminChats();
-        renderNotifications("admin");
-    }
+let lastBackgroundChatPollV145=0;
+let chatPollBusyV145=false;
+setInterval(async()=>{
+    if(document.hidden||chatPollBusyV145||!currentUser)return;
+    const role=currentUser.type;
+    const chatPage=document.getElementById(role==="admin"?"admin-chat":"customer-chat");
+    const chatVisible=!!chatPage?.classList.contains("active");
+    const now=Date.now();
+    // Active chat stays responsive; other pages check for new messages less frequently.
+    if(!chatVisible&&now-lastBackgroundChatPollV145<30000)return;
+    chatPollBusyV145=true;
+    if(!chatVisible)lastBackgroundChatPollV145=now;
+    try{
+        if(role==="customer"){await loadCustomerChat();renderNotifications("customer");}
+        else if(role==="admin"){await loadAdminChats();renderNotifications("admin");}
+    }finally{chatPollBusyV145=false;}
 },5000);
 
 async function checkLogin() {
@@ -10937,7 +10947,8 @@ renderCheckoutCouriers();
  loadOrders=async function(...args){const result=await previousLoad(...args);refreshOrderAlerts();return result;};
  const oldSeen=viewOrder;
  viewOrder=function(...args){const result=oldSeen(...args);refreshOrderAlerts();return result;};
- setInterval(async()=>{if(currentUser?.type!=="admin"||document.hidden)return;try{await loadOrders();}catch(e){console.warn("Order notification refresh failed",e);}},20000);
+ // The existing 15-second syncOrdersV8 already refreshes orders and notifications.
+// Avoid a second independent admin orders polling loop.
  document.addEventListener("DOMContentLoaded",()=>setTimeout(refreshOrderAlerts,600));
 })();
 </script>
