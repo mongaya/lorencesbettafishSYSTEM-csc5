@@ -14016,3 +14016,48 @@ body.dark-mode #customerOrders .bt-track-package-v143{background:#087fa3}
  };
 })();
 </script>
+
+
+<style id="bt-correct-payment-v144-style">
+#customerOrders .bt-correction-warning-v144{display:flex;align-items:flex-start;gap:8px;margin-top:12px;padding:10px 12px;background:#fff5ea;border:1px solid #ebcfaa;border-radius:10px;color:#8a511e;font-size:13px;line-height:1.45}
+#customerOrders .bt-correction-actions-v144{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+#customerOrders .bt-correct-payment-v144{border:0;border-radius:10px;background:#0796b5;color:#fff;padding:11px 18px;font-weight:700;cursor:pointer}
+body.dark-mode #customerOrders .bt-correction-warning-v144{background:#4a3527;border-color:#956b40;color:#ffdeb4}
+@media(max-width:550px){#customerOrders .bt-correction-actions-v144{width:100%}#customerOrders .bt-correction-actions-v144 button{flex:1}}
+</style>
+<script id="bt-correct-payment-v144-script">
+(function(){
+ const prev=renderCustomerOrders;
+ renderCustomerOrders=function(){
+  const result=prev.apply(this,arguments);
+  const root=document.getElementById("customerOrders");
+  if(!root||!currentUser||customerOrderFilter!=="To Pay")return result;
+  root.querySelectorAll(".bt-orders-list-v135 .bt-compact-card-v135").forEach(card=>{
+   const id=card.querySelector(".bt-compact-head-v135 strong")?.textContent?.trim();
+   const order=(orders||[]).find(o=>o.username===currentUser.username&&String(o.id)===id);
+   if(!order||order.payment_status!=="Payment Needs Correction")return;
+   const foot=card.querySelector(".bt-compact-foot-v135"),view=foot?.querySelector(".bt-view-order-v135");
+   if(!foot||!view)return;
+   const note=document.createElement("div");note.className="bt-correction-warning-v144";
+   note.textContent="Payment Needs Correction: "+(order.payment_rejection_reason||"Please review and correct your payment proof.");
+   foot.before(note);
+   const actions=foot.querySelector(".bt-correction-actions-v144")||document.createElement("div");
+   actions.className="bt-correction-actions-v144";
+   const correct=document.createElement("button");correct.type="button";correct.className="bt-correct-payment-v144";
+   correct.textContent="Correct Payment";
+   correct.addEventListener("click",()=>{
+    // Use the existing View Details payment form and submitPayment API, not a second payment flow.
+    view.click();
+    const detail=root.querySelector(".bt-order-view-v135 > .order-card:not(.bt-hidden-order-v135)");
+    const field=detail?.querySelector('[id^="payref-"]');
+    const proof=detail?.querySelector('[id^="payproof-"]');
+    const target=field||proof;
+    if(target){target.scrollIntoView({behavior:"smooth",block:"center"});target.focus({preventScroll:true});}
+   });
+   if(view.parentElement!==actions)actions.append(view);
+   actions.append(correct);foot.append(actions);
+  });
+  return result;
+ };
+})();
+</script>
