@@ -3098,10 +3098,9 @@ async function openCustomer() {
         const topAvatar=document.getElementById("customerTopAvatar"); if(topAvatar) topAvatar.src=user.profile_image || "images/logo.png";
     }
 
+    // Render only the landing page at login. Hidden pages render when opened.
     renderProducts();
     renderHomeProducts();
-    renderCart();
-    renderCustomerOrders();
     updateCartCount();
     renderNotifications("customer");
 }
@@ -3111,14 +3110,8 @@ async function openAdmin() {
     document.getElementById("customerApp").classList.add("hidden");
     document.getElementById("adminApp").classList.remove("hidden");
 
+    // Dashboard is the only visible page at login. Other modules render on navigation.
     renderAdminDashboard();
-    renderAdminOrders();
-    renderCourierShippingV50();
-    renderAdminProducts();
-    renderAdminCategoryManager();
-    renderPaymentSettings();
-    renderCustomers();
-    renderStock();
     renderNotifications("admin");
 }
 
