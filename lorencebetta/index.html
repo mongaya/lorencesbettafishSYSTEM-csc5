@@ -10808,28 +10808,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 .lalamove-customer-tracking-v20 .primary-btn{max-width:100%}
 </style>
 
-<script id="rating-delivered-once-fix">
-/* Presentation-only hook: show optional review prompt once per delivered order. */
-(function(){
-  const previousRender = renderCustomerOrders;
-  renderCustomerOrders = function(){
-    const result = previousRender.apply(this, arguments);
-    if (currentUser && currentUser.type === "customer") {
-      const completed = orders.find(o => o.username === currentUser.username &&
-        ["Delivered", "Order Received", "Picked Up"].includes(o.status) &&
-        localStorage.getItem(`ratingPromptSeen:${currentUser.username}:${o.id}`) !== "1" &&
-        (o.items || []).some(i => {
-          const p = products.find(p => Number(p.db_id) === Number(i.productId));
-          return p && !alreadyReviewed(p);
-        }));
-      if (completed) setTimeout(() => {
-        if (!document.getElementById("ratingOverlay")) showRatingOnce(completed.id);
-      }, 150);
-    }
-    return result;
-  };
-})();
-</script>
+<!-- Rating modal opens only after customer confirms Order Received; no render/login auto-popups. -->
 <script id="regional-checkout-live-compatibility">
 // Keep the existing live site and its admin courier settings, but restrict new orders
 // to the delivery modes supported by the new PHP checkout endpoint.
@@ -14065,3 +14044,10 @@ body.dark-mode #customerOrders .bt-correction-warning-v144{background:#4a3527;bo
  };
 })();
 </script>
+
+<style id="bt-rating-popup-spacing-v146">
+.rating-pop-item>div{min-width:0;display:flex;flex-direction:column;gap:5px}
+.rating-pop-item>div strong{display:block;overflow-wrap:anywhere}
+.rating-pop-item>div small{display:block;line-height:1.4;color:#658195}
+.rating-pop-item>.primary-btn{white-space:nowrap}
+</style>
