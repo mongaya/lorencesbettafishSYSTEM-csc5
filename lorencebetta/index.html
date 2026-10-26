@@ -2831,6 +2831,9 @@ async function apiRequestRawV133(endpoint, options = {}) {
             data = JSON.parse(text);
         } catch {
             console.error("Non-JSON API response:", {endpoint, status: response.status, body: text.slice(0, 300)});
+            if (endpoint === "login.php") {
+                throw new Error("Unable to reach the login server. Please try again. If this continues, refresh the page.");
+            }
             if (response.status === 403) {
                 throw new Error("Server blocked this request (HTTP 403). Payment changes were not saved. Please check InfinityFree security restrictions.");
             }
@@ -2944,8 +2947,15 @@ function showAuth(type) {
     }
 }
 
+let loginPendingV142 = false;
 document.getElementById("loginForm").addEventListener("submit", async function(e) {
     e.preventDefault();
+    if (loginPendingV142) return;
+    loginPendingV142 = true;
+    const loginButton = this.querySelector("button[type=submit], button.primary-btn.full-btn");
+    if (loginButton) loginButton.disabled = true;
+    clearFieldErrorV118(document.getElementById("loginUsername"));
+    clearFieldErrorV118(document.getElementById("loginPassword"));
 
     const username = document.getElementById("loginUsername").value.trim();
     const password = document.getElementById("loginPassword").value;
@@ -2974,9 +2984,18 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
         }
     } catch (err) {
         const message = String(err.message || "Unable to sign in.");
-        const target = /password/i.test(message) ? document.getElementById("loginPassword") : document.getElementById("loginUsername");
-        setFieldErrorV118(target, message);
-        error.classList.add("hidden");
+        const invalidCredentials = /invalid username or password|username and password are required|account is not active/i.test(message);
+        const target = invalidCredentials ? document.getElementById("loginUsername") : null;
+        if (target) setFieldErrorV118(target, message);
+        else {
+            error.textContent = /server|network|fetch|connection|unexpected response|invalid response/i.test(message)
+                ? "Unable to reach the login server. Please try again. If this continues, refresh the page."
+                : message;
+            error.classList.remove("hidden");
+        }
+    } finally {
+        loginPendingV142 = false;
+        if (loginButton) loginButton.disabled = false;
     }
 });
 
