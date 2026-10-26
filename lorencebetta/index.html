@@ -13980,3 +13980,39 @@ body.dark-mode #customerOrders .bt-quick-received-v141{background:#078ca7;color:
  };
 })();
 </script>
+
+
+<style id="bt-customer-tracking-link-v143-style">
+#customerOrders .bt-track-package-v143{display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;padding:10px 14px;border-radius:9px;background:#078caf;color:#fff!important;text-decoration:none!important;font-weight:700;font-size:13px}
+#customerOrders .bt-track-package-v143:hover{background:#076e91}
+#customerOrders .bt-track-link-note-v143{margin-top:9px;font-size:12px;color:#68859a}
+body.dark-mode #customerOrders .bt-track-package-v143{background:#087fa3}
+</style>
+<script id="bt-customer-tracking-link-v143-script">
+(function(){
+ const previousRender=renderCustomerOrders;
+ renderCustomerOrders=function(){
+  const result=previousRender.apply(this,arguments);
+  const root=document.getElementById("customerOrders");
+  if(!root||!currentUser)return result;
+  root.querySelectorAll(".bt-order-view-v135 > .order-card").forEach(card=>{
+   const id=card.querySelector(".order-id")?.textContent?.trim();
+   const order=(orders||[]).find(o=>o.username===currentUser.username&&String(o.id)===id);
+   if(!order||!/^(j\s*&\s*t(?:\s+express)?|jnt)$/i.test(String(order.courier||"").trim()))return;
+   const delivery=[...card.querySelectorAll(".order-side-card")].find(el=>el.querySelector("h4")?.textContent?.trim()==="Delivery");
+   if(!delivery)return;
+   delivery.querySelectorAll(".bt-track-package-v143,.bt-track-link-note-v143").forEach(el=>el.remove());
+   if(!["Shipped","Out for Delivery","Delivered"].includes(String(order.status)))return;
+   // Reuse the stored admin tracking URL. No guessed courier destinations.
+   let url;
+   try{url=new URL(String(order.tracking_url||"").trim());if(!["https:","http:"].includes(url.protocol))return;}catch{return;}
+   const existing=[...delivery.querySelectorAll("a")].find(a=>a.href===url.href);
+   if(existing){existing.classList.add("bt-track-package-v143");existing.textContent="Track Package";existing.target="_blank";existing.rel="noopener noreferrer";return;}
+   const link=document.createElement("a");link.className="bt-track-package-v143";
+   link.href=url.href;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Track Package";
+   delivery.append(link);
+  });
+  return result;
+ };
+})();
+</script>
