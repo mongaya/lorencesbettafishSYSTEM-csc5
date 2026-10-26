@@ -5444,8 +5444,8 @@ async function uploadProfilePicture(){
   if(input)input.disabled=false;
  }
 }
-const _openCustomerUpgrade=openCustomer;openCustomer=async function(){document.getElementById("publicStore")?.classList.add("hidden");await _openCustomerUpgrade();refreshProfileAvatars();showToast("Login successful.","success");};
-const _openAdminUpgrade=openAdmin;openAdmin=async function(){document.getElementById("publicStore")?.classList.add("hidden");await _openAdminUpgrade();showToast("Admin login successful.","success");};
+const _openCustomerUpgrade=openCustomer;openCustomer=async function(){document.getElementById("publicStore")?.classList.add("hidden");await _openCustomerUpgrade();showCustomerPage("home");refreshProfileAvatars();showToast("Login successful.","success");};
+const _openAdminUpgrade=openAdmin;openAdmin=async function(){document.getElementById("publicStore")?.classList.add("hidden");await _openAdminUpgrade();const dashboardButton=[...document.querySelectorAll("#adminSidebar .nav-btn")].find(b=>(b.getAttribute("onclick")||"").includes("showAdminPage(\'dashboard\'"));showAdminPage("dashboard",dashboardButton);showToast("Admin login successful.","success");};
 logout=function(){if(!confirm("Are you sure you want to log out?"))return;currentUser=null;localStorage.removeItem("lorence_currentUser");document.getElementById("customerApp")?.classList.add("hidden");document.getElementById("adminApp")?.classList.add("hidden");document.getElementById("authScreen")?.classList.add("hidden");document.getElementById("publicStore")?.classList.remove("hidden");document.getElementById("loginForm")?.reset();document.getElementById("signupForm")?.reset();const u=document.getElementById("loginUsername"),p=document.getElementById("loginPassword");if(u)u.value="";if(p){p.value="";p.type="password";}showToast("Logged out successfully.","success");window.scrollTo({top:0,behavior:"smooth"});};
 checkLogin=async function(){if(!currentUser){document.getElementById("publicStore")?.classList.remove("hidden");document.getElementById("authScreen")?.classList.add("hidden");await initPublicStorefront();return;}try{await loadAllData();if(currentUser.type==="admin")await openAdmin();else await openCustomer();}catch(e){console.error("Session refresh: data initialization failed; preserving signed-in user.",e);document.getElementById("publicStore")?.classList.add("hidden");document.getElementById("authScreen")?.classList.add("hidden");if(currentUser?.type==="admin"){document.getElementById("adminApp")?.classList.remove("hidden");}else{document.getElementById("customerApp")?.classList.remove("hidden");}if(typeof showToast==="function")showToast(e?.message||"Some data failed to load. Please try refreshing again.","error");}};
 // V119: Do not replace the unified toast handler with the legacy #toast element.
@@ -13922,3 +13922,42 @@ body.dark-mode #customerApp .bt-order-picker-v137 button,body.dark-mode #custome
 </script>
 
 
+
+<style id="bt-direct-received-v141-style">
+#customerOrders .bt-compact-actions-v141{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+#customerOrders .bt-quick-received-v141{border:0;border-radius:10px;background:#0799af;color:#fff;padding:11px 18px;font-weight:700;cursor:pointer}
+#customerOrders .bt-quick-received-v141:hover{background:#087d97}
+#customerOrders .bt-quick-received-v141:disabled{opacity:.55;cursor:wait}
+body.dark-mode #customerOrders .bt-quick-received-v141{background:#078ca7;color:#fff}
+@media(max-width:550px){#customerOrders .bt-compact-foot-v135{align-items:stretch}#customerOrders .bt-compact-actions-v141{width:100%;justify-content:stretch}#customerOrders .bt-compact-actions-v141 button{flex:1}}
+</style>
+<script id="bt-direct-received-v141-script">
+(function(){
+ const priorRender=renderCustomerOrders;
+ renderCustomerOrders=function(){
+   const result=priorRender.apply(this,arguments);
+   const root=document.getElementById("customerOrders");
+   if(!root||!currentUser||customerOrderFilter!=="To Receive")return result;
+   root.querySelectorAll(".bt-orders-list-v135 .bt-compact-card-v135").forEach(card=>{
+     const id=card.querySelector(".bt-compact-head-v135 strong")?.textContent?.trim();
+     const order=(orders||[]).find(o=>o.username===currentUser.username&&String(o.id)===id);
+     if(!order||String(order.courier||"").trim().toLowerCase()==="pick up")return;
+     if(!["Shipped","Out for Delivery","Delivered"].includes(String(order.status)))return;
+     const foot=card.querySelector(".bt-compact-foot-v135"),view=foot?.querySelector(".bt-view-order-v135");
+     if(!foot||!view||foot.querySelector(".bt-quick-received-v141"))return;
+     const actions=document.createElement("div");actions.className="bt-compact-actions-v141";
+     const receive=document.createElement("button");
+     receive.type="button";receive.className="bt-quick-received-v141";receive.textContent="Order Received";
+     receive.addEventListener("click",async()=>{
+       if(receive.disabled)return;
+       receive.disabled=true;
+       try{await confirmOrderReceived(String(order.id));}
+       finally{if(receive.isConnected)receive.disabled=false;}
+     });
+     actions.append(view,receive);
+     foot.append(actions);
+   });
+   return result;
+ };
+})();
+</script>
